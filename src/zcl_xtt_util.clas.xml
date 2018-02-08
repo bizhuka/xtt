@@ -1,0 +1,63 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+    <VERSION>1</VERSION>
+    <LANGU>E</LANGU>
+    <DESCRIPT>General util</DESCRIPT>
+    <EXPOSURE>2</EXPOSURE>
+    <STATE>1</STATE>
+    <CLSFINAL>X</CLSFINAL>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>GET_OLE_INFO</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Info about template</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>IS_COMMON_GUI</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Normal mode (OR batch OR Web-gui)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>SPLIT_FILE_PATH</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Extract file information from path</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>STR_TO_XML</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get XML object from string|xstring</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>XML_FROM_ZIP</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Get XML as a string or an object</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>XML_TO_STR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>XML object to string|xstring</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>XML_TO_ZIP</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Add XML(string|object) to archive</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

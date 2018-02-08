@@ -1,0 +1,75 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+    <VERSION>1</VERSION>
+    <LANGU>E</LANGU>
+    <DESCRIPT>xlsx is the most developed Excel format</DESCRIPT>
+    <EXPOSURE>2</EXPOSURE>
+    <STATE>1</STATE>
+    <CLSFINAL>X</CLSFINAL>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>AREA_GET_ADDRESS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Absolute or relative address</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>CELL_INIT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Prepare cell</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>CELL_IS_STRING</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Check cell is string</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>CONSTRUCTOR</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>GET_WITHOUT_T</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Prepare shared string (Raw XML)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>MO_WORKBOOK</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Main workbook</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>MO_ZIP</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>For extracting files from xlsx</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>MT_DEFINED_NAMES</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Named ranges</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
+     <CMPNAME>MT_SHARED_STRINGS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Shared strings</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

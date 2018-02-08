@@ -1,0 +1,81 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_XTT</CLSNAME>
+    <VERSION>1</VERSION>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Base class</DESCRIPT>
+    <EXPOSURE>1</EXPOSURE>
+    <STATE>1</STATE>
+    <CLSABSTRCT>X</CLSABSTRCT>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>CONSTRUCTOR</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>DOWNLOAD</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Download to frontend</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>GET_RAW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>As binary xstring</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>MERGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Merge data with template</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>MO_FILE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Info about template</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>PAI</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Used in ZXXT_SHOW program</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>PBO</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Used in ZXXT_SHOW program</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>PREPARE_RAW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Use for XML parsing (In the end of GET_RAW)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>SEND</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Send to email OR sap user</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>SHOW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Show inplace (@see PBO and PAI events)</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

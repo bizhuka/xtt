@@ -5,6 +5,7 @@ class ZCL_XTT_EXCEL_XLSX definition
   create public .
 
 public section.
+  type-pools ABAP .
 
   methods CONSTRUCTOR
     importing
@@ -588,8 +589,8 @@ METHOD get_raw.
   mo_zip->delete(
    EXPORTING
     name     = 'xl/calcChain.xml'
-   EXCEPTIONS
-    OTHERS   = 1 ) ##SUBRC_OK .  " delete if exist
+   EXCEPTIONS        " ##SUBRC_OK
+    OTHERS   = 1 ).  " delete if exist
 
   " ZIP archive as xstring
   rv_content = mo_zip->save( ).

@@ -4,6 +4,7 @@ class ZCL_XTT_XML_BASE definition
   create public .
 
 public section.
+  type-pools ABAP .
 
   types:
     BEGIN OF ts_text_match,
@@ -23,9 +24,9 @@ public section.
       !IV_FILE_FORMAT type I optional
       !IV_FILE_FORMAT_EXT type STRING optional .
 
-  methods MERGE
-    redefinition .
   methods DOWNLOAD
+    redefinition .
+  methods MERGE
     redefinition .
 protected section.
 
@@ -183,7 +184,7 @@ METHOD do_merge.
   FIELD-SYMBOLS:
    <lt_table>            TYPE ANY TABLE.
 ***************************************
-  " merge-№1 @see ME->MATCH_FOUND
+  " merge-1 @see ME->MATCH_FOUND
   SET HANDLER on_match_found FOR io_replace_block ACTIVATION abap_true.
 
   " @see match_found
@@ -195,7 +196,7 @@ METHOD do_merge.
   " Turn off event handler
   SET HANDLER on_match_found FOR io_replace_block ACTIVATION abap_false.
 ***************************************
-  " merge-№2 Structures and objects
+  " merge-2 Structures and objects
   LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE
    typ = zcl_xtt_replace_block=>mc_type_struct OR typ = zcl_xtt_replace_block=>mc_type_object.
 
@@ -215,7 +216,7 @@ METHOD do_merge.
   ENDLOOP.
 
 ***************************************
-  " merge-№3 Array types
+  " merge-3 Array types
   LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
                                                                  OR typ = zcl_xtt_replace_block=>mc_type_tree.
     " if root is a table
@@ -508,7 +509,7 @@ METHOD split_by_tag.
     ev_last_match           = lv_last_match ).
 
 *************
-  " № 1 - Text before body
+  " 1 - Text before body
   READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_first_match.
 
   " Does need an open tag?
@@ -519,7 +520,7 @@ METHOD split_by_tag.
   ENDIF.
   cv_before = cv_middle(lv_beg).
 *************
-  " № 2 - Text after body
+  " 2 - Text after body
   READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_last_match.
 
   IF lv_with_tag = abap_true.
@@ -529,7 +530,7 @@ METHOD split_by_tag.
   ENDIF.
   cv_after = cv_middle+lv_end.
 *************
-  " № 3 - Body
+  " 3 - Body
   lv_end = lv_end - lv_beg.
   cv_middle = cv_middle+lv_beg(lv_end).
 

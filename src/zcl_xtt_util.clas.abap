@@ -4,6 +4,7 @@ class ZCL_XTT_UTIL definition
   create public .
 
 public section.
+  type-pools ABAP .
 
   class-methods SPLIT_FILE_PATH
     importing

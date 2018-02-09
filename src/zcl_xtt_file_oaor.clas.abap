@@ -3,6 +3,8 @@ class ZCL_XTT_FILE_OAOR definition
   create public .
 
 public section.
+  type-pools ABAP .
+  type-pools SBDST .
 
   interfaces ZIF_XTT_FILE .
 
@@ -235,7 +237,7 @@ METHOD zif_xtt_file~get_content.
   CALL FUNCTION 'SCMS_BINARY_TO_STRING'
     EXPORTING
       input_length = lv_file_size
-      encoding     = zcl_aok_util=>c_utf8
+      encoding     = '4110' " utf8
     IMPORTING
       text_buffer  = ev_as_string
     TABLES

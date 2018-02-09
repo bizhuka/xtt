@@ -278,7 +278,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       <lt_items> TYPE ANY TABLE,
       <ls_item>  TYPE any.
 ***************************************
-    " merge-№1 @see ME->MATCH_FOUND
+    " merge-1 @see ME->MATCH_FOUND
     SET HANDLER match_found FOR io_replace_block ACTIVATION abap_true.
 
     " Current cell
@@ -293,7 +293,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     SET HANDLER match_found FOR io_replace_block ACTIVATION abap_false.
 
 ***************************************
-    " merge-№2 Structures and objects
+    " merge-2 Structures and objects
     LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE
      typ = zcl_xtt_replace_block=>mc_type_struct OR typ = zcl_xtt_replace_block=>mc_type_object.
 
@@ -315,7 +315,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     ENDLOOP.
 
 ***************************************
-    " merge-№3 Array types
+    " merge-3 Array types
     LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
                                                                    OR typ = zcl_xtt_replace_block=>mc_type_tree.
       " Find for replication
@@ -530,6 +530,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     DATA:
       lv_ind_beg   TYPE i,
       lv_ind_end   TYPE i,
+      lv_ind_end_1 TYPE i,
       lv_find_str  TYPE string,
       ls_cell      TYPE REF TO ts_ex_cell,
       lt_row_begs  TYPE tt_pair,
@@ -682,7 +683,8 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     lv_ind_end = ls_pair_ref->array_ind.
 
     " End
-    APPEND LINES OF ct_cells FROM lv_ind_end + 1 TO ct_cells_end.
+    lv_ind_end_1 = lv_ind_end + 1.
+    APPEND LINES OF ct_cells FROM lv_ind_end_1 TO ct_cells_end.
     " Middle
     APPEND LINES OF ct_cells FROM lv_ind_beg TO lv_ind_end TO ct_cells_mid.
     " Begin!

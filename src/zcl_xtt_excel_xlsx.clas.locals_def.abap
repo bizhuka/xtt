@@ -2,6 +2,9 @@
 *"* definitions, interfaces or type declarations) you need for
 *"* components in the private section
 
+TYPE-POOLS:
+ abap.
+
 TYPES:
   " Cell of Excel
   BEGIN OF ts_ex_cell,

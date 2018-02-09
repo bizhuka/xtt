@@ -4,6 +4,8 @@ class ZCL_XTT definition
   create protected .
 
 public section.
+  type-pools ABAP .
+  type-pools OLE2 .
 
   constants MC_BY_OLE type STRING value 'BY_OLE' ##NO_TEXT.
 

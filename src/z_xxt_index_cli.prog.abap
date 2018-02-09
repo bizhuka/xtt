@@ -205,7 +205,11 @@ CLASS cl_main IMPLEMENTATION.
                  cv_proxy_app  = lv_proxy_app
                  cv_file_ext   = lv_ext ).
 
-              l_show = boolc( lv_proxy_app IS NOT INITIAL OR lv_ext IS NOT INITIAL ).
+              CLEAR l_show.
+              IF lv_proxy_app IS NOT INITIAL OR lv_ext IS NOT INITIAL.
+                l_show = abap_true.
+              ENDIF.
+
               IF l_show <> abap_true.
                 p_show = abap_false.
               ENDIF.
@@ -244,6 +248,7 @@ CLASS cl_main IMPLEMENTATION.
     DATA:
       ls_screen_opt TYPE REF TO ty_screen_opt,
       lv_meth       TYPE string,
+      lo_recipient  TYPE REF TO IF_RECIPIENT_BCS,
       lt_recipient  TYPE rmps_recipient_bcs,
       lo_err        TYPE REF TO cx_address_bcs,
       lv_text       TYPE string,
@@ -285,11 +290,13 @@ CLASS cl_main IMPLEMENTATION.
         " Add recipients
         TRY.
             IF p_user IS NOT INITIAL.
-              APPEND cl_sapuser_bcs=>create( p_user ) TO lt_recipient.
+              lo_recipient = cl_sapuser_bcs=>create( p_user ).
+              APPEND lo_recipient TO lt_recipient.
             ENDIF.
 
             IF p_email IS NOT INITIAL.
-              APPEND cl_cam_address_bcs=>create_internet_address( p_email ) TO lt_recipient.
+              lo_recipient = cl_cam_address_bcs=>create_internet_address( p_email ).
+              APPEND lo_recipient TO lt_recipient.
             ENDIF.
           CATCH cx_address_bcs INTO lo_err.
             lv_text = lo_err->if_message~get_text( ).

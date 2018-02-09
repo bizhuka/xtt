@@ -4,6 +4,7 @@ class ZCL_XTT_REPLACE_BLOCK definition
   create public .
 
 public section.
+  type-pools ABAP .
 
   types:
     BEGIN OF ts_field,
@@ -114,7 +115,7 @@ METHOD add_2_fields.
   FIELD-SYMBOLS:
    <fs_data>   TYPE any.
 
-  " № 1 Detect C_TYPE_* (References)
+  " 1 Detect C_TYPE_* (References)
   ls_field-name = iv_name.
   DESCRIBE FIELD:
    is_value TYPE      l_typekind,
@@ -141,7 +142,7 @@ METHOD add_2_fields.
   IF iv_type IS NOT INITIAL.
     ls_field-typ = iv_type.
   ELSE.
-    " № 2 Detect C_TYPE_*
+    " 2 Detect C_TYPE_*
     CASE l_typekind.
         " Structures
       WHEN cl_abap_typedescr=>typekind_struct1 OR cl_abap_typedescr=>typekind_struct2.
@@ -165,7 +166,7 @@ METHOD add_2_fields.
 
         " Double
       WHEN cl_abap_typedescr=>typekind_packed OR cl_abap_typedescr=>typekind_float OR
-           cl_abap_typedescr=>typekind_decfloat  OR cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
+           '/' OR 'a' OR 'e'. " cl_abap_typedescr=>typekind_decfloat  OR cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
         ls_field-typ = zcl_xtt_replace_block=>mc_type_double.
 
         " Date
@@ -231,7 +232,7 @@ METHOD constructor.
   " What will search in template. At first '{ROOT-'
   CONCATENATE zcl_xtt_replace_block=>mc_char_block_begin iv_block_name INTO mv_block_begin.
 
-  " № 1 Is data (The most common)
+  " 1 Is data (The most common)
   TRY.
       lo_desc = cl_abap_typedescr=>describe_by_data( <fs_block> ).
     CATCH cx_dynamic_check.
@@ -247,7 +248,7 @@ METHOD constructor.
       EXIT.
     ENDIF.
 
-    " № 2 Is data ref ?
+    " 2 Is data ref ?
     TRY.
         lo_desc = cl_abap_typedescr=>describe_by_data_ref( <fs_block> ).
         lo_ref ?= <fs_block>.
@@ -256,7 +257,7 @@ METHOD constructor.
         CLEAR lo_desc.
     ENDTRY.
 
-    " № 3 Is object ref?
+    " 3 Is object ref?
     IF lo_desc IS INITIAL.
       TRY.
           lo_desc = cl_abap_typedescr=>describe_by_object_ref( <fs_block> ).

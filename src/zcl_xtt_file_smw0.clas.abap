@@ -79,7 +79,7 @@ method ZIF_XTT_FILE~GET_CONTENT.
   ENDIF.
 
   " Text or binary
-  IF ms_key-relid = zcl_smw0_file_info=>c_text.
+  IF ms_key-relid = 'HT'.
     ASSIGN lt_text TO <lt_table>.
   ELSE.
     ASSIGN lt_bin  TO <lt_table>.
@@ -104,7 +104,7 @@ method ZIF_XTT_FILE~GET_CONTENT.
   CALL FUNCTION 'SCMS_BINARY_TO_STRING'
     EXPORTING
       input_length = lv_file_size
-      encoding     = zcl_aok_util=>c_utf8
+      encoding     = '4110' " utf8
     IMPORTING
       text_buffer  = ev_as_string
     TABLES
@@ -121,11 +121,11 @@ METHOD zif_xtt_file~get_name.
   lv_ext  = me->get_param( 'fileextension' ).
 
   " Return only file name
-  zcl_aok_util=>split_name(
+  zcl_xtt_util=>split_file_path(
     EXPORTING
-     im_fullpath       = rv_name
+     iv_fullpath       = rv_name
     IMPORTING
-     ex_filename_noext = rv_name ).
+     ev_filename_noext = rv_name ).
 
   " Sometimes path too long for extension
   CONCATENATE rv_name lv_ext INTO rv_name.

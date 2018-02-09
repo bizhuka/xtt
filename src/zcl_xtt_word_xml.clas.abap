@@ -6,8 +6,8 @@ class ZCL_XTT_WORD_XML definition
 
 public section.
 
-  constants MC_WD_FORMAT_XML_DOCUMENT type I value 12 ##NO_TEXT.
-  constants MC_WD_FORMAT_XML_DOCUMENT_EXT type STRING value '.docx' ##NO_TEXT.
+  constants MC_WD_FORMAT_XML_DOCUMENT type I value 12. "#EC NOTEXT
+  constants MC_WD_FORMAT_XML_DOCUMENT_EXT type STRING value '.docx'. "#EC NOTEXT
 
   methods CONSTRUCTOR
     importing

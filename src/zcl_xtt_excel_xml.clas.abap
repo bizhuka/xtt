@@ -6,8 +6,8 @@ class ZCL_XTT_EXCEL_XML definition
 
 public section.
 
-  constants MC_XL_OPEN_XML_WORKBOOK type I value 51 ##NO_TEXT.
-  constants MC_XL_OPEN_XML_WORKBOOK_EXT type STRING value '.xlsx' ##NO_TEXT.
+  constants MC_XL_OPEN_XML_WORKBOOK type I value 51. "#EC NOTEXT
+  constants MC_XL_OPEN_XML_WORKBOOK_EXT type STRING value '.xlsx'. "#EC NOTEXT
 
   methods CONSTRUCTOR
     importing

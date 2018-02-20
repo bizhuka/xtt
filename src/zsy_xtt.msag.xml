@@ -18,7 +18,19 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZSY_XTT</ARBGB>
      <MSGNR>002</MSGNR>
-     <TEXT>Unknown type</TEXT>
+     <TEXT>Unknown type &amp;1</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>003</MSGNR>
+     <TEXT>&amp;1 interpretation error</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>004</MSGNR>
+     <TEXT>&amp;1 is reference to nowhere</TEXT>
     </T100>
    </T100>
   </asx:values>

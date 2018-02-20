@@ -7,7 +7,7 @@ METHOD example_03.
     BEGIN OF ts_root,
       title  TYPE string,
       bottom TYPE string,
-      t      TYPE tyt_rand_data,
+      t      TYPE tt_rand_data,
     END OF ts_root,
 
     " Second merge

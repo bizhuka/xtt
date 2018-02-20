@@ -3,14 +3,14 @@
 
 METHOD example_02.
   TYPES:
-    " Structure of document
+    " Document structure
     BEGIN OF ts_root,
       footer   TYPE string,
       header   TYPE string,
-      t        TYPE tyt_rand_data,
-      date     TYPE d,      " 8
-      time     TYPE t,      " 6
-      datetime TYPE char14, " date(8) + time(6)
+      t        TYPE tt_rand_data, " internal flat table ( In template {R-T} )
+      date     TYPE d,            " 8
+      time     TYPE t,            " 6
+      datetime TYPE char14,       " date(8) + time(6)
     END OF ts_root.
 
   DATA:
@@ -19,10 +19,12 @@ METHOD example_02.
 
   " No need to fill for empty template
   IF p_temp <> abap_true.
+    " {R-T} in a temaplte. @see get_random_table description
+    ls_root-t      = cl_main=>get_random_table( ).
+
+    " For printing
     ls_root-footer = 'Footer'.
     ls_root-header = 'Header'.
-    " @see get_random_table description
-    ls_root-t      = cl_main=>get_random_table( ).
 
     " Date and time in header and footer
     ls_root-date   = sy-datum.

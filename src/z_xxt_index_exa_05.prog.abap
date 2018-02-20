@@ -12,8 +12,8 @@ METHOD example_05.
   DATA:
     lo_file  TYPE REF TO zif_xtt_file,
     ls_root  TYPE ts_root,
-    lt_items TYPE tyt_rand_data,
-    ls_item  TYPE REF TO ty_rand_data,
+    lt_items TYPE tt_rand_data,
+    ls_item  TYPE REF TO ts_rand_data,
     lt_rows  TYPE tt_tree_05,
     ls_row   TYPE REF TO ts_tree_05,
     lr_table TYPE REF TO DATA.

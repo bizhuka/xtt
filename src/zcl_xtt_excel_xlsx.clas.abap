@@ -589,8 +589,9 @@ METHOD get_raw.
   mo_zip->delete(
    EXPORTING
     name     = 'xl/calcChain.xml'
-   EXCEPTIONS        " ##SUBRC_OK
-    OTHERS   = 1 ).  " delete if exist
+   EXCEPTIONS
+    OTHERS   = 1 ) " ##SUBRC_OK. delete if exist
+  .
 
   " ZIP archive as xstring
   rv_content = mo_zip->save( ).

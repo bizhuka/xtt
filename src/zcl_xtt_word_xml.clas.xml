@@ -6,7 +6,7 @@
     <CLSNAME>ZCL_XTT_WORD_XML</CLSNAME>
     <VERSION>1</VERSION>
     <LANGU>E</LANGU>
-    <DESCRIPT>Save As - &gt; Word (XML | XML 2003) Document</DESCRIPT>
+    <DESCRIPT>Save As - &gt; Word (XML | XML 2003) Document (*.xml)</DESCRIPT>
     <EXPOSURE>2</EXPOSURE>
     <STATE>1</STATE>
     <CLSFINAL>X</CLSFINAL>

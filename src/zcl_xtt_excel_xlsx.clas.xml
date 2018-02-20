@@ -6,7 +6,7 @@
     <CLSNAME>ZCL_XTT_EXCEL_XLSX</CLSNAME>
     <VERSION>1</VERSION>
     <LANGU>E</LANGU>
-    <DESCRIPT>xlsx is the most developed Excel format</DESCRIPT>
+    <DESCRIPT>Save As-&gt; Workbook (*.xlsx), Macro-Enabled Workbook (*.xlsm)</DESCRIPT>
     <EXPOSURE>2</EXPOSURE>
     <STATE>1</STATE>
     <CLSFINAL>X</CLSFINAL>

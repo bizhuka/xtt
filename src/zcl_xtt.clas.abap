@@ -238,7 +238,7 @@ METHOD download.
     WHEN 'Documents'.
       GET PROPERTY OF cv_ole_app 'Documents' = lo_docs.
     WHEN OTHERS.
-      MESSAGE x002(zsy_xtt).
+      MESSAGE x002(zsy_xtt) WITH lv_ole_doc.
   ENDCASE.
 
   CALL METHOD OF lo_docs 'Open' = cv_ole_doc

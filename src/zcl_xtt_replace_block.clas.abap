@@ -188,7 +188,7 @@ METHOD add_2_fields.
 *TYPEKIND_IREF, TYPEKIND_BREF
 *TYPEKIND_DATA, TYPEKIND_SIMPLE, TYPEKIND_ANY
       WHEN OTHERS.
-        MESSAGE 'Unknown type' TYPE 'X'.
+        MESSAGE x002(zsy_xtt) WITH l_typekind.
     ENDCASE.
   ENDIF.
 
@@ -206,12 +206,13 @@ METHOD constructor.
     lo_name         TYPE REF TO cl_abap_typedescr,
     lo_block        TYPE REF TO object,
     l_field_name    TYPE string,
-    l_absolute_name TYPE string.
+    l_absolute_name TYPE string,
+    lv_name         TYPE string.
   FIELD-SYMBOLS:
-    <fs_block>     TYPE any,
-    <fs_any>       TYPE any,
-    <ls_comp>      TYPE abap_compdescr,
-    <ls_attr>      TYPE abap_attrdescr.
+    <fs_block> TYPE any,
+    <fs_any>   TYPE any,
+    <ls_comp>  TYPE abap_compdescr,
+    <ls_attr>  TYPE abap_attrdescr.
 
   " For nested structures
   IF is_field IS NOT SUPPLIED.
@@ -236,7 +237,7 @@ METHOD constructor.
   TRY.
       lo_desc = cl_abap_typedescr=>describe_by_data( <fs_block> ).
     CATCH cx_dynamic_check.
-      MESSAGE 'IV_BLOCK interpretation error' TYPE 'X'.
+      MESSAGE x003(zsy_xtt) WITH iv_block_name.
   ENDTRY.
 
   " Description of description :)
@@ -273,7 +274,11 @@ METHOD constructor.
 
   " Skip ?
   IF lo_desc IS INITIAL.
-    MESSAGE 'IV_BLOCK is reference to nowhere' TYPE 'X'.
+    lv_name = iv_block_name.
+    IF lv_name IS INITIAL AND is_field IS NOT INITIAL.
+      lv_name = is_field->name.
+    ENDIF.
+    MESSAGE x004(zsy_xtt) WITH lv_name.
   ENDIF.
 
 *lo_desc is instance of:
@@ -518,7 +523,7 @@ METHOD get_as_string.
       ASSIGN is_field->dref->* TO <l_time>.
 
     WHEN OTHERS.
-      MESSAGE `Application's logic error` TYPE 'X'.
+      MESSAGE x002(zsy_xtt) WITH is_field->typ.
   ENDCASE.
 
   " Never will happen in MS Excel template (MS Word and pdf only)

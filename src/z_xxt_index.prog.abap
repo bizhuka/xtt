@@ -1,6 +1,6 @@
 **********************************************************************
 *  XTT - Xml template toolkit examples
-*  @see TODO github LINK
+*  @see https://github.com/bizhuka/xtt
 *  @version: 1.0
 **********************************************************************
 REPORT z_xxt_index.

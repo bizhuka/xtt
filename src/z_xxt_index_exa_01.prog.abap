@@ -3,12 +3,12 @@
 
 METHOD example_01.
   TYPES:
-    " Structure of document
+    " Document structure
     BEGIN OF ts_root,
       title  TYPE char15,
-      string TYPE string,
+      text   TYPE string,
       int    TYPE i,
-      bottom TYPE string, " Could be REF TO
+      bottom TYPE string, " Any field could be REF TO, STRUCTURE or TABLE
     END OF ts_root.
 
   DATA:
@@ -17,10 +17,10 @@ METHOD example_01.
 
   " No need to fill for empty template
   IF p_temp <> abap_true.
-    ls_root-title     = 'Document title'.
-    ls_root-string    = 'Just string'.
-    ls_root-int       = 3.
-    ls_root-bottom    = 'bottom'.
+    ls_root-title   = 'Document title'.
+    ls_root-text    = 'Just string'.
+    ls_root-int     = 3.
+    ls_root-bottom  = 'bottom'.
   ENDIF.
 
   " Show data structure only
@@ -40,6 +40,7 @@ METHOD example_01.
 
   " Paste data
   IF p_temp <> abap_true.
+    " R is a marker in the IV_TEMPLATE
     ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
   ENDIF.
 ENDMETHOD.

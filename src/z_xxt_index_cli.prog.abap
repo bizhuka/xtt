@@ -162,7 +162,7 @@ CLASS cl_main IMPLEMENTATION.
 
   METHOD pbo.
     DATA:
-      ls_screen_opt TYPE ty_screen_opt,
+      ls_screen_opt TYPE ts_screen_opt,
       l_show        TYPE abap_bool,
       lv_proxy_app  TYPE string,
       lv_ext        TYPE string.
@@ -246,7 +246,7 @@ CLASS cl_main IMPLEMENTATION.
 
   METHOD start_of_selection.
     DATA:
-      ls_screen_opt TYPE REF TO ty_screen_opt,
+      ls_screen_opt TYPE REF TO ts_screen_opt,
       lv_meth       TYPE string,
       lo_recipient  TYPE REF TO IF_RECIPIENT_BCS,
       lt_recipient  TYPE rmps_recipient_bcs,

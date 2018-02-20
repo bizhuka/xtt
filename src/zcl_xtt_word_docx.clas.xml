@@ -6,7 +6,7 @@
     <CLSNAME>ZCL_XTT_WORD_DOCX</CLSNAME>
     <VERSION>1</VERSION>
     <LANGU>E</LANGU>
-    <DESCRIPT>Save As -&gt; Word Document (*.docx)</DESCRIPT>
+    <DESCRIPT>Save As-&gt; Document (*.docx), Macro-Enabled Document (*.docm)</DESCRIPT>
     <EXPOSURE>2</EXPOSURE>
     <STATE>1</STATE>
     <CLSFINAL>X</CLSFINAL>

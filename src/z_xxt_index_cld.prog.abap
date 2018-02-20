@@ -9,29 +9,29 @@ CLASS cl_main DEFINITION FINAL.
   PUBLIC SECTION.
     TYPES:
       " Random table data
-      BEGIN OF ty_rand_data,
+      BEGIN OF ts_rand_data,
         group   TYPE string,
         caption TYPE string,
         date    TYPE d,
         sum1    TYPE p LENGTH 13 DECIMALS 2,
         sum2    TYPE p LENGTH 13 DECIMALS 2,
-      END OF ty_rand_data,
-      tyt_rand_data TYPE STANDARD TABLE OF ty_rand_data WITH DEFAULT KEY,
+      END OF ts_rand_data,
+      tt_rand_data TYPE STANDARD TABLE OF ts_rand_data WITH DEFAULT KEY,
 
       " 1 example
-      BEGIN OF ty_screen_opt,
+      BEGIN OF ts_screen_opt,
         key              TYPE char5,
         show_row_count   TYPE abap_bool,
         show_block_count TYPE abap_bool,
         show_zip         TYPE abap_bool,
         class_name       TYPE string,
         template         TYPE string,
-      END OF ty_screen_opt,
-      tyt_screen_opt TYPE SORTED TABLE OF ty_screen_opt WITH UNIQUE KEY key,
+      END OF ts_screen_opt,
+      tt_screen_opt TYPE SORTED TABLE OF ts_screen_opt WITH UNIQUE KEY key,
 
       " Tree structure
       BEGIN OF ts_tree_05.
-        INCLUDE TYPE ty_rand_data. " random data
+        INCLUDE TYPE ts_rand_data. " random data
     TYPES:
       ch_count TYPE i, " New field for trees
       END OF ts_tree_05,
@@ -147,8 +147,8 @@ CLASS cl_main DEFINITION FINAL.
     CLASS-METHODS:
       " Random data for tables
       get_random_table
-        RETURNING VALUE(rt_table) TYPE tyt_rand_data.
+        RETURNING VALUE(rt_table) TYPE tt_rand_data.
 
     DATA:
-       mt_screen_opt TYPE tyt_screen_opt.
+       mt_screen_opt TYPE tt_screen_opt.
 ENDCLASS.

@@ -26,6 +26,16 @@ private section.
   data MT_SHARED_STRINGS type STRINGTAB .
   data MT_DEFINED_NAMES type TT_EX_DEFINED_NAME .
 
+  class-methods COLUMN_READ_XML
+    importing
+      !IO_NODE type ref to IF_IXML_ELEMENT
+    changing
+      !CT_COLUMNS type TT_EX_COLUMN .
+  class-methods COLUMN_WRITE_XML
+    importing
+      !IT_COLUMNS type TT_EX_COLUMN
+    returning
+      value(RV_COLUMN_TEXT) type STRING .
   class-methods CELL_INIT
     importing
       !IS_CELL type ref to TS_EX_CELL
@@ -46,6 +56,7 @@ private section.
     importing
       !IS_CELL type ref to TS_EX_CELL
       !IV_NEW_ROW type I
+      !IV_NEW_COL_IND type I
     changing
       !CV_SHEET_DATA type STRING
       !CV_MERGE_CNT type I
@@ -84,9 +95,6 @@ private section.
       !IV_PATH type STRING
     changing
       !CT_LIST_OBJECTS type TT_EX_LIST_OBJECT .
-  methods LIST_OBJECT_WRITE_XML
-    importing
-      !IS_LIST_OBJECT type ref to TS_EX_LIST_OBJECT .
   class-methods GET_WITHOUT_T
     importing
       !IV_TEXT type STRING
@@ -99,105 +107,105 @@ ENDCLASS.
 CLASS ZCL_XTT_EXCEL_XLSX IMPLEMENTATION.
 
 
-METHOD AREA_GET_ADDRESS.
-    DATA:
-     ls_cell TYPE REF TO ts_ex_cell,
-     l_row   TYPE char10,
-     l_part  TYPE string.
+METHOD area_get_address.
+  DATA:
+    ls_cell TYPE REF TO ts_ex_cell,
+    l_row   TYPE char10,
+    l_part  TYPE string.
 
-    " Oops
-    IF is_area->a_cells IS INITIAL.
-      rv_address = is_area->a_original_value.
-      RETURN.
-    ENDIF.
+  " Oops
+  IF is_area->a_cells IS INITIAL.
+    rv_address = is_area->a_original_value.
+    RETURN.
+  ENDIF.
 
-    CLEAR rv_address.
-    LOOP AT is_area->a_cells INTO ls_cell.
-      " As string
-      int_2_text ls_cell->c_row l_row.
+  CLEAR rv_address.
+  LOOP AT is_area->a_cells REFERENCE INTO ls_cell.
+    " As string
+    int_2_text ls_cell->c_row l_row.
 
-      " $ sign
-      IF iv_no_bucks = abap_true.
-        CONCATENATE     ls_cell->c_col     l_row INTO l_part.
-      ELSE.
-        CONCATENATE `$` ls_cell->c_col `$` l_row INTO l_part.
-      ENDIF.
-
-      " Concatenate 2 cells
-      IF rv_address IS INITIAL.
-        rv_address = l_part.
-      ELSE.
-        CONCATENATE rv_address `:` l_part INTO rv_address.
-      ENDIF.
-    ENDLOOP.
-
-    " Add sheet name
-    IF is_area->a_sheet_name IS NOT INITIAL.
-      CONCATENATE `'` is_area->a_sheet_name `'!` rv_address INTO rv_address.
-    ENDIF.
-  ENDMETHOD.                    "area_get_address
-
-
-METHOD AREA_READ_XML.
-    DATA:
-     ls_area    TYPE REF TO ts_ex_area,
-     l_len      TYPE i,
-     lt_ref     TYPE stringtab,
-     l_name     TYPE string,
-     l_ref      TYPE string,
-     ls_cell    TYPE REF TO ts_ex_cell.
-
-    " Change existing
-    IF is_area IS SUPPLIED.
-      ls_area = is_area.
-    ELSE. " Add new one
-      APPEND INITIAL LINE TO ct_areas REFERENCE INTO ls_area.
-    ENDIF.
-
-    " Save previous value
-    ls_area->a_original_value = iv_value.
-
-    " Sheet name and address
-    SPLIT iv_value AT '!' INTO l_name l_ref.
-
-    " No sheet name
-    IF l_ref IS INITIAL.
-      l_ref = iv_value.
+    " $ sign
+    IF iv_no_bucks = abap_true.
+      CONCATENATE     ls_cell->c_col     l_row INTO l_part.
     ELSE.
-      " Delete '
-      ls_area->a_sheet_name = l_name.
-      IF ls_area->a_sheet_name(1) = `'`.
-        l_len = strlen( ls_area->a_sheet_name ) - 2.
-        ls_area->a_sheet_name = ls_area->a_sheet_name+1(l_len).
-      ENDIF.
+      CONCATENATE `$` ls_cell->c_col `$` l_row INTO l_part.
     ENDIF.
 
-    " Broken link
-    CHECK l_ref(1) <> '#'.
+    " Concatenate 2 cells
+    IF rv_address IS INITIAL.
+      rv_address = l_part.
+    ELSE.
+      CONCATENATE rv_address `:` l_part INTO rv_address.
+    ENDIF.
+  ENDLOOP.
 
-    " Remove all the dollars :)
-    REPLACE ALL OCCURRENCES OF `$` IN l_ref WITH ``.
+  " Add sheet name
+  IF is_area->a_sheet_name IS NOT INITIAL.
+    CONCATENATE `'` is_area->a_sheet_name `'!` rv_address INTO rv_address.
+  ENDIF.
+ENDMETHOD.                    "area_get_address
 
-    " 1 or 2 cells
-    SPLIT l_ref AT ':' INTO TABLE lt_ref.
-    LOOP AT lt_ref INTO l_ref.
-      " Save references !
-      CREATE DATA ls_cell.
 
-      " Fill with values
-      zcl_xtt_excel_xlsx=>cell_init(
-       EXPORTING
-         iv_coordinate = l_ref
-         is_cell       = ls_cell
-       EXCEPTIONS
-         wrong_format  = 1 ).
+METHOD area_read_xml.
+  DATA:
+    ls_area TYPE REF TO ts_ex_area,
+    l_len   TYPE i,
+    lt_ref  TYPE stringtab,
+    l_name  TYPE string,
+    l_ref   TYPE string,
+    ls_cell TYPE REF TO ts_ex_cell.
 
-      " Add if ok
-      IF sy-subrc = 0.
-        APPEND ls_cell TO ls_area->a_cells.
-      ENDIF.
-    ENDLOOP.
-  ENDMETHOD.                    "area_read_xml
+  " Change existing
+  IF is_area IS SUPPLIED.
+    ls_area = is_area.
+  ELSE. " Add new one
+    APPEND INITIAL LINE TO ct_areas REFERENCE INTO ls_area.
+  ENDIF.
+
+  " Save previous value
+  ls_area->a_original_value = iv_value.
+
+  " Sheet name and address
+  SPLIT iv_value AT '!' INTO l_name l_ref.
+
+  " No sheet name
+  IF l_ref IS INITIAL.
+    l_ref = iv_value.
+  ELSE.
+    " Delete '
+    ls_area->a_sheet_name = l_name.
+    IF ls_area->a_sheet_name(1) = `'`.
+      l_len = strlen( ls_area->a_sheet_name ) - 2.
+      ls_area->a_sheet_name = ls_area->a_sheet_name+1(l_len).
+    ENDIF.
+  ENDIF.
+
+  " Broken link
+  CHECK l_ref(1) <> '#'.
+
+  " Remove all the dollars :)
+  REPLACE ALL OCCURRENCES OF `$` IN l_ref WITH ``.
+
+  " 1 or 2 cells
+  SPLIT l_ref AT ':' INTO TABLE lt_ref.
+  LOOP AT lt_ref INTO l_ref.
+    " Save references !
+    CREATE DATA ls_cell.
+
+    " Fill with values
+    zcl_xtt_excel_xlsx=>cell_init(
+     EXPORTING
+       iv_coordinate = l_ref
+       is_cell       = ls_cell
+     EXCEPTIONS
+       wrong_format  = 1 ).
+
+    " Add if ok
+    IF sy-subrc = 0.
+      APPEND ls_cell->* TO ls_area->a_cells.
+    ENDIF.
+  ENDLOOP.
+ENDMETHOD.                    "area_read_xml
 
 
 METHOD CELL_INIT.
@@ -244,126 +252,211 @@ METHOD CELL_IS_STRING.
   ENDMETHOD.                    "cell_is_string
 
 
-METHOD CELL_READ_XML.
-    DATA:
-    ls_cell      TYPE REF TO ts_ex_cell,
-    lo_elem      TYPE REF TO if_ixml_element,
-    l_val        TYPE string,
-    l_ind        TYPE i.
+METHOD cell_read_xml.
+  DATA:
+    ls_cell TYPE REF TO ts_ex_cell,
+    lo_elem TYPE REF TO if_ixml_element,
+    l_val   TYPE string,
+    l_ind   TYPE i.
 
-    " Insert new one
-    CREATE DATA ls_cell.
-    APPEND ls_cell TO ct_cells.
+  " Insert new one
+  APPEND INITIAL LINE TO ct_cells REFERENCE INTO ls_cell.
 
-    " Transform coordinates
-    l_val = io_node->get_attribute( 'r' ).
-    zcl_xtt_excel_xlsx=>cell_init(
-     iv_coordinate = l_val
-     is_cell       = ls_cell ).
+  " Transform coordinates
+  l_val = io_node->get_attribute( 'r' ).
+  zcl_xtt_excel_xlsx=>cell_init(
+   iv_coordinate = l_val
+   is_cell       = ls_cell ).
 
-    ls_cell->c_type  = io_node->get_attribute( 't' ).
-    ls_cell->c_style = io_node->get_attribute( 's' ).
+  ls_cell->c_type  = io_node->get_attribute( 't' ).
+  ls_cell->c_style = io_node->get_attribute( 's' ).
 
-    " Just formula
-    lo_elem = io_node->find_from_name( name = 'f' ).
-    IF lo_elem IS BOUND.
-      " TODO raw xml       shared formula!
-      l_val = lo_elem->get_value( ).
-      l_val = cl_http_utility=>escape_html( l_val ).
+  " Just formula
+  lo_elem = io_node->find_from_name( name = 'f' ).
+  IF lo_elem IS BOUND.
+    " TODO raw xml       shared formula!
+    l_val = lo_elem->get_value( ).
+    l_val = cl_http_utility=>escape_html( l_val ).
 
-      ls_cell->c_formula = l_val.
-      RETURN.
-    ENDIF.
+    ls_cell->c_formula = l_val.
+    RETURN.
+  ENDIF.
 
-    " Default value
-    lo_elem = io_node->find_from_name( name = 'v' ).
-    IF lo_elem IS BOUND.
-      l_val = lo_elem->get_value( ).
-    ELSE.
-      l_val = io_node->get_value( ).  " TODO 'inlineStr' !!! with tags!
-    ENDIF.
+  " Default value
+  lo_elem = io_node->find_from_name( name = 'v' ).
+  IF lo_elem IS BOUND.
+    l_val = lo_elem->get_value( ).
+  ELSE.
+    l_val = io_node->get_value( ).  " TODO 'inlineStr' !!! with tags!
+  ENDIF.
 
-    CASE ls_cell->c_type.
-      WHEN 's'.
-        l_ind = l_val + 1.
-        READ TABLE mt_shared_strings INTO ls_cell->c_value INDEX l_ind.
+  CASE ls_cell->c_type.
+    WHEN 's'.
+      l_ind = l_val + 1.
+      READ TABLE mt_shared_strings INTO ls_cell->c_value INDEX l_ind.
 
-      WHEN 'inlineStr'.
-        ls_cell->c_value = l_val. " <si> tag zcl_xtt_excel_xlsx=>get_without_t(  ).
-        ls_cell->c_type  = 's'.
+    WHEN 'inlineStr'.
+      ls_cell->c_value = l_val. " <si> tag zcl_xtt_excel_xlsx=>get_without_t(  ).
+      ls_cell->c_type  = 's'.
 
-      WHEN OTHERS.
-        ls_cell->c_value = l_val.
+    WHEN OTHERS.
+      ls_cell->c_value = l_val.
 
-    ENDCASE.
-  ENDMETHOD.                    "cell_read_xml
+  ENDCASE.
+ENDMETHOD.                    "cell_read_xml
 
 
-METHOD CELL_WRITE_XML.
-    DATA:
-     l_new_row  TYPE char10,
-     l_number   TYPE char10,
-     l_data     TYPE string,
-     l_index    TYPE i.
+METHOD cell_write_xml.
+  DATA:
+    lv_new_row   TYPE char10,
+    lv_new_col   TYPE char3,
+    lv_number    TYPE char10,
+    lv_data      TYPE string,
+    lv_index     TYPE i,
+    lv_merge_col TYPE char3,
+    lv_from      TYPE string,
+    lv_to        TYPE string.
 
-    " To text
-    int_2_text iv_new_row l_new_row.
+  " Update formula
+  DEFINE replace_all_with_buck.
+    CONCATENATE:
+     `$` &1 INTO lv_from,
+     `$` &2 INTO lv_to.
 
-    " Formula
-    IF is_cell->c_formula IS NOT INITIAL.
-      " Replace to new row index
-      FIND FIRST OCCURRENCE OF '$' IN is_cell->c_formula.
-      IF sy-subrc = 0.
-        " Old row index -> New row index
-        int_2_text is_cell->c_row l_number.
-        REPLACE ALL OCCURRENCES OF l_number IN is_cell->c_formula WITH l_new_row.
+    REPLACE ALL OCCURRENCES OF lv_from IN is_cell->c_formula WITH lv_to.
+  END-OF-DEFINITION.
+
+  " To text
+  int_2_text iv_new_row lv_new_row.
+  lv_new_col = cl_ex_sheet=>convert_column2alpha( iv_new_col_ind ).
+
+  " Formula
+  IF is_cell->c_formula IS NOT INITIAL.
+    " Replace to new row index
+    FIND FIRST OCCURRENCE OF '$' IN is_cell->c_formula.
+    IF sy-subrc = 0.
+      " Old row index -> New row index
+      int_2_text is_cell->c_row lv_number.
+
+      replace_all_with_buck lv_number lv_new_row.
+      IF sy-subrc <> 0.
+        replace_all_with_buck is_cell->c_col lv_new_col.
       ENDIF.
-      " Write formula
-      CONCATENATE `<f>` is_cell->c_formula `</f>` INTO l_data.
-    ELSEIF is_cell->c_value IS NOT INITIAL.
-      " String
-      IF zcl_xtt_excel_xlsx=>cell_is_string( is_cell ) = abap_true.
-        READ TABLE mt_shared_strings TRANSPORTING NO FIELDS BINARY SEARCH
-         WITH KEY table_line = is_cell->c_value.
-        " Write index of strings
-        l_index = sy-tabix - 1.
-        int_2_text l_index l_number.
-        CONCATENATE `<v>` l_number         `</v>` INTO l_data.
-      ELSE. " Numbers
-        CONCATENATE `<v>` is_cell->c_value `</v>` INTO l_data.
-      ENDIF.
     ENDIF.
-
-    " Change current row
-    is_cell->c_row = iv_new_row.
-
-    " Address
-    CONCATENATE cv_sheet_data `<c r="` is_cell->c_col l_new_row `"` INTO cv_sheet_data.
-
-    " Style and type
-    IF is_cell->c_style IS NOT INITIAL.
-      CONCATENATE cv_sheet_data ` s="` is_cell->c_style `"` INTO cv_sheet_data.
+    " Write formula
+    CONCATENATE `<f>` is_cell->c_formula `</f>` INTO lv_data.
+  ELSEIF is_cell->c_value IS NOT INITIAL.
+    " String
+    IF zcl_xtt_excel_xlsx=>cell_is_string( is_cell ) = abap_true.
+      READ TABLE mt_shared_strings TRANSPORTING NO FIELDS BINARY SEARCH
+       WITH KEY table_line = is_cell->c_value.
+      " Write index of strings
+      lv_index = sy-tabix - 1.
+      int_2_text lv_index lv_number.
+      CONCATENATE `<v>` lv_number         `</v>` INTO lv_data.
+    ELSE. " Numbers
+      CONCATENATE `<v>` is_cell->c_value `</v>` INTO lv_data.
     ENDIF.
-    IF is_cell->c_type IS NOT INITIAL.
-      CONCATENATE cv_sheet_data ` t="` is_cell->c_type  `"` INTO cv_sheet_data.
+  ENDIF.
+
+  " Change current row
+  is_cell->c_row     = iv_new_row.
+  is_cell->c_col     = lv_new_col.
+  is_cell->c_col_ind = iv_new_col_ind.
+
+  " Address
+  CONCATENATE cv_sheet_data `<c r="` is_cell->c_col lv_new_row `"` INTO cv_sheet_data.
+
+  " Style and type
+  IF is_cell->c_style IS NOT INITIAL.
+    CONCATENATE cv_sheet_data ` s="` is_cell->c_style `"` INTO cv_sheet_data.
+  ENDIF.
+  IF is_cell->c_type IS NOT INITIAL.
+    CONCATENATE cv_sheet_data ` t="` is_cell->c_type  `"` INTO cv_sheet_data.
+  ENDIF.
+
+  " Data
+  CONCATENATE cv_sheet_data `>` lv_data `</c>` INTO cv_sheet_data.
+
+  " Merged cell
+  IF is_cell->c_merge_row_dx IS NOT INITIAL OR
+     is_cell->c_merge_col_dx IS NOT INITIAL.
+    cv_merge_cnt = cv_merge_cnt + 1.
+
+    " Calculate new val
+    lv_index = is_cell->c_row     + is_cell->c_merge_row_dx.
+    int_2_text lv_index lv_number.
+
+    lv_index = is_cell->c_col_ind + is_cell->c_merge_col_dx.
+    lv_merge_col = cl_ex_sheet=>convert_column2alpha( lv_index  ).
+
+    CONCATENATE cv_merge_cells `<mergeCell ref="`
+      is_cell->c_col  lv_new_row `:`
+      lv_merge_col    lv_number `"/> ` INTO cv_merge_cells.
+  ENDIF.
+ENDMETHOD.
+
+
+METHOD column_read_xml.
+  DATA:
+   ls_col LIKE LINE OF ct_columns,
+   lv_cnt TYPE i.
+
+  ls_col-collapsed    = io_node->get_attribute( 'collapsed' ).
+  ls_col-customwidth  = io_node->get_attribute( 'customWidth' ).
+  ls_col-hidden       = io_node->get_attribute( 'hidden' ).
+  ls_col-max          = io_node->get_attribute( 'max' ).
+  ls_col-min          = io_node->get_attribute( 'min' ).
+  ls_col-outlinelevel = io_node->get_attribute( 'outlineLevel' ).
+  ls_col-phonetic     = io_node->get_attribute( 'phonetic' ).
+  ls_col-style        = io_node->get_attribute( 'style' ).
+  ls_col-width        = io_node->get_attribute( 'width' ).
+
+  IF ls_col-min = ls_col-max.
+    INSERT ls_col INTO TABLE ct_columns.
+    RETURN.
+  ENDIF.
+
+  " Separate to columns
+  lv_cnt = ls_col-max - ls_col-min + 1.
+  DO lv_cnt TIMES.
+    ls_col-max = ls_col-min.
+    INSERT ls_col INTO TABLE ct_columns.
+
+    " Next line
+    ls_col-min = ls_col-min + 1.
+  ENDDO.
+ENDMETHOD.
+
+
+METHOD column_write_xml.
+  DATA:
+   lv_text     TYPE string.
+  FIELD-SYMBOLS:
+   <ls_column> LIKE LINE OF it_columns.
+
+  DEFINE add_text.
+    lv_text = <ls_column>-&1.
+    IF lv_text IS NOT INITIAL.
+      CONDENSE lv_text.
+      CONCATENATE rv_column_text ` ` &2 `="` lv_text `"` INTO rv_column_text RESPECTING BLANKS.
     ENDIF.
+  END-OF-DEFINITION.
 
-    " Data
-    CONCATENATE cv_sheet_data `>` l_data `</c>` INTO cv_sheet_data.
-
-    " Merged cell
-    IF is_cell->c_merge_col IS NOT INITIAL.
-      cv_merge_cnt = cv_merge_cnt + 1.
-
-      " Calculate new val
-      l_index = is_cell->c_row + is_cell->c_merge_dx.
-      int_2_text l_index l_number.
-
-      CONCATENATE cv_merge_cells `<mergeCell ref="`
-        is_cell->c_col        l_new_row `:`
-        is_cell->c_merge_col  l_number `"/> ` INTO cv_merge_cells.
-    ENDIF.
-  ENDMETHOD.                    "cell_write_xml
+  LOOP AT it_columns ASSIGNING <ls_column>.
+    CONCATENATE rv_column_text `<col` INTO rv_column_text RESPECTING BLANKS.
+    add_text collapsed    'collapsed'.
+    add_text customwidth  'customWidth'.
+    add_text hidden       'hidden'.
+    add_text max          'max'.
+    add_text min          'min'.
+    add_text outlinelevel 'outlineLevel'.
+    add_text phonetic     'phonetic'.
+    add_text style        'style'.
+    add_text width        'width'.
+    CONCATENATE rv_column_text `></col>` INTO rv_column_text RESPECTING BLANKS.
+  ENDLOOP.
+ENDMETHOD.
 
 
 METHOD CONSTRUCTOR.
@@ -466,28 +559,28 @@ METHOD CONSTRUCTOR.
 ENDMETHOD.                    "constructor
 
 
-METHOD DEFINED_NAME_READ_XML.
-    DATA:
-     l_value          TYPE string,
-     ls_defined_name  TYPE REF TO ts_ex_defined_name,
-     lt_value         TYPE stringtab.
+METHOD defined_name_read_xml.
+  DATA:
+    l_value         TYPE string,
+    ls_defined_name TYPE REF TO ts_ex_defined_name,
+    lt_value        TYPE stringtab.
 
-    " Name & value
-    " Regardless CHECK l_value IS NOT INITIAL AND l_value(1) <> '#'.
-    APPEND INITIAL LINE TO ct_defined_names REFERENCE INTO ls_defined_name.
-    ls_defined_name->d_name = io_node->get_attribute( 'name' ).
-    l_value  = io_node->get_value( ).
+  " Name & value
+  " Regardless CHECK l_value IS NOT INITIAL AND l_value(1) <> '#'.
+  APPEND INITIAL LINE TO ct_defined_names REFERENCE INTO ls_defined_name.
+  ls_defined_name->d_name = io_node->get_attribute( 'name' ).
+  l_value  = io_node->get_value( ).
 
-    " Several areas
-    SPLIT l_value AT ',' INTO TABLE lt_value.
-    LOOP AT lt_value INTO l_value.
-      area_read_xml(
-       EXPORTING
-        iv_value = l_value
-       CHANGING
-        ct_areas = ls_defined_name->d_areas ).
-    ENDLOOP.
-  ENDMETHOD.                    "defined_name_read_xml
+  " Several areas
+  SPLIT l_value AT ',' INTO TABLE lt_value.
+  LOOP AT lt_value INTO l_value.
+    area_read_xml(
+     EXPORTING
+      iv_value = l_value
+     CHANGING
+      ct_areas = ls_defined_name->d_areas ).
+  ENDLOOP.
+ENDMETHOD.
 
 
 METHOD get_raw.
@@ -672,31 +765,6 @@ METHOD LIST_OBJECT_READ_XML.
   ENDMETHOD.                    "list_object_read_xml
 
 
-METHOD LIST_OBJECT_WRITE_XML.
-    DATA:
-     ls_area_ref  TYPE REF TO ts_ex_area,
-     l_address    TYPE string,
-     lo_table     TYPE REF TO if_ixml_element.
-
-    " Get address
-    GET REFERENCE OF is_list_object->area INTO ls_area_ref.
-    l_address = zcl_xtt_excel_xlsx=>area_get_address(
-     is_area     = ls_area_ref
-     iv_no_bucks = abap_true ).
-    CHECK l_address IS NOT INITIAL.
-
-    " Change area
-    lo_table = is_list_object->dom->get_root_element( ).
-    lo_table->set_attribute( name = 'ref' value = l_address ).
-
-    " Replace in zip
-    zcl_xtt_util=>xml_to_zip(
-     io_zip     = mo_zip
-     iv_name    = is_list_object->arc_path
-     io_xmldoc  = is_list_object->dom ).
-  ENDMETHOD.                    "list_object_write_xml
-
-
 METHOD MERGE.
   DATA:
     lo_replace_block TYPE REF TO zcl_xtt_replace_block,
@@ -719,19 +787,19 @@ METHOD MERGE.
 ENDMETHOD.
 
 
-METHOD ROW_READ_XML.
-    DATA:
-     ls_row LIKE LINE OF ct_rows.
+METHOD row_read_xml.
+  DATA:
+   ls_row LIKE LINE OF ct_rows.
 
-    ls_row-r             = io_node->get_attribute( 'r' ).
-    ls_row-customheight  = io_node->get_attribute( 'customHeight' ).
-    ls_row-ht            = io_node->get_attribute( 'ht' ).
-    ls_row-hidden        = io_node->get_attribute( 'hidden' ).
-    ls_row-outlinelevel  = io_node->get_attribute( 'outlineLevel' ).
+  ls_row-r             = io_node->get_attribute( 'r' ).
+  ls_row-customheight  = io_node->get_attribute( 'customHeight' ).
+  ls_row-ht            = io_node->get_attribute( 'ht' ).
+  ls_row-hidden        = io_node->get_attribute( 'hidden' ).
+  ls_row-outlinelevel  = io_node->get_attribute( 'outlineLevel' ).
 
-    " And add by key
-    INSERT ls_row INTO TABLE ct_rows.
-  ENDMETHOD.                    "row_read_xml
+  " And add by key
+  INSERT ls_row INTO TABLE ct_rows.
+ENDMETHOD.
 
 
 METHOD row_write_xml.

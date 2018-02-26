@@ -142,7 +142,13 @@ CLASS cl_main DEFINITION FINAL.
       on_pbo_07 FOR EVENT pbo OF zcl_xtt
         IMPORTING
             sender
-            io_app_obj.
+            io_app_obj,
+
+      example_08                                            "#EC CALLED
+        IMPORTING
+                  iv_class_name TYPE csequence
+                  iv_template   TYPE csequence
+        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt.
 
     CLASS-METHODS:
       " Random data for tables

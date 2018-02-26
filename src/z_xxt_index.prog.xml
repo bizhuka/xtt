@@ -51,7 +51,7 @@
     <item>
      <ID>I</ID>
      <KEY>T03</KEY>
-     <ENTRY>Nested block</ENTRY>
+     <ENTRY>Nested blocks</ENTRY>
      <LENGTH>22</LENGTH>
     </item>
     <item>
@@ -75,8 +75,14 @@
     <item>
      <ID>I</ID>
      <KEY>T07</KEY>
-     <ENTRY>Macro call (do not recommended)</ENTRY>
-     <LENGTH>62</LENGTH>
+     <ENTRY>Macro call (do not recommended) &amp; prepare_raw event (recommended)</ENTRY>
+     <LENGTH>65</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>T08</KEY>
+     <ENTRY>direction=column</ENTRY>
+     <LENGTH>26</LENGTH>
     </item>
     <item>
      <ID>I</ID>

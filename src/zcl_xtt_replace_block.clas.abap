@@ -95,7 +95,8 @@ public section.
       value(RR_ROOT) type ref to DATA .
   class-methods TREE_RAISE_PREPARE
     importing
-      !IR_TREE type ref to TS_TREE .
+      !IR_TREE type ref to TS_TREE
+      !IV_LEVEL type I .
   PROTECTED SECTION.
 private section.
 
@@ -368,7 +369,7 @@ METHOD find_match.
     l_key         TYPE string,
     l_val         TYPE string,
     l_fld_name    TYPE string,
-    ls_field      TYPE REF TO TS_field.
+    ls_field      TYPE REF TO ts_field.
   FIELD-SYMBOLS:
    <ls_find_res> LIKE LINE OF lt_find_res.
 
@@ -409,6 +410,7 @@ METHOD find_match.
       " Or complex type
        ls_field->typ = zcl_xtt_replace_block=>mc_type_struct OR
        ls_field->typ = zcl_xtt_replace_block=>mc_type_object OR
+       ls_field->typ = zcl_xtt_replace_block=>mc_type_tree   OR " TODO check!
        ls_field->typ = zcl_xtt_replace_block=>mc_type_table.
 
       " Markers for block's range (tables only). Can specify block's end(start) explicitly
@@ -557,36 +559,36 @@ METHOD tree_create.
     ls_field    TYPE string,
     l_field_val TYPE string,
     ls_attr     TYPE ts_tree_attr,
-    ls_attr_ref TYPE REF TO ts_tree_attr,
-    l_level     TYPE i.
+    ls_attr_ref TYPE REF TO ts_tree_attr.
+*    l_level     TYPE i.
   FIELD-SYMBOLS:
-    <lt_table>    TYPE ANY TABLE,
-    <ls_item>     TYPE any,
-    <fs_any>      TYPE any.
+    <lt_table> TYPE ANY TABLE,
+    <ls_item>  TYPE any,
+    <fs_any>   TYPE any.
 
   DEFINE create_tree.
     CREATE DATA &1.
-    &1->level = &2.
+*    &1->level = &2.
     CREATE DATA &1->data TYPE HANDLE lo_sdesc.
   END-OF-DEFINITION.
 
-  ASSIGN it_table->* To <lt_table>.
+  ASSIGN it_table->* TO <lt_table>.
   lo_tdesc ?= cl_abap_tabledescr=>describe_by_data( <lt_table> ).
   lo_sdesc ?= lo_tdesc->get_table_line_type( ).
 
   " Level 0
-  create_tree rr_root 0.
+  create_tree rr_root. " 0.
 
   " More convenient than pass table
   SPLIT iv_fields AT ';' INTO TABLE lt_fields.
 
   LOOP AT <lt_table> ASSIGNING <ls_item>.
     ls_curtree = rr_root.
-    l_level    = 0.
+*    l_level    = 0.
 
     LOOP AT lt_fields INTO ls_field.
       " Next level
-      l_level = sy-tabix.
+*      l_level = sy-tabix.
 
       " Value of the field
       ASSIGN COMPONENT ls_field OF STRUCTURE <ls_item> TO <fs_any>.
@@ -599,7 +601,7 @@ METHOD tree_create.
       " Insert as a new subTREE
       IF sy-subrc <> 0.
         " New TREE
-        create_tree ls_subtree l_level.
+        create_tree ls_subtree. "l_level.
 
         " Add
         ls_attr-name  = l_field_val.
@@ -613,8 +615,8 @@ METHOD tree_create.
     ENDLOOP.
 
     " Last level
-    l_level = l_level + 1.
-    create_tree ls_subtree l_level.
+*    l_level = l_level + 1.
+    create_tree ls_subtree. " l_level.
     GET REFERENCE OF <ls_item> INTO ls_subtree->data.
 
     " Add
@@ -625,7 +627,8 @@ METHOD tree_create.
 
   " Raise event
   tree_raise_prepare(
-   ir_tree      = rr_root ).
+   ir_tree  = rr_root
+   iv_level = 0 ).
 ENDMETHOD.
 
 
@@ -679,13 +682,13 @@ METHOD tree_create_relat.
 
     " To level
     IF sy-subrc <> 0.
-      <ls_relat>-tree->level = 0.
+      "<ls_relat>-tree->level = 0.
       INSERT <ls_relat>-tree INTO TABLE <lt_tree>.
     ELSE.
       " Add as child
       ls_tree_attr-name      = <ls_relat>-node_key. " lines( <lt_tree_attr> ).
       ls_tree_attr-attr      = <ls_relat>-tree.
-      <ls_relat>-tree->level = <ls_relat_par>-tree->level + 1.
+      "<ls_relat>-tree->level = <ls_relat_par>-tree->level + 1.
       INSERT ls_tree_attr INTO TABLE <ls_relat_par>-tree->sub_nodes.
     ENDIF.
   ENDLOOP.
@@ -694,26 +697,32 @@ METHOD tree_create_relat.
   " Raise events
   LOOP AT <lt_tree> INTO ls_tree.
     tree_raise_prepare(
-     ir_tree      = ls_tree ).
+     ir_tree  = ls_tree
+     iv_level = 0 ).
   ENDLOOP.
 ENDMETHOD.
 
 
 METHOD tree_raise_prepare.
   DATA:
-    ls_tree     TYPE REF TO zcl_xtt_replace_block=>ts_tree,
-    lr_table    TYPE REF TO data.
+    ls_tree  TYPE REF TO zcl_xtt_replace_block=>ts_tree,
+    lr_table TYPE REF TO data,
+    lv_level TYPE i.
   FIELD-SYMBOLS:
     <ls_tree_attr> TYPE zcl_xtt_replace_block=>ts_tree_attr,
     <ls_sub_tree>  TYPE zcl_xtt_replace_block=>ts_tree,
     <ls_row>       TYPE any,
     <lt_std_table> TYPE STANDARD TABLE.
 
+  ir_tree->level = iv_level.
+
   " Sub levels first
+  lv_level = iv_level + 1.
   LOOP AT ir_tree->sub_nodes ASSIGNING <ls_tree_attr>.
     ls_tree ?= <ls_tree_attr>-attr.
     tree_raise_prepare(
-     ir_tree      = ls_tree ).
+     ir_tree  = ls_tree
+     iv_level = lv_level ).
   ENDLOOP.
 
 **********************************************************************

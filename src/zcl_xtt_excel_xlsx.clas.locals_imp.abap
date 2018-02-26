@@ -5,13 +5,10 @@ CLASS cl_ex_sheet IMPLEMENTATION.
   METHOD constructor.
     DATA:
       l_sheet_ind     TYPE string,
-      l_sheet_name    TYPE string,
       lo_row          TYPE REF TO if_ixml_element,
+      lo_col          TYPE REF TO if_ixml_element,
       lo_cell         TYPE REF TO if_ixml_element,
       ls_cell         TYPE REF TO ts_ex_cell,
-      ls_row          TYPE ts_ex_row,
-      " Write here then to mt_cells
-      "lt_cells_hash     TYPE SORTED TABLE OF ts_ex_cell WITH UNIQUE KEY c_row c_col,
       lo_merge_cell   TYPE REF TO if_ixml_element,
       l_val           TYPE string,
       ls_area         TYPE REF TO ts_ex_area,
@@ -19,28 +16,12 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       ls_cell_end     TYPE REF TO ts_ex_cell,
       ls_defined_name TYPE REF TO ts_ex_defined_name,
       ls_list_object  TYPE REF TO ts_ex_list_object,
-      l_prev_row      TYPE i.
-    FIELD-SYMBOLS:
-     <ls_cell>         TYPE REF TO ts_ex_cell. " Double reference
-***************************************
-    " Get existing cell Or insert new one
-    DEFINE check_in_hash.
-      READ TABLE mt_cells BINARY SEARCH INTO &2 WITH KEY " with table key
-        table_line->c_row = &1->c_row table_line->c_col_ind = &1->c_col_ind.
-      IF sy-subrc <> 0.
-        INSERT &1 INTO mt_cells INDEX sy-tabix.
-        &2 = &1.
+      l_prev_row      TYPE i,
+      l_prev_col      TYPE i,
+      lv_ind          TYPE i,
+      lv_name         TYPE string,
+      ls_blank        TYPE ts_ex_cell.
 
-        READ TABLE mt_rows TRANSPORTING NO FIELDS
-         WITH TABLE KEY r = &1->c_row.
-        IF sy-subrc <> 0.
-          ls_row-r = sy-tabix.
-          INSERT ls_row INTO TABLE mt_rows.
-        ENDIF.
-      ENDIF.
-    END-OF-DEFINITION.
-
-***************************************
     " Path to the sheet
     int_2_text iv_ind l_sheet_ind.
     CONCATENATE `xl/worksheets/sheet` l_sheet_ind `.xml` INTO mv_full_path.
@@ -83,6 +64,20 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
     " No need already sorted
     "SORT mt_cells BY table_line->c_row table_line->c_col_ind.
+***************************************
+
+    " Loop through excels columns
+    lo_col ?= mo_dom->find_from_name( 'col' ).
+    WHILE lo_col IS BOUND.
+      " Add new col
+      zcl_xtt_excel_xlsx=>column_read_xml(
+       EXPORTING
+        io_node = lo_col
+       CHANGING
+        ct_columns = mt_columns ).
+
+      lo_col ?= lo_col->get_next( ).
+    ENDWHILE.
 
 ***************************************
     lo_merge_cell ?= mo_dom->find_from_name( 'mergeCell' ).
@@ -95,15 +90,15 @@ CLASS cl_ex_sheet IMPLEMENTATION.
          is_area  = ls_area ).
 
       " Always 2 cells
-      READ TABLE ls_area->a_cells INTO ls_cell_beg INDEX 1.
-      READ TABLE ls_area->a_cells INTO ls_cell_end INDEX 2.
+      READ TABLE ls_area->a_cells REFERENCE INTO ls_cell_beg INDEX 1.
+      READ TABLE ls_area->a_cells REFERENCE INTO ls_cell_end INDEX 2.
 
       " Get ref to existing or ls_cell_beg cell
-      check_in_hash ls_cell_beg ls_cell.
+      ls_cell = find_cell( ls_cell_beg->* ).
 
       " Fill dx
-      ls_cell->c_merge_dx  = ls_cell_end->c_row - ls_cell_beg->c_row.
-      ls_cell->c_merge_col = ls_cell_end->c_col.
+      ls_cell->c_merge_row_dx = ls_cell_end->c_row     - ls_cell_beg->c_row.
+      ls_cell->c_merge_col_dx = ls_cell_end->c_col_ind - ls_cell_beg->c_col_ind.
 
       " Next
       lo_merge_cell ?= lo_merge_cell->get_next( ).
@@ -111,16 +106,13 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
     " Defined name contains areas
-    l_sheet_name = io_node->get_attribute( `name` ).
+    mv_name = io_node->get_attribute( `name` ).
     LOOP AT io_xlsx->mt_defined_names REFERENCE INTO ls_defined_name.
-      LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area WHERE a_sheet_name = l_sheet_name.
+      LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area WHERE a_sheet_name = mv_name.
         " Reference to reference
-        LOOP AT ls_area->a_cells ASSIGNING <ls_cell>.
+        LOOP AT ls_area->a_cells REFERENCE INTO ls_cell.
           " Get existing cell Or insert new one
-          check_in_hash <ls_cell> ls_cell.
-
-          " Change ref in ls_area
-          <ls_cell> = ls_cell.
+          find_cell( ls_cell->* ).
         ENDLOOP.
       ENDLOOP.
     ENDLOOP.
@@ -135,31 +127,73 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       ct_list_objects = mt_list_objects ).
 
     LOOP AT mt_list_objects REFERENCE INTO ls_list_object.
-      LOOP AT ls_list_object->area-a_cells ASSIGNING <ls_cell>.
+      LOOP AT ls_list_object->area-a_cells REFERENCE INTO ls_cell.
         " Get existing cell Or insert new one
-        check_in_hash <ls_cell> ls_cell.
-
-        " Change ref in ls_area
-        <ls_cell> = ls_cell.
+        find_cell( ls_cell->* ).
       ENDLOOP.
+    ENDLOOP.
+
+***************************************
+
+    LOOP AT mt_cells REFERENCE INTO ls_cell WHERE c_value CS `;direction=column`.
+      " Use columns
+      lv_ind = sy-fdpos - 1.
+      lv_name = ls_cell->c_value+1(lv_ind).
+      INSERT lv_name INTO TABLE mt_column_dir.
+      CLEAR ls_cell->c_value.
+
+      " Add blank cell
+      CHECK ls_cell->c_col_ind > 1.
+      ls_blank-c_row     = ls_cell->c_row.
+      ls_blank-c_col_ind = ls_cell->c_col_ind - 1.
+      find_cell( ls_blank ).
     ENDLOOP.
 
 ***************************************
     " Write offest
     l_prev_row = 0.
-    LOOP AT mt_cells INTO ls_cell.
+    l_prev_col = 0.
+    LOOP AT mt_cells REFERENCE INTO ls_cell.
       " If new row ls_cell->c_row_dx > 0
-      ls_cell->c_row_dx = ls_cell->c_row - l_prev_row.
+      ls_cell->c_row_dx = ls_cell->c_row     - l_prev_row.
+
+      " If new row then column also from 0
+      IF ls_cell->c_row_dx <> 0.
+        l_prev_col = 0.
+      ENDIF.
+      ls_cell->c_col_dx = ls_cell->c_col_ind - l_prev_col.
+
       l_prev_row = ls_cell->c_row.
+      l_prev_col = ls_cell->c_col_ind.
     ENDLOOP.
+
+***************************************
   ENDMETHOD.                    "constructor
+*--------------------------------------------------------------------*
+  METHOD find_cell.
+    DATA:
+      ls_row TYPE ts_ex_row.
+
+    READ TABLE mt_cells BINARY SEARCH REFERENCE INTO rr_ex_cell WITH KEY " with table key
+      c_row = ir_cell-c_row c_col_ind = ir_cell-c_col_ind.
+    IF sy-subrc <> 0.
+      INSERT ir_cell INTO mt_cells INDEX sy-tabix REFERENCE INTO rr_ex_cell.
+
+      READ TABLE mt_rows TRANSPORTING NO FIELDS
+       WITH TABLE KEY r = ir_cell-c_row.
+      IF sy-subrc <> 0.
+        ls_row-r = sy-tabix.
+        INSERT ls_row INTO TABLE mt_rows.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD fill_shared_strings.
     DATA:
      ls_cell TYPE REF TO ts_ex_cell.
 
     " Add one by one
-    LOOP AT mt_cells INTO ls_cell. "WHERE c_value IS NOT INITIAL.
+    LOOP AT mt_cells REFERENCE INTO ls_cell. "WHERE c_value IS NOT INITIAL.
       CHECK zcl_xtt_excel_xlsx=>cell_is_string( ls_cell ) = abap_true.
       APPEND ls_cell->c_value TO ct_shared_strings.
     ENDLOOP.
@@ -167,26 +201,55 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 *--------------------------------------------------------------------*
   METHOD save.
     DATA:
-      l_sheet_data   TYPE string,
-      l_merge_cells  TYPE string,
-      l_merge_cnt    TYPE i,
-      ls_cell        TYPE REF TO ts_ex_cell,
-      ls_row         TYPE REF TO ts_ex_row,
-      l_new_row_ind  TYPE i,
-      l_str          TYPE string,
-      lo_mc          TYPE REF TO if_ixml_element,
-      ls_list_object TYPE REF TO ts_ex_list_object.
+      l_sheet_data    TYPE string,
+      l_merge_cells   TYPE string,
+      l_merge_cnt     TYPE i,
+      ls_cell         TYPE REF TO ts_ex_cell,
+      ls_row          TYPE REF TO ts_ex_row,
+      l_new_row_ind   TYPE i,
+      l_new_col_ind   TYPE i,
+      l_str           TYPE string,
+      lo_mc           TYPE REF TO if_ixml_element,
+      ls_list_object  TYPE REF TO ts_ex_list_object,
+      lt_columns      LIKE mt_columns,
+      ls_column       TYPE ts_ex_column,
+      lv_columns_text TYPE string,
+      lr_cell_ref     TYPE REF TO ts_cell_ref,
+      ls_cell_ref     TYPE ts_cell_ref,
+      ls_defined_name TYPE REF TO ts_ex_defined_name,
+      ls_area         TYPE REF TO ts_ex_area,
+      lv_address      TYPE string,
+      lo_table        TYPE REF TO if_ixml_element.
 
     " Blank sheet
     CHECK mt_cells IS NOT INITIAL.
 
+*****************
+    " Find old -> new match
+    LOOP AT mt_cells REFERENCE INTO ls_cell.
+      READ TABLE mt_cell_ref REFERENCE INTO lr_cell_ref
+       WITH TABLE KEY r = ls_cell->c_row
+                      c = ls_cell->c_col_ind.
+
+      IF sy-subrc <> 0.
+        ls_cell_ref-r   = ls_cell->c_row.
+        ls_cell_ref-c   = ls_cell->c_col_ind.
+        ls_cell_ref-beg = ls_cell.
+        INSERT ls_cell_ref INTO TABLE mt_cell_ref REFERENCE INTO lr_cell_ref.
+      ENDIF.
+
+      lr_cell_ref->end = ls_cell.
+    ENDLOOP.
+*****************
+
     " Write cells data one by one
-    LOOP AT mt_cells INTO ls_cell.
+    LOOP AT mt_cells REFERENCE INTO ls_cell.
       " New row index as a string
       l_new_row_ind = l_new_row_ind + ls_cell->c_row_dx.
 
       " New row
       IF ls_cell->c_row_dx > 0.
+        l_new_col_ind = 0.
         " Closing tag
         IF l_sheet_data IS NOT INITIAL.
           CONCATENATE l_sheet_data `</row>` INTO l_sheet_data.
@@ -199,22 +262,55 @@ CLASS cl_ex_sheet IMPLEMENTATION.
            EXPORTING
             is_row           = ls_row
             iv_new_row       = l_new_row_ind
-            iv_outline_level = ls_cell->c_outline
+            iv_outline_level = ls_cell->c_row_outline
            CHANGING
             cv_sheet_data    = l_sheet_data ).
         ENDIF.
       ENDIF.
+
+***********
+      " New column
+      l_new_col_ind = l_new_col_ind + ls_cell->c_col_dx.
+
+      DO 1 TIMES.
+        " Existing old column
+        READ TABLE mt_columns INTO ls_column
+         WITH TABLE KEY min = ls_cell->c_col_ind.
+
+        " Prog error
+        CHECK sy-subrc = 0.
+
+        IF ls_column-outline_skip = abap_true.
+          CLEAR ls_column-outlinelevel.
+        ENDIF.
+
+        " New outline
+        IF ls_cell->c_column_outline IS NOT INITIAL.
+          int_2_text ls_cell->c_column_outline ls_column-outlinelevel.
+        ENDIF.
+
+        IF l_new_col_ind <> ls_cell->c_col_ind.
+          ls_column-min = ls_column-max = l_new_col_ind.
+        ENDIF.
+        INSERT ls_column INTO TABLE lt_columns.
+      ENDDO.
+***********
 
       " Append cell info
       io_xlsx->cell_write_xml(
        EXPORTING
         is_cell         = ls_cell
         iv_new_row      = l_new_row_ind
+        iv_new_col_ind  = l_new_col_ind
        CHANGING
         cv_sheet_data   = l_sheet_data
         cv_merge_cnt    = l_merge_cnt
         cv_merge_cells  = l_merge_cells ).
     ENDLOOP.
+
+    " New columns
+    lv_columns_text = zcl_xtt_excel_xlsx=>column_write_xml(
+     it_columns = lt_columns ).
 
     " Closing tag
     CONCATENATE l_sheet_data `</row>` INTO l_sheet_data.
@@ -224,6 +320,10 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     xml_repleace_node(
      iv_tag_name  = 'sheetData'
      iv_repl_text = '_SHEET_DATA_' ).
+
+    xml_repleace_node(
+     iv_tag_name  = 'cols'
+     iv_repl_text = '_NEW_COLUMNS_' ).
 
     lo_mc = xml_repleace_node(
      iv_tag_name  = 'mergeCells'
@@ -243,7 +343,8 @@ CLASS cl_ex_sheet IMPLEMENTATION.
        ev_str    = l_str ).
 
     " Do replcement
-    REPLACE FIRST OCCURRENCE OF '_SHEET_DATA_' IN l_str WITH l_sheet_data.
+    REPLACE FIRST OCCURRENCE OF '_SHEET_DATA_'  IN l_str WITH l_sheet_data.
+    REPLACE FIRST OCCURRENCE OF '_NEW_COLUMNS_' IN l_str WITH lv_columns_text.
     IF lo_mc IS NOT INITIAL AND l_merge_cnt > 0.
       REPLACE FIRST OCCURRENCE OF '_MERGE_CELLS_' IN l_str WITH l_merge_cells.
     ENDIF.
@@ -255,34 +356,86 @@ CLASS cl_ex_sheet IMPLEMENTATION.
      iv_sdoc = l_str ).
 
 ***************************************
+
+    LOOP AT io_xlsx->mt_defined_names REFERENCE INTO ls_defined_name.
+      LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area WHERE a_sheet_name = mv_name.
+        replace_with_new( ls_area ).
+      ENDLOOP.
+    ENDLOOP.
+
     " List object
     LOOP AT mt_list_objects REFERENCE INTO ls_list_object.
-      io_xlsx->list_object_write_xml( ls_list_object ).
+      " Get address
+      GET REFERENCE OF ls_list_object->area INTO ls_area.
+
+      " Change cells
+      replace_with_new( ls_area ).
+
+      lv_address = zcl_xtt_excel_xlsx=>area_get_address(
+       is_area     = ls_area
+       iv_no_bucks = abap_true ).
+      CHECK lv_address IS NOT INITIAL.
+
+      " Change area
+      lo_table = ls_list_object->dom->get_root_element( ).
+      lo_table->set_attribute( name = 'ref' value = lv_address ).
+
+      " Replace in zip
+      zcl_xtt_util=>xml_to_zip(
+       io_zip     = io_xlsx->mo_zip
+       iv_name    = ls_list_object->arc_path
+       io_xmldoc  = ls_list_object->dom ).
     ENDLOOP.
   ENDMETHOD.                    "save
+*--------------------------------------------------------------------*
+  METHOD replace_with_new.
+    DATA:
+      lr_cell     TYPE REF TO ts_ex_cell,
+      lr_cell_ref TYPE REF TO ts_cell_ref,
+      lv_tabix    TYPE sytabix.
+
+    LOOP AT ir_area->a_cells REFERENCE INTO lr_cell.
+      lv_tabix = sy-tabix.
+
+      " OLD -> NEW
+      READ TABLE mt_cell_ref REFERENCE INTO lr_cell_ref
+       WITH TABLE KEY r = lr_cell->c_row
+                      c = lr_cell->c_col_ind.
+      CHECK sy-subrc = 0.
+
+      CASE lv_tabix.
+          " First occurrence
+        WHEN 1.
+          lr_cell->* = lr_cell_ref->beg->*.
+
+          " Last occurrence
+        WHEN 2.
+          lr_cell->* = lr_cell_ref->end->*.
+      ENDCASE.
+    ENDLOOP.
+  ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD merge.
     DATA:
       lo_new_replace_block TYPE REF TO zcl_xtt_replace_block,
-      ls_field             TYPE REF TO zcl_xtt_replace_block=>ts_field,
+      lr_field             TYPE REF TO zcl_xtt_replace_block=>ts_field,
+      lr_field2            TYPE REF TO zcl_xtt_replace_block=>ts_field,
       lt_cells_end         LIKE ct_cells,
       lt_cells_mid         LIKE ct_cells,
       lt_copy              LIKE ct_cells,
-      ls_cell              TYPE REF TO ts_ex_cell,
-      ls_cell_copy         LIKE ls_cell,
-      l_cnt                TYPE i,
       lt_cell_match        TYPE tt_cell_match,
       lo_tree_handler      TYPE REF TO lcl_tree_handler,
-      lr_tree              TYPE REF TO zcl_xtt_replace_block=>ts_tree.
+      lr_tree              TYPE REF TO zcl_xtt_replace_block=>ts_tree,
+      lv_by_column         TYPE abap_bool.
     FIELD-SYMBOLS:
-      <lt_items> TYPE ANY TABLE,
-      <ls_item>  TYPE any.
+      <lt_items> TYPE ANY TABLE.
+*      <ls_item>  TYPE any.
 ***************************************
     " merge-1 @see ME->MATCH_FOUND
     SET HANDLER match_found FOR io_replace_block ACTIVATION abap_true.
 
     " Current cell
-    LOOP AT ct_cells INTO ms_cell WHERE table_line->c_formula IS INITIAL.
+    LOOP AT ct_cells REFERENCE INTO ms_cell WHERE c_formula IS INITIAL.
       " @see match_found
       io_replace_block->find_match(
        CHANGING
@@ -294,17 +447,17 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
     " merge-2 Structures and objects
-    LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE
+    LOOP AT io_replace_block->mt_fields REFERENCE INTO lr_field WHERE
      typ = zcl_xtt_replace_block=>mc_type_struct OR typ = zcl_xtt_replace_block=>mc_type_object.
 
       " Based on nested structure
       CREATE OBJECT lo_new_replace_block
         EXPORTING
-          is_field = ls_field.
+          is_field = lr_field.
 
       " Recursion if type is the same
-      CHECK ls_field->typ = zcl_xtt_replace_block=>mc_type_struct OR
-            ls_field->typ = zcl_xtt_replace_block=>mc_type_object.
+      CHECK lr_field->typ = zcl_xtt_replace_block=>mc_type_struct OR
+            lr_field->typ = zcl_xtt_replace_block=>mc_type_object.
 
       " Recursion
       me->merge(
@@ -316,67 +469,74 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
     " merge-3 Array types
-    LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
+    LOOP AT io_replace_block->mt_fields REFERENCE INTO lr_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
                                                                    OR typ = zcl_xtt_replace_block=>mc_type_tree.
+      " For columns
+      READ TABLE mt_column_dir TRANSPORTING NO FIELDS
+       WITH TABLE KEY table_line = lr_field->name.
+      IF sy-subrc <> 0.
+        lv_by_column = abap_false.
+      ELSE.
+        lv_by_column = abap_true.
+
+        SORT ct_cells STABLE BY c_col_ind c_row.
+      ENDIF.
+
       " Find for replication
       cl_ex_sheet=>split_2_content(
        EXPORTING
-        is_field      = ls_field
+        is_field      = lr_field
+        iv_by_column  = lv_by_column
        CHANGING
         ct_cells      = ct_cells        " Begin!
         ct_cells_mid  = lt_cells_mid
         ct_cells_end  = lt_cells_end
         ct_cell_match = lt_cell_match ).
 
-      CASE ls_field->typ.
+      CASE lr_field->typ.
 **********************************************************************
         WHEN zcl_xtt_replace_block=>mc_type_tree.
 
           CREATE OBJECT lo_tree_handler
             EXPORTING
               io_owner      = me
-              iv_block_name = ls_field->name
+              iv_block_name = lr_field->name
               it_row_match  = lt_cell_match.
 
-          lr_tree ?= ls_field->dref.
+          lr_tree ?= lr_field->dref.
 
           lo_tree_handler->add_tree_data(
            EXPORTING
-             ir_tree = lr_tree
+             ir_tree       = lr_tree
            CHANGING
-             ct_cells = ct_cells ).
+             ct_cells      = ct_cells ).
 
 **********************************************************************
         WHEN zcl_xtt_replace_block=>mc_type_table.
+          CHECK lt_cells_mid IS NOT INITIAL.
 
           " Replicate middle
-          ASSIGN ls_field->dref->* TO <lt_items>.
-          l_cnt = lines( <lt_items> ).
-          LOOP AT <lt_items> ASSIGNING <ls_item>.
-            IF sy-tabix = l_cnt.
-              lt_copy[] = lt_cells_mid[].
-            ELSE.
-              " Create copy
-              CLEAR lt_copy.
-              LOOP AT lt_cells_mid INTO ls_cell.
-                CREATE DATA ls_cell_copy.
-                ls_cell_copy->* = ls_cell->*.
+          ASSIGN lr_field->dref->* TO <lt_items>.
 
-                APPEND ls_cell_copy TO lt_copy.
-              ENDLOOP.
-            ENDIF.
+          " Use copy
+          CREATE DATA lr_field2.
+          lr_field2->* = lr_field->*.
+
+          LOOP AT <lt_items> REFERENCE INTO lr_field2->dref. "ASSIGNING <ls_item>.
+            lt_copy[] = lt_cells_mid[].
 
 *            " Create descriptor
 *            CREATE OBJECT lo_new_replace_block
 *              EXPORTING
 *                is_block      = <ls_item>
-*                iv_block_name = ls_field->name.
+*                iv_block_name = lr_field->name.
 
-            " Create merge description
-            GET REFERENCE OF <ls_item> INTO ls_field->dref.
+*            " Create merge description
+* Create copy first
+*            GET REFERENCE OF <ls_item> INTO lr_field->dref.
             CREATE OBJECT lo_new_replace_block
               EXPORTING
-                is_field = ls_field.
+                is_field = lr_field2.
 
             " Recursion
             me->merge(
@@ -390,6 +550,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
       " Rest of the cells
       APPEND LINES OF lt_cells_end TO ct_cells.
+
+      " Set the order back
+      IF lv_by_column = abap_true.
+        SORT ct_cells STABLE BY c_row.
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.                    "merge
 *--------------------------------------------------------------------*
@@ -514,10 +679,10 @@ CLASS cl_ex_sheet IMPLEMENTATION.
   METHOD split_2_content.
     TYPES:
       BEGIN OF ts_pair,
-        excel_row TYPE i,       " Excel row
+        position  TYPE i,       " Excel row Or column
         array_ind TYPE sytabix, " Index in ct_cells[]
       END OF ts_pair,
-      tt_pair TYPE SORTED TABLE OF ts_pair WITH UNIQUE KEY excel_row,
+      tt_pair TYPE SORTED TABLE OF ts_pair WITH UNIQUE KEY position,
 
       BEGIN OF ts_row_off,
         level TYPE i,
@@ -562,21 +727,27 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     CONCATENATE `\{` is_field->name `\b[^}]*\}` INTO lv_find_str.
 
     " Find matches
-    LOOP AT ct_cells INTO ls_cell.
+    LOOP AT ct_cells REFERENCE INTO ls_cell.
       " Current values
       ls_cur_pair-array_ind  = sy-tabix.
-      ls_cur_pair-excel_row  = ls_cur_pair-excel_row + ls_cell->c_row_dx.
+
+      " What field to use
+      IF iv_by_column = abap_true.
+        ls_cur_pair-position  = ls_cell->c_col_ind. " ls_cur_pair-position + ls_cell->c_col_dx.
+      ELSE.
+        ls_cur_pair-position  = ls_cell->c_row.  " ls_cur_pair-position + ls_cell->c_row_dx.
+      ENDIF.
 
       " Find row range
       READ TABLE lt_row_begs WITH TABLE KEY
-       excel_row = ls_cur_pair-excel_row TRANSPORTING NO FIELDS.
+       position = ls_cur_pair-position TRANSPORTING NO FIELDS.
       IF sy-subrc <> 0.
         INSERT ls_cur_pair INTO TABLE lt_row_begs.
       ENDIF.
 
       " Make range bigger
       READ TABLE lt_row_ends REFERENCE INTO ls_pair_ref WITH TABLE KEY
-       excel_row = ls_cur_pair-excel_row.
+       position = ls_cur_pair-position.
       IF sy-subrc = 0.
         ls_pair_ref->array_ind = ls_cur_pair-array_ind.
       ELSE.
@@ -589,7 +760,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
        MATCH LENGTH lv_length.
       CHECK sy-subrc = 0.
 
-      lv_row_last = ls_cur_pair-excel_row.
+      lv_row_last = ls_cur_pair-position.
       " Set 1 time only
       IF lv_row_first IS INITIAL.
         lv_row_first = lv_row_last.
@@ -598,22 +769,24 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 ***************************
       " TREE begin
       CHECK is_field->typ = zcl_xtt_replace_block=>mc_type_tree.
+
+      " Delete surrounding {}
+      lv_offset = lv_offset + 1.
+      lv_length = lv_length - 2.
+
       lv_text = ls_cell->c_value+lv_offset(lv_length).
 
       " Read from texts
       SPLIT lv_text AT ';' INTO TABLE lt_text.
       LOOP AT lt_text INTO lv_text.
+        CLEAR lv_value.
         SPLIT lv_text AT '=' INTO lv_text lv_value.
 
         CASE lv_text.
           WHEN 'level'.
             ls_row_off-level = lv_value.
           WHEN 'top'.
-            IF lv_value CP 'X*'.
-              ls_row_off-top = abap_true.
-            ELSE.
-              ls_row_off-top = abap_false.
-            ENDIF.
+            ls_row_off-top   = lv_value.
         ENDCASE.
       ENDLOOP.
 
@@ -623,11 +796,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       IF sy-subrc <> 0.
         CLEAR:
          ls_row_off-first,
-         ls_row_off-last.
+         ls_row_off-last. " Clear only here !!!
         INSERT ls_row_off INTO TABLE lt_row_off ASSIGNING <ls_row_off>.
       ENDIF.
 
-      <ls_row_off>-last = ls_cur_pair-excel_row.
+      <ls_row_off>-last = ls_cur_pair-position.
       IF <ls_row_off>-first IS INITIAL.
         <ls_row_off>-first = <ls_row_off>-last.
       ENDIF.
@@ -635,11 +808,15 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       " TREE end
     ENDLOOP.
 
+    " Skip
+    IF lv_row_first IS INITIAL AND lv_row_last IS INITIAL.
+      RETURN.
+    ENDIF.
+
     " Oops not found
     IF lv_row_first IS INITIAL OR lv_row_last IS INITIAL.
       MESSAGE x001(zsy_xtt).
     ENDIF.
-
 
 ***************************
     " TREE begin Check overlaps
@@ -657,11 +834,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       CLEAR ls_row_match.
 
       READ TABLE lt_row_begs REFERENCE INTO ls_pair_ref
-       WITH TABLE KEY excel_row = <ls_row_off>-first.
+       WITH TABLE KEY position = <ls_row_off>-first.
       lv_ind_beg = ls_pair_ref->array_ind.
 
       READ TABLE lt_row_ends REFERENCE INTO ls_pair_ref
-       WITH TABLE KEY excel_row = <ls_row_off>-last.
+       WITH TABLE KEY position = <ls_row_off>-last.
       lv_ind_end = ls_pair_ref->array_ind.
 
       " And add
@@ -675,11 +852,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
     " Detect middle
     READ TABLE lt_row_begs REFERENCE INTO ls_pair_ref
-     WITH TABLE KEY excel_row = lv_row_first.
+     WITH TABLE KEY position = lv_row_first.
     lv_ind_beg = ls_pair_ref->array_ind.
 
     READ TABLE lt_row_ends REFERENCE INTO ls_pair_ref
-     WITH TABLE KEY excel_row = lv_row_last.
+     WITH TABLE KEY position = lv_row_last.
     lv_ind_end = ls_pair_ref->array_ind.
 
     " End
@@ -692,26 +869,34 @@ CLASS cl_ex_sheet IMPLEMENTATION.
   ENDMETHOD.                    "split_2_content
 *--------------------------------------------------------------------*
   METHOD convert_column2int.
-    DATA: lv_uccpi  TYPE i,
-          lv_factor TYPE i,
-          lv_offset TYPE i,
-          lv_char   TYPE c,
-          lv_column TYPE char3.
+    DATA: lv_uccpi   TYPE i,
+          lv_factor  TYPE i,
+          lv_offset  TYPE i,
+          lv_char    TYPE c,
+          lr_col_ind TYPE REF TO ts_col_ind,
+          ls_col_ind TYPE ts_col_ind.
 
 *   Upper case
-    lv_column = iv_column.
-    TRANSLATE lv_column TO UPPER CASE.
-    CONDENSE lv_column NO-GAPS.
+    TRANSLATE iv_column TO UPPER CASE.
+    CONDENSE iv_column NO-GAPS.
+
+    " For speed
+    READ TABLE mt_col_ind REFERENCE INTO lr_col_ind
+     WITH TABLE KEY col = iv_column.
+    IF sy-subrc = 0.
+      rv_column = lr_col_ind->ind.
+      RETURN.
+    ENDIF.
 
 *   Get string lenght and align to right
-    lv_offset = 3 - strlen( lv_column ).
+    lv_offset = 3 - strlen( iv_column ).
 
-    SHIFT lv_column RIGHT BY lv_offset PLACES.
+    SHIFT iv_column RIGHT BY lv_offset PLACES.
 
 *   Claculate column position
     DO 3 TIMES.
       lv_offset = sy-index - 1.
-      lv_char = lv_column+lv_offset(1).
+      lv_char = iv_column+lv_offset(1).
       IF lv_char IS INITIAL.
         CONTINUE.
       ENDIF.
@@ -719,32 +904,49 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lv_factor  = 26 ** ( 3 - sy-index ).
       rv_column  = rv_column + ( lv_uccpi MOD 64 ) * lv_factor.
     ENDDO.
+
+    " Add to both tables
+    CONDENSE iv_column.
+    ls_col_ind-col = iv_column.
+    ls_col_ind-ind = rv_column.
+    INSERT ls_col_ind INTO TABLE mt_col_ind.
+    INSERT ls_col_ind INTO TABLE mt_ind_col.
   ENDMETHOD.                    "convert_column2int
-*--------------------------------------------------------------------*
-  METHOD get_cells_copy.
+
+  METHOD convert_column2alpha.
     DATA:
-      ls_cell     TYPE REF TO ts_ex_cell,
-      ls_cell_new TYPE REF TO ts_ex_cell,
-      ls_row      TYPE REF TO ts_ex_row.
+      lr_col_ind TYPE REF TO ts_col_ind,
+      ls_col_ind TYPE ts_col_ind,
+      lv_module  TYPE i,
+      lv_uccpi   TYPE i,
+      lv_text    TYPE sychar02.
+    IF iv_column > 16384 OR iv_column < 1.
+      MESSAGE x005(zsy_xtt) WITH iv_column.
+    ENDIF.
 
-    LOOP AT it_cells INTO ls_cell.
-      CREATE DATA ls_cell_new.
-      ls_cell_new->* = ls_cell->*.
+    " For speed
+    READ TABLE mt_ind_col REFERENCE INTO lr_col_ind
+     WITH TABLE KEY ind = iv_column.
+    IF sy-subrc = 0.
+      rv_column = lr_col_ind->col.
+      RETURN.
+    ENDIF.
 
-      DO 1 TIMES.
-        " For new rows only
-        CHECK ls_cell_new->c_row_dx IS NOT INITIAL.
+    ls_col_ind-ind = iv_column.
+    WHILE iv_column GT 0.
+      lv_module = ( iv_column - 1 ) MOD 26.
+      lv_uccpi  = 65 + lv_module.
 
-        " Have outline ot not
-        READ TABLE mt_rows WITH TABLE KEY r = ls_cell->c_row REFERENCE INTO ls_row.
-        CHECK sy-subrc = 0 AND ls_row->outlinelevel IS NOT INITIAL.
+      iv_column = ( iv_column - lv_module ) / 26.
 
-        ls_cell_new->c_outline = ir_tree->level.
-        ls_row->outline_skip   = abap_true.
-      ENDDO.
+      lv_text   = cl_abap_conv_in_ce=>uccpi( lv_uccpi ).
+      CONCATENATE lv_text rv_column INTO rv_column.
+    ENDWHILE.
 
-      APPEND ls_cell_new TO rt_cells.
-    ENDLOOP.
+    " Add to both tables
+    ls_col_ind-col = rv_column.
+    INSERT ls_col_ind INTO TABLE mt_col_ind.
+    INSERT ls_col_ind INTO TABLE mt_ind_col.
   ENDMETHOD.
 *--------------------------------------------------------------------*
 ENDCLASS.                    "cl_ex_sheet IMPLEMENTATION
@@ -768,10 +970,13 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       lt_row_top       TYPE tt_ex_cell,
       lt_row_bottom    TYPE tt_ex_cell,
       lr_tree_attr     TYPE REF TO zcl_xtt_replace_block=>ts_tree_attr,
-      lr_tree          TYPE REF TO zcl_xtt_replace_block=>ts_tree.
+      lr_tree          TYPE REF TO zcl_xtt_replace_block=>ts_tree,
+      ls_cell          TYPE REF TO ts_ex_cell,
+      ls_row           TYPE REF TO ts_ex_row,
+      ls_column        TYPE REF TO ts_ex_column.
     FIELD-SYMBOLS:
-      <ls_data> TYPE any,
-      <lt_row>  TYPE tt_ex_cell.
+      <ls_data>  TYPE any,
+      <lt_cells> TYPE tt_ex_cell.
     ASSIGN ir_tree->data->* TO <ls_data>.
 
     " Create merge description
@@ -783,16 +988,16 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     DO 3 TIMES.
       CASE sy-index.
         WHEN 1.
-          ASSIGN lt_row_top TO <lt_row>.
+          ASSIGN lt_row_top TO <lt_cells>.
           lv_top = abap_true.
         WHEN 2.
-          ASSIGN lt_row_bottom TO <lt_row>.
+          ASSIGN lt_row_bottom TO <lt_cells>.
           lv_top = abap_false.
         WHEN 3.
           " 3-d try
           CHECK lt_row_top IS INITIAL AND lt_row_bottom IS INITIAL.
 
-          ASSIGN lt_row_top TO <lt_row>.
+          ASSIGN lt_row_top TO <lt_cells>.
           lv_top = abap_undefined.
       ENDCASE.
 
@@ -806,15 +1011,38 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       CHECK sy-subrc = 0.
 
       " Merge with data
-      <lt_row>[] = mo_owner->get_cells_copy(
-       ir_tree  = ir_tree
-       it_cells = ls_row_match->cells[] ).
+      <lt_cells>[] = ls_row_match->cells[].
+
+      " For new rows only
+      LOOP AT <lt_cells> REFERENCE INTO ls_cell.
+
+        " Rows
+        DO 1 TIMES. " WHERE c_row_dx IS NOT INITIAL. ?
+          " Have outline ot not
+          READ TABLE mo_owner->mt_rows WITH TABLE KEY r = ls_cell->c_row REFERENCE INTO ls_row.
+          CHECK sy-subrc = 0 AND ls_row->outlinelevel IS NOT INITIAL.
+
+          ls_cell->c_row_outline = ir_tree->level.
+          ls_row->outline_skip   = abap_true.
+        ENDDO.
+
+        " Columns
+        DO 1 TIMES.
+          " Have outline ot not
+          READ TABLE mo_owner->mt_columns WITH TABLE KEY min = ls_cell->c_col_ind REFERENCE INTO ls_column.
+          CHECK sy-subrc = 0 AND ls_column->outlinelevel IS NOT INITIAL.
+
+          ls_cell->c_column_outline = ir_tree->level.
+          ls_column->outline_skip   = abap_true.
+        ENDDO.
+
+      ENDLOOP.
 
       mo_owner->merge(
        EXPORTING
         io_replace_block = lo_replace_block
        CHANGING
-        ct_cells         = <lt_row> ).
+        ct_cells         = <lt_cells> ).
     ENDDO.
 
     " row before

@@ -160,11 +160,16 @@ METHOD download.
     IMPORTING
       ev_filename_noext = lv_no_ext
       ev_path           = lv_path ).
-  CONCATENATE lv_path lv_no_ext mv_file_format_ext INTO lv_path.
+  CONCATENATE lv_path lv_no_ext mv_file_format_ext INTO cv_fullpath.
+
+  " Already exist. Add date and time
+  IF cl_gui_frontend_services=>file_exist( cv_fullpath ) = abap_true.
+    CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` mv_file_format_ext INTO cv_fullpath.
+  ENDIF.
 
   CALL METHOD OF cv_ole_doc 'SaveAs'
     EXPORTING
-      #1 = lv_path
+      #1 = cv_fullpath
       #2 = mv_file_format.
 ENDMETHOD.
 
@@ -249,10 +254,11 @@ METHOD do_merge.
 **********************************************************************
       WHEN zcl_xtt_replace_block=>mc_type_tree.
 
-        CREATE OBJECT lo_tree_handler EXPORTING
-         io_owner      = me
-         iv_block_name = ls_field->name
-         it_text_match = lt_text_match.
+        CREATE OBJECT lo_tree_handler
+          EXPORTING
+            io_owner      = me
+            iv_block_name = ls_field->name
+            it_text_match = lt_text_match.
 
         lr_tree ?= ls_field->dref.
         lo_tree_handler->add_tree_data(
@@ -267,6 +273,8 @@ METHOD do_merge.
 
 **********************************************************************
       WHEN zcl_xtt_replace_block=>mc_type_table.
+       " CHECK cv_content IS NOT INITIAL.
+
         lv_middle = cv_content.
         " Replicate middle
         ASSIGN ls_field->dref->* TO <lt_table>.
@@ -469,7 +477,7 @@ METHOD split_by_tag.
       first TYPE i,
       last  TYPE i,
     END OF ts_text_off ,
-    tt_text_off TYPE SORTED TABLE OF ts_text_off WITH UNIQUE KEY level top. " WITH NON-UNIQUE SORTED KEY by_first COMPONENTS first.
+    tt_text_off TYPE SORTED TABLE OF ts_text_off WITH UNIQUE KEY level top.
 
   DATA:
     lt_match       TYPE match_result_tab,
@@ -599,7 +607,7 @@ METHOD split_by_tag.
   ENDLOOP.
 
   " And add
-  LOOP AT lt_text_off ASSIGNING <ls_text_off>. " USING KEY by_first.
+  LOOP AT lt_text_off ASSIGNING <ls_text_off>.
     lv_beg = <ls_text_off>-first - 1.
     READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_beg.
     lv_beg = <ls_match>-offset - lv_minus.

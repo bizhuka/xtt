@@ -32,6 +32,12 @@
      <MSGNR>004</MSGNR>
      <TEXT>&amp;1 is reference to nowhere</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>005</MSGNR>
+     <TEXT>Wrong column index &amp;1</TEXT>
+    </T100>
    </T100>
   </asx:values>
  </asx:abap>

@@ -86,7 +86,7 @@ CLASS cl_main IMPLEMENTATION.
           ls_screen_opt-show_row_count = abap_true.
 
         WHEN 03.
-          add_to_list 'Nested block'(t03).
+          add_to_list 'Nested blocks'(t03).
           ls_screen_opt-show_row_count   = abap_true.
           ls_screen_opt-show_block_count = abap_true.
 
@@ -101,7 +101,11 @@ CLASS cl_main IMPLEMENTATION.
           add_to_list 'Tree (group by field relations)'(t06).
 
         WHEN 07.
-          add_to_list 'Macro call (do not recommended)'(t07).
+          add_to_list 'Macro call (do not recommended) & prepare_raw event (recommended)'(t07).
+
+        WHEN 08.
+          add_to_list 'direction=column'(t08).
+          ls_screen_opt-show_row_count   = abap_true.
 
       ENDCASE.
 
@@ -400,5 +404,6 @@ CLASS cl_main IMPLEMENTATION.
   INCLUDE z_xxt_index_exa_05.
   INCLUDE z_xxt_index_exa_06.
   INCLUDE z_xxt_index_exa_07.
+  INCLUDE z_xxt_index_exa_08.
 
 ENDCLASS.

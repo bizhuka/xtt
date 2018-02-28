@@ -91,7 +91,7 @@ CLASS cl_main IMPLEMENTATION.
           ls_screen_opt-show_block_count = abap_true.
 
         WHEN 04.
-          add_to_list 'Data types'(t04).
+          add_to_list 'Data types & Exel post processing'(t04).
 
         WHEN 05.
           add_to_list 'Tree (group by fields)'(t05).
@@ -104,7 +104,7 @@ CLASS cl_main IMPLEMENTATION.
           add_to_list 'Macro call (do not recommended) & prepare_raw event (recommended)'(t07).
 
         WHEN 08.
-          add_to_list 'direction=column'(t08).
+          add_to_list ';direction=column addition'(t08).
           ls_screen_opt-show_row_count   = abap_true.
 
       ENDCASE.

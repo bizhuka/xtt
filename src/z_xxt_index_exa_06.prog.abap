@@ -6,7 +6,7 @@ METHOD example_06.
     " Document structure
     BEGIN OF ts_root,
       title TYPE string,
-      t     TYPE  REF TO data, " Tree
+      t     TYPE REF TO data, " <-- Table of trees (better to use general REF TO)
     END OF ts_root.
 
   DATA:

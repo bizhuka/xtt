@@ -6,7 +6,7 @@ METHOD example_05.
     " Document structure
     BEGIN OF ts_root,
       title TYPE string,
-      t     TYPE  REF TO data, " Tree better use general type than zcl_xtt_replace_block=>ts_tree
+      t     TYPE  REF TO data, " better to use general type than zcl_xtt_replace_block=>ts_tree
     END OF ts_root.
 
   DATA:

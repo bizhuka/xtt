@@ -57,8 +57,8 @@
     <item>
      <ID>I</ID>
      <KEY>T04</KEY>
-     <ENTRY>Data types</ENTRY>
-     <LENGTH>20</LENGTH>
+     <ENTRY>Data types &amp; Exel post processing</ENTRY>
+     <LENGTH>50</LENGTH>
     </item>
     <item>
      <ID>I</ID>
@@ -81,7 +81,7 @@
     <item>
      <ID>I</ID>
      <KEY>T08</KEY>
-     <ENTRY>direction=column</ENTRY>
+     <ENTRY>;direction=column addition</ENTRY>
      <LENGTH>26</LENGTH>
     </item>
     <item>

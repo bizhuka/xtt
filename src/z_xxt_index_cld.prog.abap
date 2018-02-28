@@ -38,8 +38,11 @@ CLASS cl_main DEFINITION FINAL.
       tt_tree_05 TYPE STANDARD TABLE OF ts_tree_05 WITH DEFAULT KEY,
 
       BEGIN OF ts_tree_06,
+        " Folders hierarchy
         dir     TYPE string,
         par_dir TYPE string,
+
+        " Empty field. Filled in on_prepare_tree_06
         level   TYPE i,
       END OF ts_tree_06,
       tt_tree_06 TYPE STANDARD TABLE OF ts_tree_06 WITH DEFAULT KEY.
@@ -105,9 +108,9 @@ CLASS cl_main DEFINITION FINAL.
 
       on_prepare_tree_05 FOR EVENT prepare_tree OF zcl_xtt_replace_block
         IMPORTING
-            ir_tree
-            ir_data
-            ir_sub_data,
+            ir_tree      " Type Ref To ZCL_XTT_REPLACE_BLOCK=>TS_TREE
+            ir_data      " Type Ref To DATA
+            ir_sub_data, " Type Ref To DATA
 
       example_06                                            "#EC CALLED
         IMPORTING
@@ -137,7 +140,7 @@ CLASS cl_main DEFINITION FINAL.
       on_prepare_raw_07 FOR EVENT prepare_raw OF zcl_xtt
         IMPORTING
             sender
-            ir_content,
+            ir_content, " Type Ref To XSTRING
 
       on_pbo_07 FOR EVENT pbo OF zcl_xtt
         IMPORTING

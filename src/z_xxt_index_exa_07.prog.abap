@@ -32,10 +32,10 @@ METHOD example_07.
     WHEN p_dwnl.
       ro_xtt->download(        " All parameters are optional
        EXPORTING
-        iv_open     = zcl_xtt=>mc_by_ole
+        iv_open     = zcl_xtt=>mc_by_ole " Open with ole
        CHANGING
         cv_fullpath = p_path
-        cv_ole_app  = lv_ole_app ).
+        cv_ole_app  = lv_ole_app ).      " Get ole2_object back
 
       " Call macro (the same code for send method)
       on_pbo_07(
@@ -63,7 +63,7 @@ METHOD on_pbo_07.
       #1 = 'MAIN.start'
       #2 = 'From SAP'.
 
-  " Call OLE like that
+  " OR Call OLE like that
   SET PROPERTY OF io_app_obj 'StatusBar' = 'OLE Call'.
 
   GET PROPERTY OF io_app_obj 'Charts' = lv_charts.
@@ -94,6 +94,7 @@ METHOD on_prepare_raw_07.
   lv_class_name = lo_desc->get_relative_name( ).
 
   " For XML is just the documnet itself
+  " For new MS Office Open XML formats is a zip archive
   CASE lv_class_name.
     WHEN 'ZCL_XTT_EXCEL_XLSX'. " OR 'ZCL_XTT_EXCEL_XML'.
       lv_path_in_arc = 'xl/worksheets/sheet1.xml'.
@@ -108,8 +109,8 @@ METHOD on_prepare_raw_07.
     io_zip    = lo_zip
     iv_name   = lv_path_in_arc
    IMPORTING
-    eo_xmldoc = lo_xml
-    ev_sdoc   = lv_xml ).
+    eo_xmldoc = lo_xml    " As REF TO if_ixml_document
+    ev_sdoc   = lv_xml ). " As STRING
 
   " do some action with lv_xml and write data back
   " Usually with REGEX

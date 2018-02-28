@@ -12,6 +12,8 @@ METHOD example_04.
       sum      TYPE p LENGTH 13 DECIMALS 2,
       datetime TYPE char14, " date(8) + time(6)
       u        TYPE STANDARD TABLE OF t006a WITH DEFAULT KEY,
+      c        TYPE STANDARD TABLE OF t005t WITH DEFAULT KEY,
+      w        TYPE STANDARD TABLE OF t005t WITH DEFAULT KEY, " Only for Xml Spreadsheet 2003 (*.xml)
     END OF ts_root.
 
   DATA:
@@ -32,6 +34,14 @@ METHOD example_04.
     SELECT msehi msehl INTO CORRESPONDING FIELDS OF TABLE ls_root-u
     FROM t006a
     WHERE spras = sy-langu.
+
+    " Country Names
+    SELECT land1 landx INTO CORRESPONDING FIELDS OF TABLE ls_root-c
+    FROM t005t
+    WHERE spras = sy-langu.
+
+    " Only for ZCL_XTT_EXCEL_XML
+    ls_root-w[] = ls_root-c[].
   ENDIF.
 
   " Show data structure only

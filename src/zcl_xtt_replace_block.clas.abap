@@ -41,9 +41,9 @@ public section.
   constants MC_TYPE_TREE type STRING value 'tree' ##NO_TEXT.
   constants MC_TYPE_INTEGER type STRING value 'integer' ##NO_TEXT.
   constants MC_TYPE_DOUBLE type STRING value 'double' ##NO_TEXT.
-  constants MC_TYPE_BOOLEAN type STRING value 'boolean' ##NO_TEXT.
   constants MC_TYPE_DATE type STRING value 'date' ##NO_TEXT.
   constants MC_TYPE_TIME type STRING value 'time' ##NO_TEXT.
+  constants MC_TYPE_BOOLEAN type STRING value 'boolean' ##NO_TEXT.
   constants MC_TYPE_DATETIME type STRING value 'datetime' ##NO_TEXT.
   constants MC_TYPE_STRING type STRING value 'string' ##NO_TEXT.
   constants MC_TYPE_MASK type STRING value 'mask' ##NO_TEXT.

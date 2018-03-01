@@ -54,27 +54,31 @@ CLASS cl_main IMPLEMENTATION.
         add_to_list '---------------------------------------'.
       ENDIF.
 
-      IF <lv_obj_name> CP '*.DOC*'.
+      IF <lv_obj_name> CP '*_DOC*'.
         ls_screen_opt-class_name = 'ZCL_XTT_WORD_DOCX'.
         lv_desc                  = 'Word'.
 
-      ELSEIF <lv_obj_name> CP '*.XLS*'.
+      ELSEIF <lv_obj_name> CP '*_XLS*'.
         ls_screen_opt-class_name = 'ZCL_XTT_EXCEL_XLSX'.
         lv_desc                  = 'Excel'.
 
-      ELSEIF <lv_obj_name> CP '*WORD*.XML'.
+      ELSEIF <lv_obj_name> CP '*WORD*_XML'.
         ls_screen_opt-class_name = 'ZCL_XTT_WORD_XML'.
         lv_desc                  = 'Word XML'.
         ls_screen_opt-show_zip = abap_true.
 
-      ELSEIF <lv_obj_name> CP '*EXCEL*.XML'.
+      ELSEIF <lv_obj_name> CP '*EXCEL*_XML'.
         ls_screen_opt-class_name = 'ZCL_XTT_EXCEL_XML'.
         lv_desc                  = 'Excel XML'.
         ls_screen_opt-show_zip = abap_true.
 
-      ELSEIF <lv_obj_name> CP '*.PDF' OR <lv_obj_name> CP '*.XDP'.
+      ELSEIF <lv_obj_name> CP '*_PDF' OR <lv_obj_name> CP '*_XDP'.
         ls_screen_opt-class_name = 'ZCL_XTT_PDF'.
         lv_desc                  = 'Adobe PDF'.
+
+      ELSEIF <lv_obj_name> CP '*_HTM*'.
+        ls_screen_opt-class_name = 'ZCL_XTT_HTML'.
+        lv_desc                  = 'Html'.
       ENDIF.
 
       CASE lv_grp.

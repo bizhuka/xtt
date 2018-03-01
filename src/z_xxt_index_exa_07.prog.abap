@@ -118,6 +118,7 @@ METHOD on_prepare_raw_07.
   " Usually with REGEX
   " ....
 
+  " For xlsx only
   IF lv_class_name = 'ZCL_XTT_EXCEL_XLSX'.
     lo_col ?= lo_xml->find_from_name( 'col' ).
 

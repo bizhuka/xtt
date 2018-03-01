@@ -78,7 +78,9 @@ METHOD on_prepare_raw_07.
     lv_class_name  TYPE string,
     lv_path_in_arc TYPE string,
     lv_xml         TYPE string,
-    lo_xml         TYPE REF TO if_ixml_document.
+    lo_xml         TYPE REF TO if_ixml_document,
+    lo_col         TYPE REF TO if_ixml_element,
+    lv_mod         TYPE i.
   FIELD-SYMBOLS:
     <lv_content> TYPE xstring.
 
@@ -116,11 +118,24 @@ METHOD on_prepare_raw_07.
   " Usually with REGEX
   " ....
 
+  IF lv_class_name = 'ZCL_XTT_EXCEL_XLSX'.
+    lo_col ?= lo_xml->find_from_name( 'col' ).
+
+    " Update columns
+    WHILE lo_col IS BOUND.
+      lv_mod = sy-index MOD 2.
+      IF lv_mod = 0.
+        lo_col->set_attribute( name = 'hidden' value = '1' ).
+      ENDIF.
+      lo_col ?= lo_col->get_next( ).
+    ENDWHILE.
+  ENDIF.
+
   " Write data back
   zcl_xtt_util=>xml_to_zip(
    io_zip  = lo_zip
    iv_name = lv_path_in_arc
-   iv_sdoc = lv_xml ). " Or use --> io_xmldoc = lo_xml
+   io_xmldoc = lo_xml ). " Or use --> iv_sdoc = lv_xml
 
   " ZIP archive as xstring
   <lv_content> = lo_zip->save( ).

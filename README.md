@@ -8,3 +8,5 @@ XTT helps you to automate your reporting routine in SAP
 - In abap call **`merge()`** method to pass all data including nested strucures, tables and trees
 - Use **`download()|send()|show()`** method for appropreate action
 - That's all!
+
+For more information read [wiki](https://github.com/bizhuka/xtt/wiki)

@@ -57,11 +57,11 @@ method GET_PARAM.
 endmethod.
 
 
-method ZIF_XTT_FILE~GET_CONTENT.
+METHOD zif_xtt_file~get_content.
   DATA:
-   lt_text      TYPE w3htmltabtype,
-   lt_bin       TYPE w3mimetabtype,
-   lv_file_size TYPE i.
+    lt_text      TYPE w3htmltabtype,
+    lt_bin       TYPE w3mimetabtype,
+    lv_file_size TYPE i.
   FIELD-SYMBOLS:
    <lt_table>   TYPE STANDARD TABLE.
 
@@ -90,26 +90,17 @@ method ZIF_XTT_FILE~GET_CONTENT.
 
   " Result as a xstring
   IF ev_as_xstring IS REQUESTED.
-    CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
-      EXPORTING
-        input_length = lv_file_size
-      IMPORTING
-        buffer       = ev_as_xstring
-      TABLES
-        binary_tab   = <lt_table>.
+    ev_as_xstring = zcl_xtt_util=>binary_to_xstring(
+     it_table  = <lt_table>
+     iv_length = lv_file_size ).
     RETURN.
   ENDIF.
 
   " Result as a string. if ev_as_STRING Is Requested
-  CALL FUNCTION 'SCMS_BINARY_TO_STRING'
-    EXPORTING
-      input_length = lv_file_size
-      encoding     = '4110' " utf8
-    IMPORTING
-      text_buffer  = ev_as_string
-    TABLES
-      binary_tab   = <lt_table>.
-endmethod.
+  ev_as_string = zcl_xtt_util=>binary_to_string(
+   it_table  = <lt_table>
+   iv_length = lv_file_size ).
+ENDMETHOD.
 
 
 METHOD zif_xtt_file~get_name.

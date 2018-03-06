@@ -6,6 +6,8 @@ class ZCL_XTT_UTIL definition
 public section.
   type-pools ABAP .
 
+  constants MC_UTF8 type ABAP_ENCODING value '4110' ##NO_TEXT.
+
   class-methods SPLIT_FILE_PATH
     importing
       !IV_FULLPATH type CSEQUENCE
@@ -52,6 +54,34 @@ public section.
       !CV_OLE_DOC type CSEQUENCE optional
       !CV_PROXY_APP type CSEQUENCE optional
       !CV_FILE_EXT type CSEQUENCE optional .
+  class-methods STRING_TO_XSTRING
+    importing
+      !IV_STRING type STRING
+    returning
+      value(RV_XSTRING) type XSTRING .
+  class-methods BINARY_TO_XSTRING
+    importing
+      !IT_TABLE type STANDARD TABLE
+      !IV_LENGTH type I
+    returning
+      value(RV_XSTRING) type XSTRING .
+  class-methods BINARY_TO_STRING
+    importing
+      !IT_TABLE type STANDARD TABLE
+      !IV_LENGTH type I
+    returning
+      value(RV_STRING) type STRING .
+  class-methods XSTRING_TO_BINARY
+    importing
+      !IV_XSTRING type XSTRING
+    exporting
+      !EV_LENGTH type I
+      !ET_TABLE type SOLIX_TAB .
+  class-methods XSTRING_TO_STRING
+    importing
+      !IV_XSTRING type XSTRING
+    returning
+      value(RV_STRING) type STRING .
 protected section.
 private section.
 ENDCLASS.
@@ -59,6 +89,30 @@ ENDCLASS.
 
 
 CLASS ZCL_XTT_UTIL IMPLEMENTATION.
+
+
+METHOD binary_to_string.
+  CALL FUNCTION 'SCMS_BINARY_TO_STRING'
+    EXPORTING
+      input_length = iv_length
+      encoding     = mc_utf8
+    IMPORTING
+      text_buffer  = rv_string
+    TABLES
+      binary_tab   = it_table.
+ENDMETHOD.
+
+
+METHOD binary_to_xstring.
+  " cl_bcs_convert=>solix_to_xstring( )
+  CALL FUNCTION 'SCMS_BINARY_TO_XSTRING'
+    EXPORTING
+      input_length = iv_length
+    IMPORTING
+      buffer       = rv_xstring
+    TABLES
+      binary_tab   = it_table.
+ENDMETHOD.
 
 
 METHOD get_ole_info.
@@ -181,6 +235,17 @@ METHOD SPLIT_FILE_PATH.
 ENDMETHOD.
 
 
+METHOD string_to_xstring.
+  " rv_xstring = cl_bcs_convert=>string_to_xstring( iv_string = iv_string iv_codepage = mc_utf8 ).
+  CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
+    EXPORTING
+      text     = iv_string
+      encoding = mc_utf8
+    IMPORTING
+      buffer   = rv_xstring.
+ENDMETHOD.
+
+
 METHOD STR_TO_XML.
   DATA:
     lo_xml     TYPE REF TO if_ixml,
@@ -212,10 +277,9 @@ METHOD STR_TO_XML.
 ENDMETHOD.
 
 
-METHOD XML_FROM_ZIP.
+METHOD xml_from_zip.
   DATA:
-    lv_value TYPE xstring,
-    lo_conv  TYPE REF TO cl_abap_conv_in_ce.
+    lv_value TYPE xstring.
 
   " As a string
   IF ev_sdoc IS REQUESTED.
@@ -239,12 +303,7 @@ METHOD XML_FROM_ZIP.
 
   " As a string
   IF ev_sdoc IS REQUESTED.
-    lo_conv = cl_abap_conv_in_ce=>create(
-     encoding = '4110' " UTF-8
-     input    = lv_value ).
-    lo_conv->read(
-     IMPORTING
-      data =  ev_sdoc ).
+    ev_sdoc = xstring_to_string( lv_value ).
   ENDIF.
 
   " As an object
@@ -294,21 +353,16 @@ METHOD XML_TO_STR.
 ENDMETHOD.
 
 
-METHOD XML_TO_ZIP.
+METHOD xml_to_zip.
   DATA:
-   lv_value     TYPE xstring.
+   lv_value TYPE xstring.
 
   " From string
   IF iv_xdoc IS SUPPLIED.
     lv_value = iv_xdoc.
   ELSEIF iv_sdoc IS SUPPLIED.
     " Transform string to xString
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text     = iv_sdoc
-        encoding = '4110' " UTF-8
-      IMPORTING
-        buffer   = lv_value.
+    lv_value = string_to_xstring( iv_sdoc ).
   ELSEIF io_xmldoc IS SUPPLIED. " From object
     " Transform document to xString
     zcl_xtt_util=>xml_to_str(
@@ -325,5 +379,32 @@ METHOD XML_TO_ZIP.
 
   " Add to ZIP
   io_zip->add( name = iv_name content = lv_value ).
+ENDMETHOD.
+
+
+METHOD xstring_to_binary.
+  " et_table = cl_bcs_convert=>xstring_to_solix( iv_xstring ).
+  " ev_length = xstrlen( iv_xstring ).
+  CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+    EXPORTING
+      buffer        = iv_xstring
+    IMPORTING
+      output_length = ev_length
+    TABLES
+      binary_tab    = et_table.
+ENDMETHOD.
+
+
+METHOD xstring_to_string.
+  DATA:
+    lo_conv  TYPE REF TO cl_abap_conv_in_ce.
+
+  lo_conv = cl_abap_conv_in_ce=>create(
+   encoding = mc_utf8
+   input    = iv_xstring ).
+
+  lo_conv->read(
+   IMPORTING
+    data =  rv_string ).
 ENDMETHOD.
 ENDCLASS.

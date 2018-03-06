@@ -372,12 +372,7 @@ METHOD get_raw.
 
   IF mv_path_in_arc IS INITIAL.
     " Can convert XML or HTML result to pdf or attach to email for example
-    CALL FUNCTION 'SCMS_STRING_TO_XSTRING'
-      EXPORTING
-        text     = mv_file_content
-        encoding = '4110' " UTF-8
-      IMPORTING
-        buffer   = rv_content.
+    rv_content = zcl_xtt_util=>string_to_xstring( mv_file_content ).
   ELSE.
     " Replace XML file
     zcl_xtt_util=>xml_to_zip(

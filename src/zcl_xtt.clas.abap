@@ -154,16 +154,12 @@ METHOD download.
   ENDIF.
 
   " Convert to table
-  CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-    EXPORTING
-      buffer        = lv_content
-    IMPORTING
-      output_length = lv_file_size
-    TABLES
-      binary_tab    = lt_data
-    EXCEPTIONS
-      OTHERS        = 1.
-  CHECK sy-subrc = 0.
+  zcl_xtt_util=>xstring_to_binary(
+   EXPORTING
+     iv_xstring = lv_content
+   IMPORTING
+     ev_length  = lv_file_size
+     et_table   = lt_data ).
 
   IF lv_file_size < 10000000.
     " For small files
@@ -301,18 +297,13 @@ ENDMETHOD.
 
         " Convert to proper type
         lv_subject = lv_filename.
-        " cl_bcs_convert=>xstring_to_solix( im_xcontent )
-        "lv_size    = xstrlen( im_xcontent ).
-        CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
-          EXPORTING
-            buffer        = lv_value
-          IMPORTING
-            output_length = lv_file_size
-          TABLES
-            binary_tab    = lt_data
-          EXCEPTIONS
-            OTHERS        = 1.
-        CHECK sy-subrc = 0.
+        " Convert to table
+        zcl_xtt_util=>xstring_to_binary(
+         EXPORTING
+           iv_xstring = lv_value
+         IMPORTING
+           ev_length  = lv_file_size
+           et_table   = lt_data ).
         lv_size = lv_file_size.
 
         " Attachment

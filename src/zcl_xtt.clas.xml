@@ -29,12 +29,6 @@
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_XTT</CLSNAME>
-     <CMPNAME>GET_RAW</CMPNAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>As binary xstring</DESCRIPT>
-    </SEOCOMPOTX>
-    <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>MERGE</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Merge data with template</DESCRIPT>

@@ -29,6 +29,10 @@ public section.
     importing
       !IS_BLOCK type ANY
       !IV_BLOCK_NAME type CSEQUENCE default `R` .
+  methods GET_RAW
+  abstract
+    returning
+      value(RV_CONTENT) type XSTRING .
   methods DOWNLOAD
     importing
       !IV_OPEN type CSEQUENCE default ABAP_TRUE
@@ -46,13 +50,7 @@ public section.
       !IV_SUBJECT type SO_OBJ_DES
       !IV_BODY type CSEQUENCE .
 protected section.
-
   data MO_FILE type ref to ZIF_XTT_FILE .
-
-  methods GET_RAW
-  abstract
-    returning
-      value(RV_CONTENT) type XSTRING .
 private section.
 ENDCLASS.
 

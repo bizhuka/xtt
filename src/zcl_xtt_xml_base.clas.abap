@@ -23,7 +23,8 @@ public section.
       !IV_PATH_IN_ARC type CSEQUENCE optional
       !IV_FILE_FORMAT type I optional
       !IV_FILE_FORMAT_EXT type STRING optional .
-
+  methods GET_RAW
+    redefinition .
   methods DOWNLOAD
     redefinition .
   methods MERGE
@@ -35,7 +36,6 @@ protected section.
   data MV_FILE_CONTENT type STRING .
   data MV_VALUE type STRING .
   data MV_PREFIX type STRING .
-
   methods DO_MERGE
     importing
       !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL default ABAP_FALSE
@@ -74,9 +74,6 @@ protected section.
       !IS_FIELD
       !IV_POS_BEG
       !IV_POS_END .
-
-  methods GET_RAW
-    redefinition .
 private section.
 
   data MV_FILE_FORMAT type I .

@@ -10,13 +10,12 @@ public section.
   methods CONSTRUCTOR
     importing
       !IO_FILE type ref to ZIF_XTT_FILE .
-
+  methods GET_RAW
+    redefinition .
   methods MERGE
     redefinition .
 protected section.
 
-  methods GET_RAW
-    redefinition .
 private section.
 
   data:

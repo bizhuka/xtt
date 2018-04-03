@@ -271,13 +271,13 @@ ENDMETHOD.
         lv_body = iv_body.
         lt_body = cl_document_bcs=>string_to_soli( lv_body ).
         lo_doc = cl_document_bcs=>create_document(
-         i_type    = 'RAW'
+         i_type    = 'HTM'
          i_text    = lt_body
          i_subject = iv_subject ).
 
         " Add recipients
         LOOP AT it_recipients INTO lo_recipient.
-          lo_mail->add_recipient( lo_recipient ).
+          lo_mail->add_recipient( i_recipient = lo_recipient i_express = abap_true ).
         ENDLOOP.
 
         " File name
@@ -314,6 +314,7 @@ ENDMETHOD.
 
         " And send
         lo_mail->set_document( lo_doc ).
+        lo_mail->set_send_immediately( abap_true ).
         lo_mail->send( ).
 
         COMMIT WORK AND WAIT.

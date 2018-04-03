@@ -3,11 +3,11 @@
 *  @see https://github.com/bizhuka/xtt
 *  @version: 1.0
 **********************************************************************
-REPORT z_xxt_index.
+REPORT z_xtt_index.
 
-INCLUDE z_xxt_index_scr.
-INCLUDE z_xxt_index_cld.
-INCLUDE z_xxt_index_cli.
+INCLUDE z_xtt_index_scr.
+INCLUDE z_xtt_index_cld.
+INCLUDE z_xtt_index_cli.
 
 
 **********************************************************************

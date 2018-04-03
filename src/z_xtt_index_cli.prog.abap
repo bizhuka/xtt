@@ -36,7 +36,7 @@ CLASS cl_main IMPLEMENTATION.
                         FROM tadir
                         WHERE pgmid    = 'R3TR'
                           AND object   = 'PROG'
-                          AND obj_name = 'Z_XXT_INDEX' )
+                          AND obj_name = 'Z_XTT_INDEX' )
     ORDER BY obj_name.
 
     " Fill examples
@@ -256,7 +256,7 @@ CLASS cl_main IMPLEMENTATION.
     DATA:
       ls_screen_opt TYPE REF TO ts_screen_opt,
       lv_meth       TYPE string,
-      lo_recipient  TYPE REF TO IF_RECIPIENT_BCS,
+      lo_recipient  TYPE REF TO if_recipient_bcs,
       lt_recipient  TYPE rmps_recipient_bcs,
       lo_err        TYPE REF TO cx_address_bcs,
       lv_text       TYPE string,
@@ -401,13 +401,13 @@ CLASS cl_main IMPLEMENTATION.
     ENDDO.
   ENDMETHOD.
 
-  INCLUDE z_xxt_index_exa_01.
-  INCLUDE z_xxt_index_exa_02.
-  INCLUDE z_xxt_index_exa_03.
-  INCLUDE z_xxt_index_exa_04.
-  INCLUDE z_xxt_index_exa_05.
-  INCLUDE z_xxt_index_exa_06.
-  INCLUDE z_xxt_index_exa_07.
-  INCLUDE z_xxt_index_exa_08.
+  INCLUDE z_xtt_index_exa_01.
+  INCLUDE z_xtt_index_exa_02.
+  INCLUDE z_xtt_index_exa_03.
+  INCLUDE z_xtt_index_exa_04.
+  INCLUDE z_xtt_index_exa_05.
+  INCLUDE z_xtt_index_exa_06.
+  INCLUDE z_xtt_index_exa_07.
+  INCLUDE z_xtt_index_exa_08.
 
 ENDCLASS.

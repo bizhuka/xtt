@@ -10,6 +10,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lo_cell         TYPE REF TO if_ixml_element,
       ls_cell         TYPE REF TO ts_ex_cell,
       lo_merge_cell   TYPE REF TO if_ixml_element,
+      lo_data_valid   TYPE REF TO if_ixml_element,
       l_val           TYPE string,
       ls_area         TYPE REF TO ts_ex_area,
       ls_cell_beg     TYPE REF TO ts_ex_cell,
@@ -102,6 +103,26 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
       " Next
       lo_merge_cell ?= lo_merge_cell->get_next( ).
+    ENDWHILE.
+***************************************
+
+    lo_data_valid ?= mo_dom->find_from_name( 'dataValidation' ).
+    WHILE lo_data_valid IS BOUND.
+      APPEND INITIAL LINE TO mt_data_valid REFERENCE INTO ls_area.
+
+      " Create new area
+      l_val = lo_data_valid->get_attribute( 'sqref' ).
+      zcl_xtt_excel_xlsx=>area_read_xml(
+         iv_value = l_val
+         is_area  = ls_area ).
+
+      LOOP AT ls_area->a_cells REFERENCE INTO ls_cell.
+        " Get existing cell Or insert new one
+        find_cell( ls_cell->* ).
+      ENDLOOP.
+
+      " Next
+      lo_data_valid ?= lo_data_valid->get_next( ).
     ENDWHILE.
 
 ***************************************
@@ -206,9 +227,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       l_merge_cnt     TYPE i,
       ls_cell         TYPE REF TO ts_ex_cell,
       ls_row          TYPE REF TO ts_ex_row,
+      ls_blank_row    TYPE REF TO ts_ex_row,
       l_new_row_ind   TYPE i,
       l_new_col_ind   TYPE i,
       l_str           TYPE string,
+      lo_data_valid   TYPE REF TO if_ixml_element,
       lo_mc           TYPE REF TO if_ixml_element,
       ls_list_object  TYPE REF TO ts_ex_list_object,
       lt_columns      LIKE mt_columns,
@@ -243,6 +266,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 *****************
 
     " Write cells data one by one
+    CREATE DATA ls_blank_row.
     LOOP AT mt_cells REFERENCE INTO ls_cell.
       " New row index as a string
       l_new_row_ind = l_new_row_ind + ls_cell->c_row_dx.
@@ -261,6 +285,15 @@ CLASS cl_ex_sheet IMPLEMENTATION.
           zcl_xtt_excel_xlsx=>row_write_xml(
            EXPORTING
             is_row           = ls_row
+            iv_new_row       = l_new_row_ind
+            iv_outline_level = ls_cell->c_row_outline
+           CHANGING
+            cv_sheet_data    = l_sheet_data ).
+        ELSE.
+          ls_blank_row->r = ls_cell->c_row.
+          zcl_xtt_excel_xlsx=>row_write_xml(
+           EXPORTING
+            is_row           = ls_blank_row
             iv_new_row       = l_new_row_ind
             iv_outline_level = ls_cell->c_row_outline
            CHANGING
@@ -333,6 +366,26 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     IF lo_mc IS NOT INITIAL AND l_merge_cnt > 0.
       int_2_text l_merge_cnt l_str.
       lo_mc->set_attribute( name = 'count' value = l_str ).
+    ENDIF.
+
+    " Data validation
+    IF mt_data_valid IS NOT INITIAL.
+      lo_data_valid ?= mo_dom->find_from_name( 'dataValidation' ).
+      LOOP AT mt_data_valid REFERENCE INTO ls_area.
+        CHECK lo_data_valid IS NOT INITIAL.
+
+        " Change
+        replace_with_new( ls_area ).
+
+        lv_address = zcl_xtt_excel_xlsx=>area_get_address(
+          is_area     = ls_area
+          iv_no_bucks = abap_true ).
+
+        lo_data_valid->set_attribute( name = 'sqref' value = lv_address ).
+
+        " Next
+        lo_data_valid ?= lo_data_valid->get_next( ).
+      ENDLOOP.
     ENDIF.
 
     " Transform to string
@@ -413,6 +466,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
           lr_cell->* = lr_cell_ref->end->*.
       ENDCASE.
     ENDLOOP.
+
+    " Add additional cell to the eand
+    IF lv_tabix = 1 AND lr_cell_ref IS NOT INITIAL.
+      APPEND lr_cell_ref->end->* TO ir_area->a_cells.
+    ENDIF.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD merge.

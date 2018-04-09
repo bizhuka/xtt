@@ -114,6 +114,7 @@ CLASS cl_ex_sheet DEFINITION FINAL.
       mt_rows         TYPE tt_ex_row,
       mt_columns      TYPE tt_ex_column,
       mt_list_objects TYPE tt_ex_list_object,
+      mt_data_valid   TYPE tt_ex_area,
 
       " Current cell. For event handler
       ms_cell         TYPE REF TO ts_ex_cell,

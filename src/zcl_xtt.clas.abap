@@ -52,6 +52,12 @@ public section.
 protected section.
   data MO_FILE type ref to ZIF_XTT_FILE .
 private section.
+
+  methods IS_WEB_DYNPRO
+    importing
+      !IV_INPLACE type ABAP_BOOL
+    returning
+      value(RV_WD) type ABAP_BOOL .
 ENDCLASS.
 
 
@@ -82,6 +88,9 @@ METHOD download.
     lv_ole_app   TYPE text255,
     lv_ole_doc   TYPE text255,
     lo_docs      TYPE ole2_object.
+
+  " Just attach file
+  CHECK is_web_dynpro( iv_inplace = abap_false ) IS INITIAL.
 
   " As a xstring (implemented in subclasses)
   lv_content = get_raw( ).
@@ -243,6 +252,34 @@ METHOD download.
 ENDMETHOD.
 
 
+METHOD is_web_dynpro.
+  DATA:
+    lv_content  TYPE xstring,
+    lv_filename TYPE string.
+
+  " Check Web Dynpro
+  CHECK wdr_task=>application IS NOT INITIAL.
+
+  " As a xstring (implemented in subclasses)
+  lv_content = get_raw( ).
+
+  " File name
+  lv_filename = mo_file->get_name( ).
+
+  " Add as attachment
+  cl_wd_runtime_services=>attach_file_to_response(
+    EXPORTING
+      i_filename      = lv_filename  " File name with extension
+      i_content       = lv_content
+      i_mime_type     = 'RAW'        " No need to specify
+      i_in_new_window = abap_false
+      i_inplace       = iv_inplace ).
+
+  " Is web dynpro
+  rv_wd = abap_true.
+ENDMETHOD.
+
+
   METHOD send.
     DATA:
       lo_mail      TYPE REF TO cl_bcs,
@@ -326,8 +363,11 @@ ENDMETHOD.
 
 
 METHOD show.
+  " Try to open inplace in browser
+  CHECK is_web_dynpro( iv_inplace = abap_true ) IS INITIAL.
+
   CALL FUNCTION 'Z_SHOW_XTT_SCREEN'
     EXPORTING
-      io_xtt     = me.
+      io_xtt = me.
 ENDMETHOD.
 ENDCLASS.

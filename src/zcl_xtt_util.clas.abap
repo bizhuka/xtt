@@ -158,22 +158,16 @@ METHOD get_ole_info.
 ENDMETHOD.
 
 
-method IS_COMMON_GUI.
-  DATA:
-   lv_web TYPE char1.
-
+METHOD is_common_gui.
   " Background process
   CHECK sy-batch <> abap_true.
 
-  " ITS/WebGUI
-  CALL FUNCTION 'GUI_IS_ITS'
-    IMPORTING
-      return = lv_web.
-  CHECK lv_web IS INITIAL.
+  " Web dynpro  (TODO SAPUI5)
+  CHECK wdr_task=>application IS INITIAL.
 
   " Is Ok
   rv_ok = abap_true.
-endmethod.
+ENDMETHOD.
 
 
 METHOD SPLIT_FILE_PATH.

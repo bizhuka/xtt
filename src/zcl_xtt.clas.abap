@@ -266,7 +266,7 @@ METHOD is_web_dynpro.
   " File name
   lv_filename = mo_file->get_name( ).
 
-  " Add as attachment
+  " Add as an attachment
   cl_wd_runtime_services=>attach_file_to_response(
     EXPORTING
       i_filename      = lv_filename  " File name with extension

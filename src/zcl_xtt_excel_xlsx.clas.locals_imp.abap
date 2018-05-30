@@ -1031,7 +1031,8 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       lr_tree          TYPE REF TO zcl_xtt_replace_block=>ts_tree,
       ls_cell          TYPE REF TO ts_ex_cell,
       ls_row           TYPE REF TO ts_ex_row,
-      ls_column        TYPE REF TO ts_ex_column.
+      ls_column        TYPE REF TO ts_ex_column,
+      lv_templ_lev_cnt TYPE i.
     FIELD-SYMBOLS:
       <ls_data>  TYPE any,
       <lt_cells> TYPE tt_ex_cell.
@@ -1043,6 +1044,8 @@ CLASS lcl_tree_handler IMPLEMENTATION.
         is_block      = <ls_data>
         iv_block_name = mv_block_name.
 
+    " Check amount of level's templates
+    lv_templ_lev_cnt = lines( mt_row_match ).
     DO 3 TIMES.
       CASE sy-index.
         WHEN 1.
@@ -1072,29 +1075,29 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       <lt_cells>[] = ls_row_match->cells[].
 
       " For new rows only
-      LOOP AT <lt_cells> REFERENCE INTO ls_cell.
+      IF lv_templ_lev_cnt = 1.
+        LOOP AT <lt_cells> REFERENCE INTO ls_cell.
+          " Rows
+          DO 1 TIMES. " WHERE c_row_dx IS NOT INITIAL. ?
+            " Have outline ot not
+            READ TABLE mo_owner->mt_rows WITH TABLE KEY r = ls_cell->c_row REFERENCE INTO ls_row.
+            CHECK sy-subrc = 0 AND ls_row->outlinelevel IS NOT INITIAL.
 
-        " Rows
-        DO 1 TIMES. " WHERE c_row_dx IS NOT INITIAL. ?
-          " Have outline ot not
-          READ TABLE mo_owner->mt_rows WITH TABLE KEY r = ls_cell->c_row REFERENCE INTO ls_row.
-          CHECK sy-subrc = 0 AND ls_row->outlinelevel IS NOT INITIAL.
+            ls_cell->c_row_outline = ir_tree->level.
+            ls_row->outline_skip   = abap_true.
+          ENDDO.
 
-          ls_cell->c_row_outline = ir_tree->level.
-          ls_row->outline_skip   = abap_true.
-        ENDDO.
+          " Columns
+          DO 1 TIMES.
+            " Have outline ot not
+            READ TABLE mo_owner->mt_columns WITH TABLE KEY min = ls_cell->c_col_ind REFERENCE INTO ls_column.
+            CHECK sy-subrc = 0 AND ls_column->outlinelevel IS NOT INITIAL.
 
-        " Columns
-        DO 1 TIMES.
-          " Have outline ot not
-          READ TABLE mo_owner->mt_columns WITH TABLE KEY min = ls_cell->c_col_ind REFERENCE INTO ls_column.
-          CHECK sy-subrc = 0 AND ls_column->outlinelevel IS NOT INITIAL.
-
-          ls_cell->c_column_outline = ir_tree->level.
-          ls_column->outline_skip   = abap_true.
-        ENDDO.
-
-      ENDLOOP.
+            ls_cell->c_column_outline = ir_tree->level.
+            ls_column->outline_skip   = abap_true.
+          ENDDO.
+        ENDLOOP.
+      ENDIF.
 
       mo_owner->merge(
        EXPORTING

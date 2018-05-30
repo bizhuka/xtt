@@ -14,6 +14,14 @@
     <FIXPT>X</FIXPT>
     <UNICODE>X</UNICODE>
    </VSEOCLASS>
+   <TPOOL>
+    <item>
+     <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>Could not load file</ENTRY>
+     <LENGTH>29</LENGTH>
+    </item>
+   </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_XTT_FILE_SMW0</CLSNAME>

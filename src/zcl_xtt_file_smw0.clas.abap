@@ -75,7 +75,7 @@ METHOD zif_xtt_file~get_content.
     EXCEPTIONS
       OTHERS = 1.
   IF sy-subrc <> 0.
-    MESSAGE 'Could not load file' TYPE 'X'.
+    MESSAGE 'Could not load file'(001) TYPE 'X'.
   ENDIF.
 
   " Text or binary

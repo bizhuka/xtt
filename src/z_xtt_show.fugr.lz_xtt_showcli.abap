@@ -86,9 +86,11 @@ CLASS lcl_main IMPLEMENTATION.
            OTHERS               = 1 ).
 
         " Show it
-        lo_html_viewer->show_url(
-          url      = lv_url
-          in_place = abap_true ).
+        IF sy-subrc = 0.
+          lo_html_viewer->show_url(
+            url      = lv_url
+            in_place = abap_true ).
+        ENDIF.
       ENDIF.
     ENDDO.
 

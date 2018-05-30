@@ -410,7 +410,7 @@ METHOD find_match.
       " Or complex type
        ls_field->typ = zcl_xtt_replace_block=>mc_type_struct OR
        ls_field->typ = zcl_xtt_replace_block=>mc_type_object OR
-       ls_field->typ = zcl_xtt_replace_block=>mc_type_tree   OR " TODO check!
+       " ls_field->typ = zcl_xtt_replace_block=>mc_type_tree   OR " TODO check!
        ls_field->typ = zcl_xtt_replace_block=>mc_type_table.
 
       " Markers for block's range (tables only). Can specify block's end(start) explicitly
@@ -639,7 +639,7 @@ METHOD tree_create_relat.
       relat_key TYPE string,
       tree      TYPE REF TO ts_tree,
     END OF ts_relat,
-    tt_relat TYPE SORTED TABLE OF ts_relat WITH UNIQUE KEY node_key.
+    tt_relat TYPE HASHED TABLE OF ts_relat WITH UNIQUE KEY node_key.
 
   DATA:
     ls_tree      TYPE REF TO ts_tree,

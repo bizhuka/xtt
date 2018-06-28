@@ -13,6 +13,3 @@
 * INCLUDE LZ_XTT_SHOWE...                    " Events
 * INCLUDE LZ_XTT_SHOWP...                    " Local class implement.
 * INCLUDE LZ_XTT_SHOWT99.                    " ABAP Unit tests
-
-
-INCLUDE lz_xtt_showcli.

@@ -56,8 +56,6 @@
        <COLUMN>001</COLUMN>
        <LENGTH>255</LENGTH>
        <HEIGHT>200</HEIGHT>
-       <C_RESIZE_V>X</C_RESIZE_V>
-       <C_RESIZE_H>X</C_RESIZE_H>
        <C_LINE_MIN>001</C_LINE_MIN>
        <C_COLN_MIN>001</C_COLN_MIN>
       </RPY_DYCATT>
@@ -116,7 +114,7 @@
       <ACTCODE>000001</ACTCODE>
       <PFKCODE>000001</PFKCODE>
       <BUTCODE>0001</BUTCODE>
-      <INT_NOTE>Workbench: Standard Function Keys with Tool</INT_NOTE>
+      <INT_NOTE>Main status</INT_NOTE>
      </RSMPE_STAT>
     </STA>
     <FUN>
@@ -132,16 +130,16 @@
       <TEXTNO>001</TEXTNO>
       <TYPE>E</TYPE>
       <TEXT_TYPE>S</TEXT_TYPE>
-      <TEXT_NAME>ICON_CANCEL</TEXT_NAME>
-      <ICON_ID>@0W@</ICON_ID>
-      <FUN_TEXT>Cancel</FUN_TEXT>
+      <FUN_TEXT>Exit</FUN_TEXT>
      </RSMPE_FUNT>
      <RSMPE_FUNT>
       <CODE>EXIT</CODE>
       <TEXTNO>002</TEXTNO>
       <TYPE>E</TYPE>
       <TEXT_TYPE>S</TEXT_TYPE>
-      <FUN_TEXT>Exit</FUN_TEXT>
+      <TEXT_NAME>ICON_CANCEL</TEXT_NAME>
+      <ICON_ID>@0W@</ICON_ID>
+      <FUN_TEXT>Cancel</FUN_TEXT>
      </RSMPE_FUNT>
     </FUN>
     <PFK>
@@ -155,13 +153,13 @@
       <CODE>000001</CODE>
       <PFNO>12</PFNO>
       <FUNCODE>EXIT</FUNCODE>
-      <FUNNO>001</FUNNO>
+      <FUNNO>002</FUNNO>
      </RSMPE_PFK>
      <RSMPE_PFK>
       <CODE>000001</CODE>
       <PFNO>15</PFNO>
       <FUNCODE>EXIT</FUNCODE>
-      <FUNNO>002</FUNNO>
+      <FUNNO>001</FUNNO>
      </RSMPE_PFK>
     </PFK>
     <SET>
@@ -179,20 +177,20 @@
       <OBJ_TYPE>A</OBJ_TYPE>
       <OBJ_CODE>000001</OBJ_CODE>
       <MODAL>D</MODAL>
-      <INT_NOTE>Workbench: Standard Function Keys with Tool</INT_NOTE>
+      <INT_NOTE>Main status</INT_NOTE>
      </RSMPE_ATRT>
      <RSMPE_ATRT>
       <OBJ_TYPE>P</OBJ_TYPE>
       <OBJ_CODE>000001</OBJ_CODE>
       <MODAL>D</MODAL>
-      <INT_NOTE>Workbench: Standard Function Keys with Tool</INT_NOTE>
+      <INT_NOTE>Main status</INT_NOTE>
      </RSMPE_ATRT>
      <RSMPE_ATRT>
       <OBJ_TYPE>B</OBJ_TYPE>
       <OBJ_CODE>000001</OBJ_CODE>
       <SUB_CODE>0001</SUB_CODE>
       <MODAL>D</MODAL>
-      <INT_NOTE>Workbench: Standard Function Keys with Tool</INT_NOTE>
+      <INT_NOTE>Main status</INT_NOTE>
      </RSMPE_ATRT>
     </DOC>
     <TIT>

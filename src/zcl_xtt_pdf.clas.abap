@@ -102,7 +102,7 @@ METHOD get_raw.
       "Data in XML format ->set_data( formdata = ). But data already set in XDP file itself
 
       " New task
-      lo_pdfobj->set_task_renderpdf( ).
+      lo_pdfobj->set_task_renderpdf( )." changesrestricted = 'F' printable = abap_false
 
       " Execute of action
       lo_pdfobj->execute( ).

@@ -92,7 +92,11 @@ public section.
       !IV_NODE_KEY type CSEQUENCE
       !IV_RELAT_KEY type CSEQUENCE
     returning
-      value(RR_ROOT) type ref to DATA .
+      value(RR_ROOT) type ref to DATA
+    exceptions
+      EX_LOOP_REF
+      EX_KEY_DUPL
+      EX_REF_TO_NOWHERE .
   class-methods TREE_RAISE_PREPARE
     importing
       !IR_TREE type ref to TS_TREE
@@ -635,9 +639,10 @@ ENDMETHOD.
 METHOD tree_create_relat.
   TYPES:
     BEGIN OF ts_relat,
-      node_key  TYPE string,
-      relat_key TYPE string,
-      tree      TYPE REF TO ts_tree,
+      node_key        TYPE string,
+      relat_key       TYPE string,
+      relat_not_empty TYPE abap_bool,
+      tree            TYPE REF TO ts_tree,
     END OF ts_relat,
     tt_relat TYPE HASHED TABLE OF ts_relat WITH UNIQUE KEY node_key.
 
@@ -663,12 +668,27 @@ METHOD tree_create_relat.
     ASSIGN COMPONENT iv_node_key  OF STRUCTURE <ls_row> TO <lv_node_key>.
     ASSIGN COMPONENT iv_relat_key OF STRUCTURE <ls_row> TO <lv_relat_key>.
 
+    IF <lv_node_key> = <lv_relat_key>.
+      RAISE ex_loop_ref.
+    ENDIF.
+
+    " Is level 0 OR error ?
+    IF <lv_relat_key> IS NOT INITIAL.
+      ls_relat-relat_not_empty = abap_true.
+    ENDIF.
+
     ls_relat-node_key  = <lv_node_key>.
     ls_relat-relat_key = <lv_relat_key>.
     CREATE DATA ls_relat-tree.
     GET REFERENCE OF <ls_row> INTO ls_relat-tree->data.
 
+    " Insert new item
     INSERT ls_relat INTO TABLE lt_relat.
+    IF sy-subrc <> 0.
+      RAISE ex_key_dupl.
+    ENDIF.
+
+    CLEAR ls_relat.
   ENDLOOP.
 
   " Where write result
@@ -682,6 +702,10 @@ METHOD tree_create_relat.
 
     " To level
     IF sy-subrc <> 0.
+      IF <ls_relat>-relat_not_empty = abap_true.
+        RAISE ex_ref_to_nowhere.
+      ENDIF.
+
       "<ls_relat>-tree->level = 0.
       INSERT <ls_relat>-tree INTO TABLE <lt_tree>.
     ELSE.

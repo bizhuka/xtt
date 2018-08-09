@@ -14,7 +14,7 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       lo_replace_block TYPE REF TO zcl_xtt_replace_block,
       ls_text_match    TYPE REF TO zcl_xtt_xml_base=>ts_text_match,
       lv_top           TYPE abap_bool,
-      lv_index         TYPE sytabix,
+      lv_level_index   TYPE REF TO i,
       lv_text_top      TYPE string,
       lv_text_bottom   TYPE string,
       lr_tree_attr     TYPE REF TO zcl_xtt_replace_block=>ts_tree_attr,
@@ -30,6 +30,7 @@ CLASS lcl_tree_handler IMPLEMENTATION.
         is_block      = <ls_data>
         iv_block_name = mv_block_name.
 
+    CREATE DATA lv_level_index.
     DO 3 TIMES.
       CASE sy-index.
         WHEN 1.
@@ -46,12 +47,25 @@ CLASS lcl_tree_handler IMPLEMENTATION.
           lv_top = abap_undefined.
       ENDCASE.
 
+      " What level to use
+      IF lv_top <> abap_undefined.
+        lv_level_index->* = ir_tree->level.
+      ELSE.
+        lv_level_index->* = lines( mt_text_match ).
+      ENDIF.
+
+      " Could change it
+      lo_replace_block->tree_change_level(
+       ir_tree        = ir_tree
+       iv_block_name  = mv_block_name
+       iv_top         = lv_top
+       iv_level_index = lv_level_index ).
+
       IF lv_top <> abap_undefined.
         READ TABLE mt_text_match REFERENCE INTO ls_text_match
-         WITH TABLE KEY level = ir_tree->level top = lv_top.
+         WITH TABLE KEY level = lv_level_index->* top = lv_top.
       ELSE.
-        lv_index = lines( mt_text_match ).
-        READ TABLE mt_text_match REFERENCE INTO ls_text_match INDEX lv_index.
+        READ TABLE mt_text_match REFERENCE INTO ls_text_match INDEX lv_level_index->*.
       ENDIF.
       CHECK sy-subrc = 0.
 

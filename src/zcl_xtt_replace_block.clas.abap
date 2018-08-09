@@ -61,6 +61,12 @@ public section.
       value(IR_TREE) type ref to TS_TREE
       value(IR_DATA) type ref to DATA
       value(IR_SUB_DATA) type ref to DATA optional .
+  class-events ON_TREE_CHANGE_LEVEL
+    exporting
+      value(IR_TREE) type ref to ZCL_XTT_REPLACE_BLOCK=>TS_TREE
+      value(IV_BLOCK_NAME) type CSEQUENCE
+      value(IV_TOP) type ABAP_BOOL
+      value(IV_LEVEL_INDEX) type ref to I .
 
   methods CONSTRUCTOR
     importing
@@ -101,6 +107,12 @@ public section.
     importing
       !IR_TREE type ref to TS_TREE
       !IV_LEVEL type I .
+  methods TREE_CHANGE_LEVEL
+    importing
+      !IR_TREE type ref to ZCL_XTT_REPLACE_BLOCK=>TS_TREE
+      !IV_BLOCK_NAME type CSEQUENCE
+      !IV_TOP type ABAP_BOOL
+      !IV_LEVEL_INDEX type ref to I .
   PROTECTED SECTION.
 private section.
 
@@ -535,7 +547,7 @@ METHOD get_as_string.
   " Never will happen in MS Excel template (MS Word and pdf only)
   " Excel uses its own formats for date and time
   " Format depends on country
-  IF <l_date> IS ASSIGNED.
+  IF <l_date> IS ASSIGNED AND <l_date> IS NOT INITIAL.
     WRITE <l_date> TO l_text.
     rv_result = l_text.
   ENDIF.
@@ -550,6 +562,15 @@ METHOD get_as_string.
       rv_result = l_text.
     ENDIF.
   ENDIF.
+ENDMETHOD.
+
+
+METHOD tree_change_level.
+  RAISE EVENT on_tree_change_level EXPORTING
+    ir_tree        = ir_tree
+    iv_block_name  = iv_block_name
+    iv_top         = iv_top
+    iv_level_index = iv_level_index.
 ENDMETHOD.
 
 

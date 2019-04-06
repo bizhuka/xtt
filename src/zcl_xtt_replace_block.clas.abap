@@ -31,6 +31,35 @@ public section.
   types:
     tt_tree TYPE STANDARD TABLE OF REF TO ts_tree WITH DEFAULT KEY .
 
+  types:
+    BEGIN OF ts_func,
+      level  TYPE i,
+      name   TYPE string,
+      field  TYPE string,
+      " fields TYPE SORTED TABLE OF string WITH UNIQUE KEY TABLE_LINE,
+    END OF ts_func .
+  types:
+    tt_func TYPE SORTED TABLE OF ts_func WITH UNIQUE KEY TABLE_LINE.
+
+  types:
+    BEGIN OF ts_tree_group,
+      level    TYPE i,
+      top      TYPE abap_bool,
+      if_where TYPE string,
+      if_show  TYPE abap_bool, " Show or hide
+      if_form  TYPE string,    " Name of preform
+      " funcs    TYPE SORTED TABLE OF ts_func WITH UNIQUE KEY name,
+    end OF ts_tree_group .
+  types:
+    BEGIN OF ts_row_offset.
+      INCLUDE TYPE ts_tree_group.
+  types:
+      first    TYPE i,
+      last     TYPE i,
+    END OF ts_row_offset .
+  types:
+    tt_row_offset TYPE SORTED TABLE OF ts_row_offset WITH UNIQUE KEY level top if_where .
+
   constants MC_CHAR_BLOCK_BEGIN type CHAR1 value '{' ##NO_TEXT.
   constants MC_CHAR_BLOCK_END type CHAR1 value '}' ##NO_TEXT.
   constants MC_CHAR_NAME_DELIMITER type CHAR1 value '-' ##NO_TEXT.
@@ -79,6 +108,8 @@ public section.
       !IV_TYPE type CSEQUENCE optional
       !IS_VALUE type ANY .
   methods FIND_MATCH
+    importing
+      !IV_SKIP_TAGS type ABAP_BOOL optional
     changing
       !CV_CONTENT type STRING .
   class-methods GET_AS_STRING
@@ -107,16 +138,41 @@ public section.
     importing
       !IR_TREE type ref to TS_TREE
       !IV_LEVEL type I .
-  methods TREE_CHANGE_LEVEL
+  class-methods TREE_FIND_MATCH
     importing
       !IR_TREE type ref to ZCL_XTT_REPLACE_BLOCK=>TS_TREE
       !IV_BLOCK_NAME type CSEQUENCE
       !IV_TOP type ABAP_BOOL
-      !IV_LEVEL_INDEX type ref to I .
+      !IV_CHECK_PROG type STRING
+      !IT_ROW_MATCH type SORTED TABLE
+    returning
+      value(RR_FOUND_MATCH) type ref to DATA .
+  class-methods TREE_DETECT_OPTIONS
+    importing
+      !IV_TEXT type CSEQUENCE
+      !IV_POS type I
+    changing
+      !CS_ROW_OFFSET type TS_ROW_OFFSET
+      !CT_ROW_OFFSET type TT_ROW_OFFSET .
+  class-methods TREE_INITIALIZE
+    importing
+      !IR_TREE type ref to TS_TREE
+    exporting
+      !EV_PROGRAM type STRING
+    changing
+      !CT_ROW_MATCH type SORTED TABLE .
   PROTECTED SECTION.
 private section.
 
   data MV_BLOCK_BEGIN type STRING .
+  class-data MT_FUNC type TT_FUNC .
+
+  class-methods CATCH_PREPARE_TREE
+    for event PREPARE_TREE of ZCL_XTT_REPLACE_BLOCK
+    importing
+      !IR_TREE
+      !IR_DATA
+      !IR_SUB_DATA .
 ENDCLASS.
 
 
@@ -211,6 +267,56 @@ METHOD add_2_fields.
 
   " And add
   INSERT ls_field INTO TABLE mt_fields.
+ENDMETHOD.
+
+
+METHOD catch_prepare_tree.
+  FIELD-SYMBOLS:
+    <ls_func>      LIKE LINE OF mt_func,
+    <ls_data>      TYPE any,
+    <lt_sub_data>  TYPE ANY TABLE, " STANDARD ?
+    <ls_sub_data>  TYPE any,
+    <lv_field>     TYPE any,
+    <lv_sub_field> TYPE any.
+
+  CHECK mt_func IS NOT INITIAL AND ir_sub_data IS NOT INITIAL.
+
+  " Cast to specefic data
+  ASSIGN:
+   ir_data->*        TO <ls_data>,
+   ir_sub_data->*    TO <lt_sub_data>.
+
+  LOOP AT mt_func ASSIGNING <ls_func> WHERE level = ir_tree->level.
+    ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_data> TO <lv_field>.
+    CHECK sy-subrc = 0.
+
+    CASE <ls_func>-name.
+      WHEN 'COUNT'.
+        <lv_field> = lines( <lt_sub_data> ).
+
+      WHEN 'FIRST'. " 'LAST'.
+        LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
+          ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_sub_data> TO <lv_sub_field>.
+          <lv_field> = <lv_sub_field>.
+          EXIT.
+        ENDLOOP.
+
+      WHEN 'SUM' OR 'AVG'.
+        " Calculate sum
+        <lv_field> = 0.
+        LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
+          ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_sub_data> TO <lv_sub_field>.
+          <lv_field> = <lv_field> + <lv_sub_field>.
+        ENDLOOP.
+
+        IF <ls_func>-name = 'AVG'.
+          <lv_field> = <lv_field> / lines( <lt_sub_data> ).
+        ENDIF.
+
+      WHEN OTHERS.
+        MESSAGE 'Unkown function' TYPE 'X'.
+    ENDCASE.
+  ENDLOOP.
 ENDMETHOD.
 
 
@@ -411,6 +517,11 @@ METHOD find_match.
     l_cnt = l_off - <ls_find_res>-offset - 1.
     l_whole_field = cv_content+l_beg(l_cnt).
 
+    " Delete all rubbish between
+    IF iv_skip_tags = abap_true.
+      REPLACE ALL OCCURRENCES OF REGEX '<[^\>]+>' IN l_whole_field WITH ''.
+    ENDIF.
+
     " First part is a name
     SPLIT l_whole_field AT zcl_xtt_replace_block=>mc_char_option_delimiter INTO TABLE lt_params.
     READ TABLE lt_params INTO l_fld_name INDEX 1.
@@ -565,15 +676,6 @@ METHOD get_as_string.
 ENDMETHOD.
 
 
-METHOD tree_change_level.
-  RAISE EVENT on_tree_change_level EXPORTING
-    ir_tree        = ir_tree
-    iv_block_name  = iv_block_name
-    iv_top         = iv_top
-    iv_level_index = iv_level_index.
-ENDMETHOD.
-
-
 METHOD tree_create.
   DATA:
     lo_tdesc    TYPE REF TO cl_abap_tabledescr,
@@ -650,10 +752,10 @@ METHOD tree_create.
     INSERT ls_attr INTO TABLE ls_curtree->sub_nodes.
   ENDLOOP.
 
-  " Raise event
-  tree_raise_prepare(
-   ir_tree  = rr_root
-   iv_level = 0 ).
+*  " Raise event
+*  tree_raise_prepare(
+*   ir_tree  = rr_root
+*   iv_level = 0 ).
 ENDMETHOD.
 
 
@@ -739,12 +841,303 @@ METHOD tree_create_relat.
   ENDLOOP.
 
   rr_root = lt_tree.
-  " Raise events
-  LOOP AT <lt_tree> INTO ls_tree.
-    tree_raise_prepare(
-     ir_tree  = ls_tree
-     iv_level = 0 ).
+*  " Raise events
+*  LOOP AT <lt_tree> INTO ls_tree.
+*    tree_raise_prepare(
+*     ir_tree  = ls_tree
+*     iv_level = 0 ).
+*  ENDLOOP.
+ENDMETHOD.
+
+
+METHOD tree_detect_options.
+  DATA:
+    lt_text  TYPE stringtab,
+    lv_text  TYPE string,
+    lv_value TYPE string,
+    ls_func  TYPE ts_func,
+    lv_ind   TYPE i.
+  FIELD-SYMBOLS:
+    <ls_func>    LIKE ls_func,
+    <ls_row_off> TYPE ts_row_offset.
+
+  " Read from texts
+  lv_text = iv_text.
+
+  " TODO unescape all? Only for <>
+  REPLACE ALL OCCURRENCES OF:
+   '&lt;'   IN lv_text WITH '<',
+   '&gt;'   IN lv_text WITH '>',
+   '&amp;'  IN lv_text WITH '&',
+   '&quot;' IN lv_text WITH '"',
+   '&apos;' IN lv_text WITH `'`.
+
+  SPLIT lv_text AT ';' INTO TABLE lt_text.
+  LOOP AT lt_text INTO lv_text.
+    CLEAR lv_value.
+    SPLIT lv_text AT '=' INTO lv_text lv_value.
+
+    CASE lv_text.
+      WHEN 'level'.
+        CLEAR cs_row_offset.
+        cs_row_offset-level = lv_value.
+
+      WHEN 'top'.
+        cs_row_offset-top = lv_value.
+
+      WHEN 'show_if'.
+        cs_row_offset-if_where = lv_value.
+        cs_row_offset-if_show  = abap_true.
+
+      WHEN 'hide_if'.
+        cs_row_offset-if_where = lv_value.
+        cs_row_offset-if_show  = abap_false.
+
+      WHEN 'func'.
+        ls_func-name = lv_value.
+        READ TABLE lt_text INTO ls_func-field INDEX 1.
+
+    ENDCASE.
   ENDLOOP.
+
+  " Exist or new
+  READ TABLE ct_row_offset ASSIGNING <ls_row_off>
+   FROM cs_row_offset.
+  IF sy-subrc <> 0.
+    CLEAR:
+     cs_row_offset-first,
+     cs_row_offset-last. " Clear only here !!!
+    INSERT cs_row_offset INTO TABLE ct_row_offset ASSIGNING <ls_row_off>.
+  ENDIF.
+
+  <ls_row_off>-last = iv_pos.
+  IF <ls_row_off>-first IS INITIAL.
+    <ls_row_off>-first = <ls_row_off>-last.
+  ENDIF.
+
+***************************
+  " Add function
+  CHECK ls_func-name IS NOT INITIAL.
+
+  " Current level
+  ls_func-level = cs_row_offset-level.
+
+  TRANSLATE:
+   ls_func-name  TO UPPER CASE,
+   ls_func-field TO UPPER CASE.
+
+  SPLIT ls_func-field AT '-' INTO TABLE lt_text.
+  lv_ind = lines( lt_text ).
+  READ TABLE lt_text INTO ls_func-field INDEX lv_ind.
+
+  " And add
+  INSERT ls_func INTO TABLE mt_func.
+ENDMETHOD.
+
+
+METHOD tree_find_match.
+  DATA:
+    lv_level_index TYPE REF TO i,
+    lv_last_top    TYPE abap_bool,
+    lv_last_index  TYPE i,
+    ls_tree_group  TYPE ts_tree_group,
+    lv_ok          TYPE abap_bool,
+    lr_row_match   TYPE REF TO data.
+  FIELD-SYMBOLS:
+    <ls_data>      TYPE any,
+    <ls_row_match> TYPE any.
+
+  " Data to ANY
+  ASSIGN ir_tree->data->* TO <ls_data>.
+
+  " What level to use
+  CREATE DATA lv_level_index.
+  lv_level_index->* = -1.
+  lv_last_top       = iv_top.
+
+  IF iv_top <> abap_undefined.
+    lv_level_index->* = ir_tree->level.
+  ELSE.
+    lv_last_index = lines( it_row_match ).
+    READ TABLE it_row_match ASSIGNING <ls_row_match> INDEX lv_last_index.
+    IF sy-subrc = 0.
+      MOVE-CORRESPONDING <ls_row_match> TO ls_tree_group.
+      lv_level_index->* = ls_tree_group-level.
+      lv_last_top       = ls_tree_group-top.
+    ENDIF.
+  ENDIF.
+
+  " Change level by external condition
+  RAISE EVENT on_tree_change_level EXPORTING
+    ir_tree        = ir_tree
+    iv_block_name  = iv_block_name
+    iv_top         = iv_top
+    iv_level_index = lv_level_index.
+
+  " Check all conditions
+  CLEAR rr_found_match.
+  LOOP AT it_row_match ASSIGNING <ls_row_match>.
+    " Slow match by level and top
+    MOVE-CORRESPONDING <ls_row_match> TO ls_tree_group.
+    CHECK ls_tree_group-level = lv_level_index->* AND ls_tree_group-top = lv_last_top.
+
+    " As refernce
+    GET REFERENCE OF <ls_row_match> INTO lr_row_match.
+
+    " Just get default row group
+    IF ls_tree_group-if_form IS INITIAL.
+      rr_found_match = lr_row_match.
+    ENDIF.
+
+    CHECK ls_tree_group-if_form IS NOT INITIAL AND
+          iv_check_prog IS NOT INITIAL.
+
+    CLEAR lv_ok.
+    PERFORM (ls_tree_group-if_form) IN PROGRAM (iv_check_prog) IF FOUND
+      USING
+            <ls_data>
+      CHANGING
+            lv_ok.
+
+    IF lv_ok = abap_true.
+      " Hide
+      IF ls_tree_group-if_show = abap_true.
+        rr_found_match = lr_row_match.
+      ELSE.
+        CLEAR rr_found_match.
+      ENDIF.
+
+      EXIT.
+    ENDIF.
+  ENDLOOP.
+ENDMETHOD.
+
+
+METHOD tree_initialize.
+  DATA:
+    ls_tree_group TYPE ts_tree_group,
+    lv_ok         TYPE abap_bool,
+    lo_struc      TYPE REF TO cl_abap_structdescr, " TODO class attributes
+    ls_comp       TYPE REF TO abap_compdescr,
+    lv_len        TYPE string,
+    lv_dec        TYPE string,
+    lv_type       TYPE string,
+    lt_code       TYPE stringtab,
+    lv_line       TYPE string,
+    lv_message    TYPE string,
+    lv_pos        TYPE i.                                   "#EC NEEDED
+  FIELD-SYMBOLS:
+    <ls_row_match> TYPE any,
+    <lv_any>       TYPE any.
+
+  " The same key and base fields
+  LOOP AT ct_row_match ASSIGNING <ls_row_match>.
+    MOVE-CORRESPONDING <ls_row_match> TO ls_tree_group.
+
+    " Yes create new program on fly
+    IF ls_tree_group-if_where IS NOT INITIAL.
+      lv_ok = abap_true.
+    ENDIF.
+  ENDLOOP.
+
+  " Raise event
+  SET HANDLER catch_prepare_tree.
+  tree_raise_prepare(
+   ir_tree  = ir_tree
+   iv_level = 0 ).
+  CLEAR mt_func.
+
+  " No need in program
+  CHECK lv_ok = abap_true.
+
+  ASSIGN ir_tree->data->* TO <lv_any>.
+  lo_struc ?= cl_abap_typedescr=>describe_by_data( <lv_any> ).
+
+  " Structure declaration
+  APPEND `REPORT DYNAMIC_IF. TYPES: BEGIN OF TS_ROW, ` TO lt_code.
+
+  LOOP AT lo_struc->components REFERENCE INTO ls_comp.
+    " Convert to strings
+    lv_len = ls_comp->length.
+    lv_dec = ls_comp->decimals.
+
+    CASE ls_comp->type_kind.
+        " Convert to string
+      WHEN cl_abap_typedescr=>typekind_char OR cl_abap_typedescr=>typekind_clike OR
+           cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string.
+        lv_type = 'STRING'.
+
+        " Integer, byte, short
+      WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int1  OR cl_abap_typedescr=>typekind_int2.
+        lv_type = 'INT4'.
+
+        " Use mask and don't delete dots in ZCL_XTT_REPLACE_BLOCK=>get_as_string
+      WHEN cl_abap_typedescr=>typekind_num OR cl_abap_typedescr=>typekind_numeric.
+        CONCATENATE ` n LENGTH ` lv_len ` DECIMALS ` lv_dec INTO lv_type. "#EC NOTEXT
+
+        " Double
+      WHEN cl_abap_typedescr=>typekind_packed OR cl_abap_typedescr=>typekind_float OR
+           '/' OR 'a' OR 'e'. " cl_abap_typedescr=>typekind_decfloat  OR cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
+        lv_type = ` p LENGTH 16 DECIMALS 5`. "#EC NOTEXT No need to be spcific
+
+        " Date
+      WHEN cl_abap_typedescr=>typekind_date.
+        lv_type = 'SYDATUM'.
+
+        " Time
+      WHEN cl_abap_typedescr=>typekind_time.
+        lv_type = 'SYUZEIT'.
+
+      WHEN OTHERS.
+        CONTINUE.
+    ENDCASE.
+
+    CONCATENATE ls_comp->name ` TYPE ` lv_type `,` INTO lv_type. "#EC NOTEXT
+    APPEND lv_type TO lt_code.
+  ENDLOOP.
+
+  APPEND 'END OF TS_ROW.' TO lt_code.                       "#EC NOTEXT
+
+  " Global structure
+  APPEND '' TO lt_code.
+  APPEND 'DATA: ROW TYPE TS_ROW.' TO lt_code.               "#EC NOTEXT
+  APPEND '' TO lt_code.
+
+  " Generate FORMs
+  LOOP AT ct_row_match ASSIGNING <ls_row_match>.
+    MOVE-CORRESPONDING <ls_row_match> TO ls_tree_group.
+    CHECK ls_tree_group-if_where IS NOT INITIAL.
+
+    " Name of FORM
+    ls_tree_group-if_form = sy-tabix.
+    CONDENSE ls_tree_group-if_form.
+    CONCATENATE `F_` ls_tree_group-if_form INTO ls_tree_group-if_form.
+
+    " Change form name
+    ASSIGN COMPONENT 'IF_FORM' OF STRUCTURE <ls_row_match> TO <lv_any>.
+    <lv_any> = ls_tree_group-if_form.
+
+    " FORM declaration
+    CONCATENATE `FORM ` ls_tree_group-if_form ` USING is_row TYPE ANY CHANGING cv_ok TYPE abap_bool.` INTO lv_line. "#EC NOTEXT
+    APPEND lv_line TO lt_code.
+
+    APPEND 'MOVE-CORRESPONDING is_row TO row.' TO lt_code.  "#EC NOTEXT
+
+    CONCATENATE `IF ` ls_tree_group-if_where `. cv_ok = 'X'. ENDIF.` INTO lv_line. "#EC NOTEXT
+    APPEND lv_line TO lt_code.
+
+    APPEND 'ENDFORM.' TO lt_code.                           "#EC NOTEXT
+    APPEND '' TO lt_code.
+  ENDLOOP.
+
+  GENERATE SUBROUTINE POOL lt_code NAME ev_program
+    MESSAGE lv_message
+    LINE lv_pos. " <--- in lt_code[]
+
+  " Ooops! wrong syntax in if_show of if_hide!
+  IF sy-subrc <> 0.
+    MESSAGE lv_message TYPE 'X'.
+  ENDIF.
 ENDMETHOD.
 
 

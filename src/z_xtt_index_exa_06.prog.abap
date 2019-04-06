@@ -51,7 +51,7 @@ METHOD example_06.
        ct_folder = lt_folders ).
 
     " Create tree
-    SET HANDLER on_prepare_tree_06 ACTIVATION abap_true.
+    SET HANDLER on_prepare_tree_06. " ACTIVATION abap_true.
 
     GET REFERENCE OF lt_folders INTO lr_table.
     ls_root-t = zcl_xtt_replace_block=>tree_create_relat(
@@ -59,7 +59,8 @@ METHOD example_06.
       iv_node_key   = 'DIR'
       iv_relat_key  = 'PAR_DIR' ).
 
-    SET HANDLER on_prepare_tree_06 ACTIVATION abap_false.
+    "  Will call later in MERGE
+    " SET HANDLER on_prepare_tree_06 ACTIVATION abap_false.
   ENDIF.
 
   " Show data structure only

@@ -366,8 +366,8 @@ CLASS cl_main IMPLEMENTATION.
     FIELD-SYMBOLS:
      <ls_item> LIKE LINE OF rt_table.
 
-    " A,B,C chars
-    lo_rand_i = cl_abap_random_int=>create( min = 0 max = 2 ).
+    " A,B,C,D chars
+    lo_rand_i = cl_abap_random_int=>create( min = 0 max = 3 ).
     " SUMS
     lo_rand_p = cl_abap_random_packed=>create( min = 0 max = 1000000 ).
     DO p_r_cnt TIMES.

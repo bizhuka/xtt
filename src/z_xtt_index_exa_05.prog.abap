@@ -29,15 +29,16 @@ METHOD example_05.
       MOVE-CORRESPONDING ls_item->* TO ls_row->*.
     ENDLOOP.
 
-    SET HANDLER on_prepare_tree_05 ACTIVATION abap_true.
+    " In template `;func=`
+    " SET HANDLER on_prepare_tree_05. " ACTIVATION abap_true.
 
     GET REFERENCE OF lt_rows INTO lr_table.
     ls_root-t = zcl_xtt_replace_block=>tree_create(
      it_table      = lr_table       " from 7.5 REF #(lt_rows)
      iv_fields     = 'GROUP'   ).   " Name of the fields delimited by ;
 
-    " No need for future invokes
-    SET HANDLER on_prepare_tree_05 ACTIVATION abap_false.
+    "  Will call later in MERGE
+    " SET HANDLER on_prepare_tree_05 ACTIVATION abap_false.
   ENDIF.
 
   " Show data structure only
@@ -76,13 +77,13 @@ METHOD on_prepare_tree_05.
    ir_sub_data->*    TO <lt_sub_data>.
 
   " Virtual field
-  <ls_data>-ch_count = lines( <lt_sub_data> ).
+  <ls_data>-ch_count = lines( <lt_sub_data> ).                 " -----> ;func=COUNT
   "<ls_data>-level    = ir_tree->level.
 
   " And calc sums
   LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
-    <ls_data>-sum1  = <ls_data>-sum1 + <ls_sub_data>-sum1.
-    <ls_data>-sum2  = <ls_data>-sum2 + <ls_sub_data>-sum2.
+    <ls_data>-sum1  = <ls_data>-sum1 + <ls_sub_data>-sum1.     " -----> ;func=SUM
+    <ls_data>-sum2  = <ls_data>-sum2 + <ls_sub_data>-sum2.     " -----> ;func=SUM
 
     " text description (1 time)
     CHECK <ls_data>-group IS INITIAL.

@@ -6,14 +6,16 @@ class ZCL_XTT_XML_BASE definition
 public section.
   type-pools ABAP .
 
+  CLASS ZCL_XTT_REPLACE_BLOCK DEFINITION LOAD.
+
   types:
-    BEGIN OF ts_text_match,
-     level TYPE i,
-     top   TYPE abap_bool,
-     text  TYPE string,
+   BEGIN OF ts_text_match.
+    INCLUDE TYPE zcl_xtt_replace_block=>ts_tree_group.
+    types:
+    text  TYPE string,
    END OF ts_text_match .
   types:
-    tt_text_match TYPE SORTED TABLE OF ts_text_match WITH UNIQUE KEY level top .
+    tt_text_match TYPE SORTED TABLE OF ts_text_match WITH UNIQUE KEY level top if_where.
 
   methods CONSTRUCTOR
     importing
@@ -22,10 +24,12 @@ public section.
       !IV_ROW_TAG type CSEQUENCE
       !IV_PATH_IN_ARC type CSEQUENCE optional
       !IV_FILE_FORMAT type I optional
-      !IV_FILE_FORMAT_EXT type STRING optional .
-  methods GET_RAW
-    redefinition .
+      !IV_FILE_FORMAT_EXT type STRING optional
+      !IV_SKIP_TAGS type ABAP_BOOL optional .
+
   methods DOWNLOAD
+    redefinition .
+  methods GET_RAW
     redefinition .
   methods MERGE
     redefinition .
@@ -79,6 +83,7 @@ private section.
   data MV_FILE_FORMAT type I .
   data MV_FILE_FORMAT_EXT type STRING .
   data MV_PATH_IN_ARC type STRING .
+  data MV_SKIP_TAGS type ABAP_BOOL .
   data MO_ZIP type ref to CL_ABAP_ZIP .
 ENDCLASS.
 
@@ -96,6 +101,7 @@ METHOD constructor.
   mv_body_tag        = iv_body_tag.
   mv_row_tag         = iv_row_tag.
   mv_path_in_arc     = iv_path_in_arc.
+  mv_skip_tags       = iv_skip_tags.
 
   " For download method
   mv_file_format     = iv_file_format.
@@ -192,6 +198,8 @@ METHOD do_merge.
   " @see match_found
   " What will search in template. At first '{ROOT-'
   io_replace_block->find_match(
+   EXPORTING
+    iv_skip_tags   = mv_skip_tags
    CHANGING
     cv_content     = cv_content ).
 
@@ -251,13 +259,14 @@ METHOD do_merge.
 **********************************************************************
       WHEN zcl_xtt_replace_block=>mc_type_tree.
 
+        lr_tree ?= ls_field->dref.
         CREATE OBJECT lo_tree_handler
           EXPORTING
             io_owner      = me
+            ir_tree       = lr_tree
             iv_block_name = ls_field->name
             it_text_match = lt_text_match.
 
-        lr_tree ?= ls_field->dref.
         lo_tree_handler->add_tree_data(
          EXPORTING
            ir_tree = lr_tree
@@ -270,7 +279,7 @@ METHOD do_merge.
 
 **********************************************************************
       WHEN zcl_xtt_replace_block=>mc_type_table.
-       " CHECK cv_content IS NOT INITIAL.
+        " CHECK cv_content IS NOT INITIAL.
 
         lv_middle = cv_content.
         " Replicate middle
@@ -462,15 +471,6 @@ ENDMETHOD.
 
 
 METHOD split_by_tag.
-  TYPES:
-    BEGIN OF ts_text_off,
-      level TYPE i,
-      top   TYPE abap_bool,
-      first TYPE i,
-      last  TYPE i,
-    END OF ts_text_off ,
-    tt_text_off TYPE SORTED TABLE OF ts_text_off WITH UNIQUE KEY level top.
-
   DATA:
     lt_match       TYPE match_result_tab,
     lv_first_match TYPE i,
@@ -480,19 +480,17 @@ METHOD split_by_tag.
     lv_end         TYPE i,
     lv_off         TYPE i,
     lv_text        TYPE string,
-    lt_text        TYPE stringtab,
-    ls_text_off    TYPE ts_text_off,
-    lt_text_off    TYPE tt_text_off,
-    lv_value       TYPE string,
+    ls_row_off     TYPE zcl_xtt_replace_block=>ts_row_offset,
+    lt_row_off     TYPE zcl_xtt_replace_block=>tt_row_offset,
     lv_tabix       TYPE sytabix,
     lv_from        TYPE sytabix,
     lv_minus       TYPE i,
     ls_text_match  LIKE LINE OF et_text_match.
   FIELD-SYMBOLS:
-    <ls_match>     LIKE LINE OF lt_match,
-    <ls_submatch>  LIKE LINE OF <ls_match>-submatches,
-    <ls_text_off>  LIKE ls_text_off,
-    <ls_text_off2> LIKE ls_text_off.
+    <ls_match>    LIKE LINE OF lt_match,
+    <ls_submatch> LIKE LINE OF <ls_match>-submatches,
+    <ls_row_off>  LIKE ls_row_off,
+    <ls_row_off2> LIKE ls_row_off.
 
 *************
   find_bounds(
@@ -542,8 +540,6 @@ METHOD split_by_tag.
 
   " Offset
   lv_minus = lv_beg.
-
-
   LOOP AT lt_match ASSIGNING <ls_match>.
     lv_tabix = sy-tabix.
     READ TABLE <ls_match>-submatches ASSIGNING <ls_submatch> INDEX 3.
@@ -552,65 +548,41 @@ METHOD split_by_tag.
       AND <ls_match>-length = <ls_submatch>-length.
 
     " Get whole match
-    lv_off  = <ls_match>-offset - lv_beg.
+    lv_off  = <ls_match>-offset - lv_beg - 1.
     lv_text = cv_middle+lv_off(<ls_match>-length).
 
     " Read from texts
-    SPLIT lv_text AT ';' INTO TABLE lt_text.
-    LOOP AT lt_text INTO lv_text.
-      SPLIT lv_text AT '=' INTO lv_text lv_value.
-
-      CASE lv_text.
-        WHEN 'level'.
-          ls_text_off-level = lv_value.
-        WHEN 'top'.
-          IF lv_value CP 'X*'.
-            ls_text_off-top = abap_true.
-          ELSE.
-            ls_text_off-top = abap_false.
-          ENDIF.
-      ENDCASE.
-    ENDLOOP.
-
-    " Exist or new
-    READ TABLE lt_text_off ASSIGNING <ls_text_off>
-     FROM ls_text_off.
-    IF sy-subrc <> 0.
-      CLEAR:
-       ls_text_off-first,
-       ls_text_off-last.
-      INSERT ls_text_off INTO TABLE lt_text_off ASSIGNING <ls_text_off>.
-    ENDIF.
-
-    <ls_text_off>-last = lv_tabix.
-    IF <ls_text_off>-first IS INITIAL.
-      <ls_text_off>-first = lv_tabix.
-    ENDIF.
+    zcl_xtt_replace_block=>tree_detect_options(
+     EXPORTING
+       iv_text       = lv_text
+       iv_pos        = lv_tabix
+     CHANGING
+       cs_row_offset = ls_row_off
+       ct_row_offset = lt_row_off ).
   ENDLOOP.
 
   " Check overlaps
-  LOOP AT lt_text_off ASSIGNING <ls_text_off>.
+  LOOP AT lt_row_off ASSIGNING <ls_row_off>.
     lv_from = sy-tabix + 1.
-    LOOP AT lt_text_off ASSIGNING <ls_text_off2> FROM lv_from WHERE
-       ( first <= <ls_text_off>-last AND first >= <ls_text_off>-first ) OR
-       ( last  <= <ls_text_off>-last AND last  >= <ls_text_off>-first ).
+    LOOP AT lt_row_off ASSIGNING <ls_row_off2> FROM lv_from WHERE
+       ( first <= <ls_row_off>-last AND first >= <ls_row_off>-first ) OR
+       ( last  <= <ls_row_off>-last AND last  >= <ls_row_off>-first ).
       MESSAGE x001(zsy_xtt).
     ENDLOOP.
   ENDLOOP.
 
   " And add
-  LOOP AT lt_text_off ASSIGNING <ls_text_off>.
-    lv_beg = <ls_text_off>-first - 1.
+  LOOP AT lt_row_off ASSIGNING <ls_row_off>.
+    lv_beg = <ls_row_off>-first - 1.
     READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_beg.
     lv_beg = <ls_match>-offset - lv_minus.
 
-    lv_end = <ls_text_off>-last + 1.
+    lv_end = <ls_row_off>-last + 1.
     READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_end.
     lv_end = <ls_match>-offset + <ls_match>-length - lv_beg - lv_minus.
 
     " And add
-    ls_text_match-level = <ls_text_off>-level.
-    ls_text_match-top   = <ls_text_off>-top.
+    MOVE-CORRESPONDING <ls_row_off> TO ls_text_match.
     ls_text_match-text  = cv_middle+lv_beg(lv_end).
     INSERT ls_text_match INTO TABLE et_text_match.
   ENDLOOP.

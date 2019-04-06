@@ -8,7 +8,7 @@ PARAMETERS:
   p_exa   TYPE char5 AS LISTBOX DEFAULT 1 VISIBLE LENGTH 80 OBLIGATORY MODIF ID exa USER-COMMAND update_scr,
 
   " Row count
-  p_r_cnt TYPE int4 DEFAULT 9 MODIF ID oth,
+  p_r_cnt TYPE int4 DEFAULT 15 MODIF ID oth,
 
   " Block count
   p_b_cnt TYPE int4 DEFAULT 3  MODIF ID oth,

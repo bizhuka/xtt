@@ -29,6 +29,7 @@ METHOD constructor.
    iv_body_tag        = 'w:body'
    iv_row_tag         = 'w:tr'
    iv_file_format     = iv_file_format
-   iv_file_format_ext = iv_file_format_ext ).
+   iv_file_format_ext = iv_file_format_ext
+   iv_skip_tags       = abap_true ).
 ENDMETHOD.
 ENDCLASS.

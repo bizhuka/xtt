@@ -5,6 +5,8 @@
 TYPE-POOLS:
  abap.
 
+CLASS ZCL_XTT_REPLACE_BLOCK DEFINITION LOAD.
+
 TYPES:
   " Cell of Excel
   BEGIN OF ts_ex_cell,
@@ -33,12 +35,12 @@ TYPES:
   " Only reference to cells !
   tt_ex_cell TYPE STANDARD TABLE OF ts_ex_cell WITH DEFAULT KEY,
 
-  BEGIN OF ts_cell_match,
-    level TYPE i,
-    top   TYPE abap_bool,
+  BEGIN OF ts_cell_match.
+    INCLUDE TYPE zcl_xtt_replace_block=>ts_tree_group.
+  types:
     cells TYPE tt_ex_cell,
   END OF ts_cell_match,
-  tt_cell_match TYPE SORTED TABLE OF ts_cell_match WITH UNIQUE KEY level top,
+  tt_cell_match TYPE SORTED TABLE OF ts_cell_match WITH UNIQUE KEY level top if_where,
 
   " Row of Excel
   BEGIN OF ts_ex_row,
@@ -192,12 +194,14 @@ CLASS lcl_tree_handler DEFINITION FINAL.
     DATA:
       mt_row_match  TYPE tt_cell_match,
       mo_owner      TYPE REF TO cl_ex_sheet,
-      mv_block_name TYPE string.
+      mv_block_name TYPE string,
+      mv_check_prog TYPE string.
 
     METHODS:
       constructor
         IMPORTING
           io_owner      TYPE REF TO cl_ex_sheet
+          ir_tree       TYPE REF TO zcl_xtt_replace_block=>ts_tree
           iv_block_name TYPE string
           it_row_match  TYPE tt_cell_match,
 

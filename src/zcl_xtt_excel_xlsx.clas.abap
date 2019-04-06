@@ -401,15 +401,15 @@ METHOD column_read_xml.
    ls_col LIKE LINE OF ct_columns,
    lv_cnt TYPE i.
 
-  ls_col-collapsed    = io_node->get_attribute( 'collapsed' ).
-  ls_col-customwidth  = io_node->get_attribute( 'customWidth' ).
-  ls_col-hidden       = io_node->get_attribute( 'hidden' ).
-  ls_col-max          = io_node->get_attribute( 'max' ).
-  ls_col-min          = io_node->get_attribute( 'min' ).
-  ls_col-outlinelevel = io_node->get_attribute( 'outlineLevel' ).
-  ls_col-phonetic     = io_node->get_attribute( 'phonetic' ).
-  ls_col-style        = io_node->get_attribute( 'style' ).
-  ls_col-width        = io_node->get_attribute( 'width' ).
+  ls_col-collapsed    = io_node->get_attribute( 'collapsed' ).    "#EC NOTEXT
+  ls_col-customwidth  = io_node->get_attribute( 'customWidth' ).  "#EC NOTEXT
+  ls_col-hidden       = io_node->get_attribute( 'hidden' ).       "#EC NOTEXT
+  ls_col-max          = io_node->get_attribute( 'max' ).          "#EC NOTEXT
+  ls_col-min          = io_node->get_attribute( 'min' ).          "#EC NOTEXT
+  ls_col-outlinelevel = io_node->get_attribute( 'outlineLevel' ). "#EC NOTEXT
+  ls_col-phonetic     = io_node->get_attribute( 'phonetic' ).     "#EC NOTEXT
+  ls_col-style        = io_node->get_attribute( 'style' ).        "#EC NOTEXT
+  ls_col-width        = io_node->get_attribute( 'width' ).        "#EC NOTEXT
 
   IF ls_col-min = ls_col-max.
     INSERT ls_col INTO TABLE ct_columns.
@@ -444,16 +444,16 @@ METHOD column_write_xml.
 
   LOOP AT it_columns ASSIGNING <ls_column>.
     CONCATENATE rv_column_text `<col` INTO rv_column_text RESPECTING BLANKS.
-    add_text collapsed    'collapsed'.
-    add_text customwidth  'customWidth'.
-    add_text hidden       'hidden'.
-    add_text max          'max'.
-    add_text min          'min'.
-    add_text outlinelevel 'outlineLevel'.
-    add_text phonetic     'phonetic'.
-    add_text style        'style'.
-    add_text width        'width'.
-    CONCATENATE rv_column_text `></col>` INTO rv_column_text RESPECTING BLANKS.
+    add_text collapsed    'collapsed'.    "#EC NOTEXT
+    add_text customwidth  'customWidth'.  "#EC NOTEXT
+    add_text hidden       'hidden'.       "#EC NOTEXT
+    add_text max          'max'.          "#EC NOTEXT
+    add_text min          'min'.          "#EC NOTEXT
+    add_text outlinelevel 'outlineLevel'. "#EC NOTEXT
+    add_text phonetic     'phonetic'.     "#EC NOTEXT
+    add_text style        'style'.        "#EC NOTEXT
+    add_text width        'width'.        "#EC NOTEXT
+    CONCATENATE rv_column_text `></col>` INTO rv_column_text RESPECTING BLANKS. "#EC NOTEXT
   ENDLOOP.
 ENDMETHOD.
 
@@ -487,7 +487,7 @@ METHOD CONSTRUCTOR.
   zcl_xtt_util=>xml_from_zip(
    EXPORTING
     io_zip     = mo_zip
-    iv_name    = 'xl/workbook.xml'
+    iv_name    = 'xl/workbook.xml'      "#EC NOTEXT
    IMPORTING
     eo_xmldoc  = mo_workbook ).
 
@@ -496,12 +496,12 @@ METHOD CONSTRUCTOR.
   zcl_xtt_util=>xml_from_zip(
    EXPORTING
     io_zip     = mo_zip
-    iv_name    = 'xl/sharedStrings.xml'
+    iv_name    = 'xl/sharedStrings.xml' "#EC NOTEXT
    IMPORTING
     ev_sdoc    = l_shared_strings ).
 
   " Find all pairs
-  FIND ALL OCCURRENCES OF REGEX '(<si>)|(<\/si>)' IN l_shared_strings RESULTS lt_match.
+  FIND ALL OCCURRENCES OF REGEX '(<si>)|(<\/si>)' IN l_shared_strings RESULTS lt_match. "#EC NOTEXT
   l_cnt = lines( lt_match ).
 
   l_ind = 0.
@@ -542,7 +542,7 @@ METHOD CONSTRUCTOR.
 
 ***************************************
   " Sheets
-  lo_node = mo_workbook->find_from_name( 'sheet' ).
+  lo_node = mo_workbook->find_from_name( 'sheet' ). "#EC NOTEXT
   WHILE lo_node IS BOUND.
     " Prepare and add
     CREATE OBJECT lo_sheet
@@ -567,7 +567,7 @@ METHOD defined_name_read_xml.
   " Name & value
   " Regardless CHECK l_value IS NOT INITIAL AND l_value(1) <> '#'.
   APPEND INITIAL LINE TO ct_defined_names REFERENCE INTO ls_defined_name.
-  ls_defined_name->d_name = io_node->get_attribute( 'name' ).
+  ls_defined_name->d_name = io_node->get_attribute( 'name' ). "#EC NOTEXT
   l_value  = io_node->get_value( ).
 
   " Several areas
@@ -672,7 +672,7 @@ METHOD get_raw.
   IF mt_defined_names IS NOT INITIAL.
     zcl_xtt_util=>xml_to_zip(
      io_zip    = mo_zip
-     iv_name   = 'xl/workbook.xml'
+     iv_name   = 'xl/workbook.xml' "#EC NOTEXT
      io_xmldoc = mo_workbook ).
   ENDIF.
 
@@ -682,8 +682,7 @@ METHOD get_raw.
    EXPORTING
     name     = 'xl/calcChain.xml'
    EXCEPTIONS
-    OTHERS   = 1 ) " ##SUBRC_OK. delete if exist
-  .
+    OTHERS   = 1 ). "#SUBRC_OK delete if exist
 
   " ZIP archive as xstring
   rv_content = mo_zip->save( ).
@@ -729,15 +728,15 @@ METHOD LIST_OBJECT_READ_XML.
     " No relations
     CHECK lo_rels IS NOT INITIAL.
 
-    lo_rel ?= lo_rels->find_from_name( `Relationship` ).
+    lo_rel ?= lo_rels->find_from_name( `Relationship` ). "#EC NOTEXT
     WHILE lo_rel IS BOUND.
-      l_val = lo_rel->get_attribute( `Target` ).
+      l_val = lo_rel->get_attribute( `Target` ). "#EC NOTEXT
       lo_rel ?= lo_rel->get_next( ).
-      CHECK l_val CP `../tables/*`.
+      CHECK l_val CP `../tables/*`. "#EC NOTEXT
 
       " Path to table
       CLEAR ls_list_object.
-      CONCATENATE `xl/tables/` l_val+10 INTO ls_list_object-arc_path.
+      CONCATENATE `xl/tables/` l_val+10 INTO ls_list_object-arc_path. "#EC NOTEXT
 
       " Dom
       zcl_xtt_util=>xml_from_zip(
@@ -749,7 +748,7 @@ METHOD LIST_OBJECT_READ_XML.
 
       " Get address
       lo_area ?= ls_list_object-dom->get_first_child( ).
-      l_val = lo_area->get_attribute( 'ref' ).
+      l_val = lo_area->get_attribute( 'ref' ). "#EC NOTEXT
 
       " Edit area
       GET REFERENCE OF ls_list_object-area INTO ls_area_ref.
@@ -790,11 +789,11 @@ METHOD row_read_xml.
   DATA:
    ls_row LIKE LINE OF ct_rows.
 
-  ls_row-r             = io_node->get_attribute( 'r' ).
-  ls_row-customheight  = io_node->get_attribute( 'customHeight' ).
-  ls_row-ht            = io_node->get_attribute( 'ht' ).
-  ls_row-hidden        = io_node->get_attribute( 'hidden' ).
-  ls_row-outlinelevel  = io_node->get_attribute( 'outlineLevel' ).
+  ls_row-r             = io_node->get_attribute( 'r' ).             "#EC NOTEXT
+  ls_row-customheight  = io_node->get_attribute( 'customHeight' ).  "#EC NOTEXT
+  ls_row-ht            = io_node->get_attribute( 'ht' ).            "#EC NOTEXT
+  ls_row-hidden        = io_node->get_attribute( 'hidden' ).        "#EC NOTEXT
+  ls_row-outlinelevel  = io_node->get_attribute( 'outlineLevel' ).  "#EC NOTEXT
 
   " And add by key
   INSERT ls_row INTO TABLE ct_rows.
@@ -811,19 +810,19 @@ METHOD row_write_xml.
 
   " Write attributes
   CONCATENATE cv_sheet_data `<row`
-   ` r="`            l_new_row            `"` INTO cv_sheet_data.
+   ` r="`            l_new_row            `"` INTO cv_sheet_data. "#EC NOTEXT
 
   " if im_row->customheight = 1 then height = im_row->ht
   IF is_row->ht IS NOT INITIAL AND is_row->customheight IS NOT INITIAL.
     CONCATENATE cv_sheet_data
     ` customHeight="` is_row->customheight `"`
-    ` ht="`           is_row->ht           `"` INTO cv_sheet_data.
+    ` ht="`           is_row->ht           `"` INTO cv_sheet_data. "#EC NOTEXT
   ENDIF.
 
   " ht = 0
   IF is_row->hidden IS NOT INITIAL.
     CONCATENATE cv_sheet_data
-    ` hidden="`       is_row->hidden       `"` INTO cv_sheet_data.
+    ` hidden="`       is_row->hidden       `"` INTO cv_sheet_data. "#EC NOTEXT
   ENDIF.
 
   " + sign
@@ -836,7 +835,7 @@ METHOD row_write_xml.
 
   IF lv_outline IS NOT INITIAL.
     CONCATENATE cv_sheet_data
-    ` outlineLevel="` lv_outline `"` INTO cv_sheet_data.
+    ` outlineLevel="` lv_outline `"` INTO cv_sheet_data. "#EC NOTEXT
   ENDIF.
 
   " Closing >

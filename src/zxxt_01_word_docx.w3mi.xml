@@ -9,19 +9,19 @@
      <RELID>MI</RELID>
      <OBJID>ZXXT_01_WORD_DOCX</OBJID>
      <NAME>filename</NAME>
-     <VALUE>ZXXT_01_WORD.docx</VALUE>
+     <VALUE>ZXXT_01_WORD.DOCX</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_01_WORD_DOCX</OBJID>
      <NAME>mimetype</NAME>
-     <VALUE>doc</VALUE>
+     <VALUE>docx</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_01_WORD_DOCX</OBJID>
      <NAME>fileextension</NAME>
-     <VALUE>.docx</VALUE>
+     <VALUE>.DOCX</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

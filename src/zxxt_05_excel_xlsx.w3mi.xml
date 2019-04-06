@@ -9,19 +9,19 @@
      <RELID>MI</RELID>
      <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
      <NAME>filename</NAME>
-     <VALUE>ZXXT_05_EXCEL.xlsx</VALUE>
+     <VALUE>ZXXT_05_EXCEL.XLSX</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
      <NAME>mimetype</NAME>
-     <VALUE>xls</VALUE>
+     <VALUE>xlsx</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
      <NAME>fileextension</NAME>
-     <VALUE>.xlsx</VALUE>
+     <VALUE>.XLSX</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

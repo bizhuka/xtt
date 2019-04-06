@@ -7,12 +7,14 @@ CLASS lcl_tree_handler DEFINITION FINAL.
     DATA:
       mt_text_match TYPE zcl_xtt_xml_base=>tt_text_match,
       mo_owner      TYPE REF TO zcl_xtt_xml_base,
-      mv_block_name TYPE string.
+      mv_block_name TYPE string,
+      mv_check_prog TYPE string.
 
     METHODS:
       constructor
         IMPORTING
           io_owner      TYPE REF TO zcl_xtt_xml_base
+          ir_tree       TYPE REF TO zcl_xtt_replace_block=>ts_tree
           iv_block_name TYPE string
           it_text_match TYPE zcl_xtt_xml_base=>tt_text_match,
 

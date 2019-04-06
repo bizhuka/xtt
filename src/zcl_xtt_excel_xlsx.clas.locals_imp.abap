@@ -25,7 +25,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
     " Path to the sheet
     int_2_text iv_ind l_sheet_ind.
-    CONCATENATE `xl/worksheets/sheet` l_sheet_ind `.xml` INTO mv_full_path.
+    CONCATENATE `xl/worksheets/sheet` l_sheet_ind `.xml` INTO mv_full_path. "#EC NOTEXT
 
     " Content as an object
     zcl_xtt_util=>xml_from_zip(
@@ -37,7 +37,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
     " Loop through excels rows
-    lo_row ?= mo_dom->find_from_name( 'row' ).
+    lo_row ?= mo_dom->find_from_name( 'row' ).              "#EC NOTEXT
     WHILE lo_row IS BOUND.
       " Add new row
       zcl_xtt_excel_xlsx=>row_read_xml(
@@ -47,7 +47,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
         ct_rows = mt_rows ).
 
       " Loop through excels cells
-      lo_cell = lo_row->find_from_name( 'c' ).
+      lo_cell = lo_row->find_from_name( 'c' ).              "#EC NOTEXT
       WHILE lo_cell IS BOUND.
         io_xlsx->cell_read_xml(
          EXPORTING
@@ -68,7 +68,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 ***************************************
 
     " Loop through excels columns
-    lo_col ?= mo_dom->find_from_name( 'col' ).
+    lo_col ?= mo_dom->find_from_name( 'col' ).              "#EC NOTEXT
     WHILE lo_col IS BOUND.
       " Add new col
       zcl_xtt_excel_xlsx=>column_read_xml(
@@ -81,10 +81,10 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     ENDWHILE.
 
 ***************************************
-    lo_merge_cell ?= mo_dom->find_from_name( 'mergeCell' ).
+    lo_merge_cell ?= mo_dom->find_from_name( 'mergeCell' ). "#EC NOTEXT
     WHILE lo_merge_cell IS BOUND.
       " Create new area
-      l_val = lo_merge_cell->get_attribute( 'ref' ).
+      l_val = lo_merge_cell->get_attribute( 'ref' ).        "#EC NOTEXT
       CREATE DATA ls_area.
       zcl_xtt_excel_xlsx=>area_read_xml(
          iv_value = l_val
@@ -106,12 +106,12 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     ENDWHILE.
 ***************************************
 
-    lo_data_valid ?= mo_dom->find_from_name( 'dataValidation' ).
+    lo_data_valid ?= mo_dom->find_from_name( 'dataValidation' ). "#EC NOTEXT
     WHILE lo_data_valid IS BOUND.
       APPEND INITIAL LINE TO mt_data_valid REFERENCE INTO ls_area.
 
       " Create new area
-      l_val = lo_data_valid->get_attribute( 'sqref' ).
+      l_val = lo_data_valid->get_attribute( 'sqref' ).      "#EC NOTEXT
       zcl_xtt_excel_xlsx=>area_read_xml(
          iv_value = l_val
          is_area  = ls_area ).
@@ -127,7 +127,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
     " Defined name contains areas
-    mv_name = io_node->get_attribute( `name` ).
+    mv_name = io_node->get_attribute( `name` ).             "#EC NOTEXT
     LOOP AT io_xlsx->mt_defined_names REFERENCE INTO ls_defined_name.
       LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area WHERE a_sheet_name = mv_name.
         " Reference to reference
@@ -140,7 +140,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
     " Find related list objects
-    CONCATENATE `xl/worksheets/_rels/sheet` l_sheet_ind `.xml.rels` INTO l_val.
+    CONCATENATE `xl/worksheets/_rels/sheet` l_sheet_ind `.xml.rels` INTO l_val. "#EC NOTEXT
     io_xlsx->list_object_read_xml(
      EXPORTING
       iv_path        = l_val
@@ -156,7 +156,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
 
-    LOOP AT mt_cells REFERENCE INTO ls_cell WHERE c_value CS `;direction=column`.
+    LOOP AT mt_cells REFERENCE INTO ls_cell WHERE c_value CS `;direction=column`. "#EC NOTEXT
       " Use columns
       lv_ind = sy-fdpos - 1.
       lv_name = ls_cell->c_value+1(lv_ind).
@@ -351,26 +351,26 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 ***************************************
     " Replace existing text
     xml_repleace_node(
-     iv_tag_name  = 'sheetData'
+     iv_tag_name  = 'sheetData'                             "#EC NOTEXT
      iv_repl_text = '_SHEET_DATA_' ).
 
     xml_repleace_node(
-     iv_tag_name  = 'cols'
+     iv_tag_name  = 'cols'                                  "#EC NOTEXT
      iv_repl_text = '_NEW_COLUMNS_' ).
 
     lo_mc = xml_repleace_node(
-     iv_tag_name  = 'mergeCells'
+     iv_tag_name  = 'mergeCells'                            "#EC NOTEXT
      iv_repl_text = '_MERGE_CELLS_' ).
 
     " Change count
     IF lo_mc IS NOT INITIAL AND l_merge_cnt > 0.
       int_2_text l_merge_cnt l_str.
-      lo_mc->set_attribute( name = 'count' value = l_str ).
+      lo_mc->set_attribute( name = 'count' value = l_str ). "#EC NOTEXT
     ENDIF.
 
     " Data validation
     IF mt_data_valid IS NOT INITIAL.
-      lo_data_valid ?= mo_dom->find_from_name( 'dataValidation' ).
+      lo_data_valid ?= mo_dom->find_from_name( 'dataValidation' ). "#EC NOTEXT
       LOOP AT mt_data_valid REFERENCE INTO ls_area.
         CHECK lo_data_valid IS NOT INITIAL.
 
@@ -381,7 +381,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
           is_area     = ls_area
           iv_no_bucks = abap_true ).
 
-        lo_data_valid->set_attribute( name = 'sqref' value = lv_address ).
+        lo_data_valid->set_attribute( name = 'sqref' value = lv_address ). "#EC NOTEXT
 
         " Next
         lo_data_valid ?= lo_data_valid->get_next( ).
@@ -396,10 +396,10 @@ CLASS cl_ex_sheet IMPLEMENTATION.
        ev_str    = l_str ).
 
     " Do replcement
-    REPLACE FIRST OCCURRENCE OF '_SHEET_DATA_'  IN l_str WITH l_sheet_data.
-    REPLACE FIRST OCCURRENCE OF '_NEW_COLUMNS_' IN l_str WITH lv_columns_text.
+    REPLACE FIRST OCCURRENCE OF '_SHEET_DATA_'  IN l_str WITH l_sheet_data. "#EC NOTEXT
+    REPLACE FIRST OCCURRENCE OF '_NEW_COLUMNS_' IN l_str WITH lv_columns_text. "#EC NOTEXT
     IF lo_mc IS NOT INITIAL AND l_merge_cnt > 0.
-      REPLACE FIRST OCCURRENCE OF '_MERGE_CELLS_' IN l_str WITH l_merge_cells.
+      REPLACE FIRST OCCURRENCE OF '_MERGE_CELLS_' IN l_str WITH l_merge_cells. "#EC NOTEXT
     ENDIF.
 
     " Replace XML file
@@ -431,7 +431,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
       " Change area
       lo_table = ls_list_object->dom->get_root_element( ).
-      lo_table->set_attribute( name = 'ref' value = lv_address ).
+      lo_table->set_attribute( name = 'ref' value = lv_address ). "#EC NOTEXT
 
       " Replace in zip
       zcl_xtt_util=>xml_to_zip(
@@ -554,14 +554,14 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       CASE lr_field->typ.
 **********************************************************************
         WHEN zcl_xtt_replace_block=>mc_type_tree.
+          lr_tree ?= lr_field->dref.
 
           CREATE OBJECT lo_tree_handler
             EXPORTING
               io_owner      = me
+              ir_tree       = lr_tree
               iv_block_name = lr_field->name
               it_row_match  = lt_cell_match.
-
-          lr_tree ?= lr_field->dref.
 
           lo_tree_handler->add_tree_data(
            EXPORTING
@@ -740,15 +740,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
         position  TYPE i,       " Excel row Or column
         array_ind TYPE sytabix, " Index in ct_cells[]
       END OF ts_pair,
-      tt_pair TYPE SORTED TABLE OF ts_pair WITH UNIQUE KEY position,
-
-      BEGIN OF ts_row_off,
-        level TYPE i,
-        top   TYPE abap_bool,
-        first TYPE i,
-        last  TYPE i,
-      END OF ts_row_off ,
-      tt_row_off TYPE SORTED TABLE OF ts_row_off WITH UNIQUE KEY level top.
+      tt_pair TYPE SORTED TABLE OF ts_pair WITH UNIQUE KEY position.
 
     DATA:
       lv_ind_beg   TYPE i,
@@ -765,15 +757,13 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lv_offset    TYPE i,
       lv_length    TYPE i,
       lv_text      TYPE string,
-      lt_text      TYPE stringtab,
-      lv_value     TYPE string,
-      ls_row_off   TYPE ts_row_off,
-      lt_row_off   TYPE tt_row_off,
+      lt_row_off   TYPE zcl_xtt_replace_block=>tt_row_offset,
+      ls_row_off   TYPE zcl_xtt_replace_block=>ts_row_offset,
       lv_from      TYPE sytabix,
       ls_row_match TYPE ts_cell_match.
     FIELD-SYMBOLS:
-      <ls_row_off>  TYPE ts_row_off,
-      <ls_row_off2> TYPE ts_row_off.
+      <ls_row_off>  TYPE zcl_xtt_replace_block=>ts_row_offset,
+      <ls_row_off2> TYPE zcl_xtt_replace_block=>ts_row_offset.
 
     " All positions
     CLEAR:
@@ -835,33 +825,13 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lv_text = ls_cell->c_value+lv_offset(lv_length).
 
       " Read from texts
-      SPLIT lv_text AT ';' INTO TABLE lt_text.
-      LOOP AT lt_text INTO lv_text.
-        CLEAR lv_value.
-        SPLIT lv_text AT '=' INTO lv_text lv_value.
-
-        CASE lv_text.
-          WHEN 'level'.
-            ls_row_off-level = lv_value.
-          WHEN 'top'.
-            ls_row_off-top   = lv_value.
-        ENDCASE.
-      ENDLOOP.
-
-      " Exist or new
-      READ TABLE lt_row_off ASSIGNING <ls_row_off>
-       FROM ls_row_off.
-      IF sy-subrc <> 0.
-        CLEAR:
-         ls_row_off-first,
-         ls_row_off-last. " Clear only here !!!
-        INSERT ls_row_off INTO TABLE lt_row_off ASSIGNING <ls_row_off>.
-      ENDIF.
-
-      <ls_row_off>-last = ls_cur_pair-position.
-      IF <ls_row_off>-first IS INITIAL.
-        <ls_row_off>-first = <ls_row_off>-last.
-      ENDIF.
+      zcl_xtt_replace_block=>tree_detect_options(
+       EXPORTING
+         iv_text       = lv_text
+         iv_pos        = ls_cur_pair-position
+       CHANGING
+         cs_row_offset = ls_row_off
+         ct_row_offset = lt_row_off ).
 ***************************
       " TREE end
     ENDLOOP.
@@ -900,8 +870,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lv_ind_end = ls_pair_ref->array_ind.
 
       " And add
-      ls_row_match-level = <ls_row_off>-level.
-      ls_row_match-top   = <ls_row_off>-top.
+      MOVE-CORRESPONDING <ls_row_off> TO ls_row_match.
       APPEND LINES OF ct_cells FROM lv_ind_beg TO lv_ind_end TO ls_row_match-cells.
       INSERT ls_row_match INTO TABLE ct_cell_match.
     ENDLOOP.
@@ -1017,14 +986,22 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     mo_owner      = io_owner.
     mv_block_name = iv_block_name.
     mt_row_match  = it_row_match.
+
+    " If there are dynamic levels
+    zcl_xtt_replace_block=>tree_initialize(
+     EXPORTING
+       ir_tree      = ir_tree
+     IMPORTING
+       ev_program   = mv_check_prog
+     CHANGING
+       ct_row_match = mt_row_match ).
   ENDMETHOD.
 
   METHOD add_tree_data.
     DATA:
       lo_replace_block TYPE REF TO zcl_xtt_replace_block,
-      ls_row_match     TYPE REF TO ts_cell_match,
+      lr_found_match   TYPE REF TO ts_cell_match,
       lv_top           TYPE abap_bool,
-      lv_level_index   TYPE REF TO i,
       lt_row_top       TYPE tt_ex_cell,
       lt_row_bottom    TYPE tt_ex_cell,
       lr_tree_attr     TYPE REF TO zcl_xtt_replace_block=>ts_tree_attr,
@@ -1046,7 +1023,6 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
     " Check amount of level's templates
     lv_templ_lev_cnt = lines( mt_row_match ).
-    CREATE DATA lv_level_index.
     DO 3 TIMES.
       CASE sy-index.
         WHEN 1.
@@ -1063,30 +1039,17 @@ CLASS lcl_tree_handler IMPLEMENTATION.
           lv_top = abap_undefined.
       ENDCASE.
 
-      " What level to use
-      IF lv_top <> abap_undefined.
-        lv_level_index->* = ir_tree->level.
-      ELSE.
-        lv_level_index->* = lines( mt_row_match ).
-      ENDIF.
-
-      " Could change it
-      lo_replace_block->tree_change_level(
-       ir_tree        = ir_tree
-       iv_block_name  = mv_block_name
-       iv_top         = lv_top
-       iv_level_index = lv_level_index ).
-
-      IF lv_top <> abap_undefined.
-        READ TABLE mt_row_match REFERENCE INTO ls_row_match
-         WITH TABLE KEY level = lv_level_index->* top = lv_top.
-      ELSE.
-        READ TABLE mt_row_match REFERENCE INTO ls_row_match INDEX lv_level_index->*.
-      ENDIF.
-      CHECK sy-subrc = 0.
+      " Find match
+      lr_found_match ?= zcl_xtt_replace_block=>tree_find_match(
+         ir_tree        = ir_tree
+         iv_block_name  = mv_block_name
+         iv_top         = lv_top
+         iv_check_prog  = mv_check_prog
+         it_row_match   = mt_row_match ).
+      CHECK lr_found_match IS NOT INITIAL.
 
       " Merge with data
-      <lt_cells>[] = ls_row_match->cells[].
+      <lt_cells>[] = lr_found_match->cells[].
 
       " For new rows only
       IF lv_templ_lev_cnt = 1.

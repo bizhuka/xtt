@@ -27,14 +27,15 @@ METHOD example_08.
       MOVE-CORRESPONDING ls_item->* TO ls_row->*.
     ENDLOOP.
 
-    SET HANDLER on_prepare_tree_05 ACTIVATION abap_true.
+    SET HANDLER on_prepare_tree_05. " ACTIVATION abap_true.
 
     GET REFERENCE OF lt_rows INTO lr_table.
     ls_root-a = zcl_xtt_replace_block=>tree_create(
      it_table      = lr_table       " from 7.5 REF #(lt_rows)
      iv_fields     = 'GROUP'   ).   " Name of the fields delimited by ;
 
-    SET HANDLER on_prepare_tree_05 ACTIVATION abap_false.
+    "  Will call later in MERGE
+    " SET HANDLER on_prepare_tree_05 ACTIVATION abap_false.
   ENDIF.
 
   " Show data structure only

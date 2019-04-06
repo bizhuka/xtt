@@ -214,7 +214,8 @@ METHOD download.
         zcl_xtt_util=>is_common_gui( ) = abap_true.
 
   " Just open
-  IF iv_open <> zcl_xtt=>mc_by_ole.
+  IF  iv_open <> zcl_xtt=>mc_by_ole OR
+    ( iv_open IS NOT INITIAL AND iv_zip = abap_true ). " Open as zip
     cl_gui_cfw=>flush( ).
     cl_gui_frontend_services=>execute(
      EXPORTING

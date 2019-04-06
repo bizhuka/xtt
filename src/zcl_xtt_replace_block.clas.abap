@@ -30,7 +30,6 @@ public section.
       END OF ts_tree .
   types:
     tt_tree TYPE STANDARD TABLE OF REF TO ts_tree WITH DEFAULT KEY .
-
   types:
     BEGIN OF ts_func,
       level  TYPE i,
@@ -39,8 +38,7 @@ public section.
       " fields TYPE SORTED TABLE OF string WITH UNIQUE KEY TABLE_LINE,
     END OF ts_func .
   types:
-    tt_func TYPE SORTED TABLE OF ts_func WITH UNIQUE KEY TABLE_LINE.
-
+    tt_func TYPE SORTED TABLE OF ts_func WITH UNIQUE KEY TABLE_LINE .
   types:
     BEGIN OF ts_tree_group,
       level    TYPE i,
@@ -101,12 +99,7 @@ public section.
     importing
       !IS_BLOCK type ANY optional
       value(IV_BLOCK_NAME) type STRING optional
-      !IS_FIELD type ref to TS_FIELD optional .
-  methods ADD_2_FIELDS
-    importing
-      !IV_NAME type CSEQUENCE
-      !IV_TYPE type CSEQUENCE optional
-      !IS_VALUE type ANY .
+      !IS_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD optional .
   methods FIND_MATCH
     importing
       !IV_SKIP_TAGS type ABAP_BOOL optional
@@ -132,8 +125,7 @@ public section.
       value(RR_ROOT) type ref to DATA
     exceptions
       EX_LOOP_REF
-      EX_KEY_DUPL
-      EX_REF_TO_NOWHERE .
+      EX_KEY_DUPL .
   class-methods TREE_RAISE_PREPARE
     importing
       !IR_TREE type ref to TS_TREE
@@ -167,6 +159,11 @@ private section.
   data MV_BLOCK_BEGIN type STRING .
   class-data MT_FUNC type TT_FUNC .
 
+  methods ADD_2_FIELDS
+    importing
+      !IV_NAME type CSEQUENCE
+      !IV_TYPE type CSEQUENCE optional
+      !IR_VALUE type ref to DATA .
   class-methods CATCH_PREPARE_TREE
     for event PREPARE_TREE of ZCL_XTT_REPLACE_BLOCK
     importing
@@ -182,34 +179,38 @@ CLASS ZCL_XTT_REPLACE_BLOCK IMPLEMENTATION.
 
 METHOD add_2_fields.
   DATA:
-    ls_field   TYPE TS_field,
+    ls_field   TYPE ts_field,
     l_typekind TYPE abap_typekind,
     l_mask     TYPE string.
   FIELD-SYMBOLS:
-   <fs_data>   TYPE any.
+    <lv_value> TYPE any,
+    <fs_data>  TYPE any.
+
+  " Data could be changed
+  ASSIGN ir_value->* TO <lv_value>.
 
   " 1 Detect C_TYPE_* (References)
   ls_field-name = iv_name.
   DESCRIBE FIELD:
-   is_value TYPE      l_typekind,
-   is_value EDIT MASK l_mask.
+   <lv_value> TYPE      l_typekind,
+   <lv_value> EDIT MASK l_mask.
 
   CASE l_typekind.
       " Special case for objects
     WHEN cl_abap_typedescr=>typekind_intf OR cl_abap_typedescr=>typekind_class OR cl_abap_typedescr=>typekind_oref.
-      ls_field-oref = is_value.
+      ls_field-oref = <lv_value>.
       ls_field-typ = zcl_xtt_replace_block=>mc_type_object.
       INSERT ls_field INTO TABLE mt_fields.
       RETURN. " <-- That's all
 
       " Try to detect data
     WHEN cl_abap_typedescr=>typekind_dref.
-      ls_field-dref = is_value.
+      ls_field-dref = <lv_value>.
       ASSIGN ls_field-dref->* TO <fs_data>.  " <-- Usally use dref
       DESCRIBE FIELD <fs_data> TYPE l_typekind.
 
     WHEN OTHERS.
-      GET REFERENCE OF is_value INTO ls_field-dref.
+      ls_field-dref = ir_value.
   ENDCASE.
 
   IF iv_type IS NOT INITIAL.
@@ -325,7 +326,8 @@ METHOD constructor.
     lo_desc         TYPE REF TO cl_abap_typedescr,
     lo_sdesc        TYPE REF TO cl_abap_structdescr,
     lo_odesc        TYPE REF TO cl_abap_objectdescr,
-    lo_ref          TYPE REF TO data,
+    lr_data         TYPE REF TO data,
+    lr_ref          TYPE REF TO data,
     lo_name         TYPE REF TO cl_abap_typedescr,
     lo_block        TYPE REF TO object,
     l_field_name    TYPE string,
@@ -375,8 +377,8 @@ METHOD constructor.
     " 2 Is data ref ?
     TRY.
         lo_desc = cl_abap_typedescr=>describe_by_data_ref( <fs_block> ).
-        lo_ref ?= <fs_block>.
-        ASSIGN lo_ref->* TO <fs_block>.
+        lr_ref ?= <fs_block>.
+        ASSIGN lr_ref->* TO <fs_block>.
       CATCH cx_dynamic_check.
         CLEAR lo_desc.
     ENDTRY.
@@ -432,10 +434,11 @@ METHOD constructor.
       IF l_absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK\TYPE=TS_TREE'.
         is_field->typ = zcl_xtt_replace_block=>mc_type_tree.
 
+        GET REFERENCE OF <fs_block> INTO lr_data.
         me->add_2_fields(
-         iv_name     = iv_block_name
-         iv_type     = is_field->typ
-         is_value    = <fs_block> ).
+           iv_name     = iv_block_name
+           iv_type     = is_field->typ
+           ir_value    = lr_data ).
         RETURN.
       ENDIF.
 **********************************************************************
@@ -447,9 +450,10 @@ METHOD constructor.
         CONCATENATE iv_block_name zcl_xtt_replace_block=>mc_char_name_delimiter <ls_comp>-name INTO l_field_name.
 
         " Insert field to me->fields
+        GET REFERENCE OF <fs_any> INTO lr_data.
         me->add_2_fields(
-         iv_name     = l_field_name
-         is_value    = <fs_any> ).
+          iv_name     = l_field_name
+          ir_value    = lr_data ).
       ENDLOOP.
 
       " Object processed as a structure ↑↑↑
@@ -463,16 +467,18 @@ METHOD constructor.
         CONCATENATE iv_block_name zcl_xtt_replace_block=>mc_char_name_delimiter <ls_attr>-name INTO l_field_name.
 
         " Insert field to me->fields
+        GET REFERENCE OF <fs_any> INTO lr_data.
         me->add_2_fields(
-         iv_name     = l_field_name
-         is_value    = <fs_any> ).
+           iv_name     = l_field_name
+           ir_value    = lr_data ).
       ENDLOOP.
 
     WHEN OTHERS.
       " CL_ABAP_TABLEDESCR, CL_ABAP_ELEMDESCR
+      GET REFERENCE OF <fs_block> INTO lr_data.
       me->add_2_fields(
-       iv_name     = iv_block_name
-       is_value    = <fs_block> ).
+         iv_name     = iv_block_name
+         ir_value    = lr_data ).
   ENDCASE.
 ENDMETHOD.
 
@@ -764,7 +770,7 @@ METHOD tree_create_relat.
     BEGIN OF ts_relat,
       node_key        TYPE string,
       relat_key       TYPE string,
-      relat_not_empty TYPE abap_bool,
+*      relat_not_empty TYPE abap_bool,
       tree            TYPE REF TO ts_tree,
     END OF ts_relat,
     tt_relat TYPE HASHED TABLE OF ts_relat WITH UNIQUE KEY node_key.
@@ -796,9 +802,9 @@ METHOD tree_create_relat.
     ENDIF.
 
     " Is level 0 OR error ?
-    IF <lv_relat_key> IS NOT INITIAL.
-      ls_relat-relat_not_empty = abap_true.
-    ENDIF.
+*    IF <lv_relat_key> IS NOT INITIAL.
+*      ls_relat-relat_not_empty = abap_true.
+*    ENDIF.
 
     ls_relat-node_key  = <lv_node_key>.
     ls_relat-relat_key = <lv_relat_key>.
@@ -825,9 +831,9 @@ METHOD tree_create_relat.
 
     " To level
     IF sy-subrc <> 0.
-      IF <ls_relat>-relat_not_empty = abap_true.
-        RAISE ex_ref_to_nowhere.
-      ENDIF.
+*      IF <ls_relat>-relat_not_empty = abap_true.
+*        RAISE ex_ref_to_nowhere.
+*      ENDIF.
 
       "<ls_relat>-tree->level = 0.
       INSERT <ls_relat>-tree INTO TABLE <lt_tree>.

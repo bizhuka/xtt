@@ -44,7 +44,6 @@ public section.
   methods SHOW
   final .
   methods SEND
-  final
     importing
       !IT_RECIPIENTS type RMPS_RECIPIENT_BCS
       !IV_SUBJECT type SO_OBJ_DES
@@ -281,43 +280,44 @@ METHOD is_web_dynpro.
 ENDMETHOD.
 
 
-  METHOD send.
-    DATA:
-      lo_mail      TYPE REF TO cl_bcs,
-      lo_doc       TYPE REF TO cl_document_bcs,
-      lo_recipient TYPE REF TO if_recipient_bcs,
-      lt_header    TYPE soli_tab,
-      ls_header    TYPE REF TO soli,
-      lv_subject   TYPE sood-objdes,
-      lv_ext       TYPE soodk-objtp,
-      lv_size      TYPE sood-objlen,
-      lv_file_size TYPE i,
-      lt_data      TYPE solix_tab,
-      lo_exp       TYPE REF TO cx_bcs,
-      lv_text      TYPE string,
-      lt_body      TYPE soli_tab,
-      lv_filename  TYPE string,
-      lv_value     TYPE xstring,
-      lv_body      TYPE string.
+METHOD send.
+  DATA:
+    lo_mail      TYPE REF TO cl_bcs,
+    lo_doc       TYPE REF TO cl_document_bcs,
+    lo_recipient TYPE REF TO if_recipient_bcs,
+    lt_header    TYPE soli_tab,
+    ls_header    TYPE REF TO soli,
+    lv_subject   TYPE sood-objdes,
+    lv_ext       TYPE soodk-objtp,
+    lv_size      TYPE sood-objlen,
+    lv_file_size TYPE i,
+    lt_data      TYPE solix_tab,
+    lo_exp       TYPE REF TO cx_bcs,
+    lv_text      TYPE string,
+    lt_body      TYPE soli_tab,
+    lv_value     TYPE xstring,
+    lv_filename  TYPE string,
+    lv_body      TYPE string.
 
-    TRY.
-        lv_value = get_raw( ).
-        " Request
-        lo_mail = cl_bcs=>create_persistent( ).
+  TRY.
+      " Request
+      lo_mail = cl_bcs=>create_persistent( ).
 
-        " Body
-        lv_body = iv_body.
-        lt_body = cl_document_bcs=>string_to_soli( lv_body ).
-        lo_doc = cl_document_bcs=>create_document(
-         i_type    = 'HTM'
-         i_text    = lt_body
-         i_subject = iv_subject ).
+      " Body
+      lv_body = iv_body.
+      lt_body = cl_document_bcs=>string_to_soli( lv_body ).
+      lo_doc = cl_document_bcs=>create_document(
+       i_type    = 'HTM'
+       i_text    = lt_body
+       i_subject = iv_subject ).
 
-        " Add recipients
-        LOOP AT it_recipients INTO lo_recipient.
-          lo_mail->add_recipient( i_recipient = lo_recipient i_express = abap_true ).
-        ENDLOOP.
+      " Add recipients
+      LOOP AT it_recipients INTO lo_recipient.
+        lo_mail->add_recipient( i_recipient = lo_recipient i_express = abap_true ).
+      ENDLOOP.
 
+      " Set to null in children to avoid sending attachment
+      IF mo_file IS NOT INITIAL.
         " File name
         APPEND INITIAL LINE TO lt_header REFERENCE INTO ls_header.
         lv_filename = mo_file->get_name( ).
@@ -331,9 +331,8 @@ ENDMETHOD.
           ev_extension      = lv_ext ). " First 3 chars
         TRANSLATE lv_ext TO UPPER CASE.
 
-        " Convert to proper type
-        lv_subject = lv_filename.
         " Convert to table
+        lv_value = get_raw( ).
         zcl_xtt_util=>xstring_to_binary(
          EXPORTING
            iv_xstring = lv_value
@@ -342,25 +341,29 @@ ENDMETHOD.
            et_table   = lt_data ).
         lv_size = lv_file_size.
 
-        " Attachment
+        " Convert to proper type
+        lv_subject = lv_filename.
+
+        " Add attachment
         lo_doc->add_attachment(
          i_attachment_type    = lv_ext
          i_attachment_subject = lv_subject
          i_attachment_size    = lv_size
          i_att_content_hex    = lt_data
          i_attachment_header  = lt_header ).
+      ENDIF.
 
-        " And send
-        lo_mail->set_document( lo_doc ).
-        lo_mail->set_send_immediately( abap_true ).
-        lo_mail->send( ).
+      " And send
+      lo_mail->set_document( lo_doc ).
+      lo_mail->set_send_immediately( abap_true ).
+      lo_mail->send( ).
 
-        COMMIT WORK AND WAIT.
-      CATCH cx_bcs INTO lo_exp.
-        lv_text = lo_exp->if_message~get_text( ).
-        MESSAGE lv_text TYPE 'E'.
-    ENDTRY.
-  ENDMETHOD.
+      COMMIT WORK AND WAIT.
+    CATCH cx_bcs INTO lo_exp.
+      lv_text = lo_exp->if_message~get_text( ).
+      MESSAGE lv_text TYPE 'E'.
+  ENDTRY.
+ENDMETHOD.
 
 
 METHOD show.

@@ -208,7 +208,7 @@ METHOD do_merge.
 ***************************************
   " merge-2 Structures and objects
   LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE
-   typ = zcl_xtt_replace_block=>mc_type_struct OR typ = zcl_xtt_replace_block=>mc_type_object.
+   typ = zcl_xtt_replace_block=>mc_type_struct OR typ = zcl_xtt_replace_block=>mc_type_object. "#EC CI_SORTSEQ
 
     " Based on nested structure
     CREATE OBJECT lo_new_replace_block
@@ -228,7 +228,7 @@ METHOD do_merge.
 ***************************************
   " merge-3 Array types
   LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
-                                                                 OR typ = zcl_xtt_replace_block=>mc_type_tree.
+                                                                 OR typ = zcl_xtt_replace_block=>mc_type_tree. "#EC CI_SORTSEQ
     " if root is a table
     CLEAR:
      lv_before,

@@ -98,7 +98,7 @@ public section.
   methods CONSTRUCTOR
     importing
       !IS_BLOCK type ANY optional
-      value(IV_BLOCK_NAME) type STRING optional
+      !IV_BLOCK_NAME type STRING optional
       !IS_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD optional .
   methods FIND_MATCH
     importing
@@ -323,6 +323,7 @@ ENDMETHOD.
 
 METHOD constructor.
   DATA:
+    lv_block_name   LIKE iv_block_name,
     lo_desc         TYPE REF TO cl_abap_typedescr,
     lo_sdesc        TYPE REF TO cl_abap_structdescr,
     lo_odesc        TYPE REF TO cl_abap_objectdescr,
@@ -340,12 +341,13 @@ METHOD constructor.
     <ls_attr>  TYPE abap_attrdescr.
 
   " For nested structures
+  lv_block_name = iv_block_name.
   IF is_field IS NOT SUPPLIED.
     " Work by field symbol
     ASSIGN is_block TO <fs_block>.
   ELSE.
     " ROOT-FIELD1...
-    iv_block_name = is_field->name.
+    lv_block_name = is_field->name.
 
     " Objects
     IF is_field->oref IS NOT INITIAL.
@@ -356,13 +358,13 @@ METHOD constructor.
   ENDIF.
 
   " What will search in template. At first '{ROOT-'
-  CONCATENATE zcl_xtt_replace_block=>mc_char_block_begin iv_block_name INTO mv_block_begin.
+  CONCATENATE zcl_xtt_replace_block=>mc_char_block_begin lv_block_name INTO mv_block_begin.
 
   " 1 Is data (The most common)
   TRY.
       lo_desc = cl_abap_typedescr=>describe_by_data( <fs_block> ).
     CATCH cx_dynamic_check.
-      MESSAGE x003(zsy_xtt) WITH iv_block_name.
+      MESSAGE x003(zsy_xtt) WITH lv_block_name.
   ENDTRY.
 
   " Description of description :)
@@ -399,7 +401,7 @@ METHOD constructor.
 
   " Skip ?
   IF lo_desc IS INITIAL.
-    lv_name = iv_block_name.
+    lv_name = lv_block_name.
     IF lv_name IS INITIAL AND is_field IS NOT INITIAL.
       lv_name = is_field->name.
     ENDIF.
@@ -436,7 +438,7 @@ METHOD constructor.
 
         GET REFERENCE OF <fs_block> INTO lr_data.
         me->add_2_fields(
-           iv_name     = iv_block_name
+           iv_name     = lv_block_name
            iv_type     = is_field->typ
            ir_value    = lr_data ).
         RETURN.
@@ -447,7 +449,7 @@ METHOD constructor.
       LOOP AT lo_sdesc->components ASSIGNING <ls_comp>.
         " Name and data
         ASSIGN COMPONENT sy-tabix OF STRUCTURE <fs_block> TO <fs_any>.
-        CONCATENATE iv_block_name zcl_xtt_replace_block=>mc_char_name_delimiter <ls_comp>-name INTO l_field_name.
+        CONCATENATE lv_block_name zcl_xtt_replace_block=>mc_char_name_delimiter <ls_comp>-name INTO l_field_name.
 
         " Insert field to me->fields
         GET REFERENCE OF <fs_any> INTO lr_data.
@@ -464,7 +466,7 @@ METHOD constructor.
       LOOP AT lo_odesc->attributes ASSIGNING <ls_attr> WHERE visibility = cl_abap_objectdescr=>public.
         " Name and data
         ASSIGN lo_block->(<ls_attr>-name) TO <fs_any>.
-        CONCATENATE iv_block_name zcl_xtt_replace_block=>mc_char_name_delimiter <ls_attr>-name INTO l_field_name.
+        CONCATENATE lv_block_name zcl_xtt_replace_block=>mc_char_name_delimiter <ls_attr>-name INTO l_field_name.
 
         " Insert field to me->fields
         GET REFERENCE OF <fs_any> INTO lr_data.
@@ -477,7 +479,7 @@ METHOD constructor.
       " CL_ABAP_TABLEDESCR, CL_ABAP_ELEMDESCR
       GET REFERENCE OF <fs_block> INTO lr_data.
       me->add_2_fields(
-         iv_name     = iv_block_name
+         iv_name     = lv_block_name
          ir_value    = lr_data ).
   ENDCASE.
 ENDMETHOD.
@@ -1138,7 +1140,7 @@ METHOD tree_initialize.
 
   GENERATE SUBROUTINE POOL lt_code NAME ev_program
     MESSAGE lv_message
-    LINE lv_pos. " <--- in lt_code[]
+    LINE lv_pos. "#EC CI_GENERATE. <--- in lt_code[]
 
   " Ooops! wrong syntax in if_show of if_hide!
   IF sy-subrc <> 0.

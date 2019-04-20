@@ -4,7 +4,7 @@
 CLASS cl_main IMPLEMENTATION.
   METHOD constructor.
     DATA:
-      lt_obj_name   TYPE STANDARD TABLE OF tadir-obj_name,
+      lt_wwwdata    TYPE STANDARD TABLE OF wwwdata WITH DEFAULT KEY,
       lv_grp        TYPE num2,
       lv_prev_grp   TYPE num2,
       lv_number     TYPE num2,
@@ -13,7 +13,7 @@ CLASS cl_main IMPLEMENTATION.
       ls_list       TYPE REF TO vrm_value,
       lv_desc       TYPE string.
     FIELD-SYMBOLS:
-      <lv_obj_name>   LIKE LINE OF lt_obj_name.
+      <ls_wwwdata>  LIKE LINE OF lt_wwwdata.
 
     DEFINE add_to_list.
       APPEND INITIAL LINE TO lt_list REFERENCE INTO ls_list.
@@ -27,24 +27,18 @@ CLASS cl_main IMPLEMENTATION.
     END-OF-DEFINITION.
 
     " Parameter settings for Web Reporting
-    SELECT obj_name INTO TABLE lt_obj_name
-    FROM tadir
-    WHERE pgmid    = 'R3TR'
-      AND object   = 'W3MI'
-      AND devclass IN ( SELECT DISTINCT devclass
-                        FROM tadir
-                        WHERE pgmid    = 'R3TR'
-                          AND object   = 'PROG'
-                          AND obj_name = 'Z_XTT_INDEX' )
-    ORDER BY obj_name.
+    SELECT DISTINCT objid text INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata
+    FROM wwwdata
+    WHERE objid LIKE 'ZXXT_%'
+    ORDER BY objid.
 
     " Fill examples
-    LOOP AT lt_obj_name ASSIGNING <lv_obj_name>.
+    LOOP AT lt_wwwdata ASSIGNING <ls_wwwdata>.
       CLEAR:
        lv_desc,
        ls_screen_opt.
-      lv_grp = <lv_obj_name>+5(2).
-      ls_screen_opt-template = <lv_obj_name>.
+      lv_grp = <ls_wwwdata>-objid+5(2).
+      ls_screen_opt-template = <ls_wwwdata>-objid.
 
       " New example group
       IF lv_grp <> lv_prev_grp.
@@ -53,64 +47,35 @@ CLASS cl_main IMPLEMENTATION.
         add_to_list '---------------------------------------'.
       ENDIF.
 
-      IF <lv_obj_name> CP '*_DOC*'.
+      IF <ls_wwwdata>-objid CP '*_DOC*'.
         ls_screen_opt-class_name = 'ZCL_XTT_WORD_DOCX'.
         lv_desc                  = 'Word'.
 
-      ELSEIF <lv_obj_name> CP '*_XLS*'.
+      ELSEIF <ls_wwwdata>-objid CP '*_XLS*'.
         ls_screen_opt-class_name = 'ZCL_XTT_EXCEL_XLSX'.
         lv_desc                  = 'Excel'.
 
-      ELSEIF <lv_obj_name> CP '*WORD*_XML'.
+      ELSEIF <ls_wwwdata>-objid CP '*WORD*_XML'.
         ls_screen_opt-class_name = 'ZCL_XTT_WORD_XML'.
         lv_desc                  = 'Word XML'.
         ls_screen_opt-show_zip = abap_true.
 
-      ELSEIF <lv_obj_name> CP '*EXCEL*_XML'.
+      ELSEIF <ls_wwwdata>-objid CP '*EXCEL*_XML'.
         ls_screen_opt-class_name = 'ZCL_XTT_EXCEL_XML'.
         lv_desc                  = 'Excel XML'.
         ls_screen_opt-show_zip = abap_true.
 
-      ELSEIF <lv_obj_name> CP '*_PDF' OR <lv_obj_name> CP '*_XDP'.
+      ELSEIF <ls_wwwdata>-objid CP '*_PDF' OR <ls_wwwdata>-objid CP '*_XDP'.
         ls_screen_opt-class_name = 'ZCL_XTT_PDF'.
         lv_desc                  = 'Adobe PDF'.
 
-      ELSEIF <lv_obj_name> CP '*_HTM*'.
+      ELSEIF <ls_wwwdata>-objid CP '*_HTM*'.
         ls_screen_opt-class_name = 'ZCL_XTT_HTML'.
         lv_desc                  = 'Html'.
       ENDIF.
 
-      CASE lv_grp.
-        WHEN 01.
-          add_to_list 'Simple structure'(t01).
-
-        WHEN 02.
-          add_to_list 'Basic table example'(t02).
-          ls_screen_opt-show_row_count = abap_true.
-
-        WHEN 03.
-          add_to_list 'Nested blocks'(t03).
-          ls_screen_opt-show_row_count   = abap_true.
-          ls_screen_opt-show_block_count = abap_true.
-
-        WHEN 04.
-          add_to_list 'Data types & Exel post processing'(t04).
-
-        WHEN 05.
-          add_to_list 'Tree (group by fields)'(t05).
-          ls_screen_opt-show_row_count   = abap_true.
-
-        WHEN 06.
-          add_to_list 'Tree (group by field relations)'(t06).
-
-        WHEN 07.
-          add_to_list 'Macro call (do not recommended) & prepare_raw event (recommended)'(t07).
-
-        WHEN 08.
-          add_to_list ';direction=column addition'(t08).
-          ls_screen_opt-show_row_count   = abap_true.
-
-      ENDCASE.
+      " Add with description
+      add_to_list <ls_wwwdata>-text.
 
       " And add
       ls_screen_opt-key = ls_list->key.
@@ -127,7 +92,7 @@ CLASS cl_main IMPLEMENTATION.
     SELECT SINGLE adr6~smtp_addr INTO p_email
     FROM adr6
     INNER JOIN usr21 ON usr21~addrnumber = adr6~addrnumber AND usr21~persnumber = adr6~persnumber
-    WHERE usr21~bname = sy-uname.
+    WHERE usr21~bname = sy-uname.                          "#EC WARN_OK
 
     " First item
     p_exa = '01-00'.

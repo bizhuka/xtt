@@ -107,6 +107,7 @@
    <CUA>
     <ADM>
      <ACTCODE>000001</ACTCODE>
+     <MENCODE>000012</MENCODE>
      <PFKCODE>000001</PFKCODE>
     </ADM>
     <STA>
@@ -133,6 +134,7 @@
       <TYPE>E</TYPE>
       <TEXT_TYPE>S</TEXT_TYPE>
       <FUN_TEXT>Exit</FUN_TEXT>
+      <PATH>X</PATH>
      </RSMPE_FUNT>
      <RSMPE_FUNT>
       <CODE>EXIT</CODE>
@@ -144,6 +146,36 @@
       <FUN_TEXT>Cancel</FUN_TEXT>
      </RSMPE_FUNT>
     </FUN>
+    <MEN>
+     <RSMPE_MEN>
+      <CODE>000012</CODE>
+      <NO>01</NO>
+      <REF_TYPE>F</REF_TYPE>
+      <REF_CODE>EXIT</REF_CODE>
+      <REF_NO>001</REF_NO>
+     </RSMPE_MEN>
+    </MEN>
+    <MTX>
+     <RSMPE_MNLT>
+      <CODE>000011</CODE>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT>-</TEXT>
+      <PATH>-</PATH>
+     </RSMPE_MNLT>
+     <RSMPE_MNLT>
+      <CODE>000012</CODE>
+      <TEXT_TYPE>S</TEXT_TYPE>
+      <TEXT>Exit</TEXT>
+      <PATH>E</PATH>
+     </RSMPE_MNLT>
+    </MTX>
+    <ACT>
+     <RSMPE_ACT>
+      <CODE>000001</CODE>
+      <NO>01</NO>
+      <MENUCODE>000012</MENUCODE>
+     </RSMPE_ACT>
+    </ACT>
     <PFK>
      <RSMPE_PFK>
       <CODE>000001</CODE>

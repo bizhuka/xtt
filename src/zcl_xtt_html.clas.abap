@@ -58,7 +58,9 @@ METHOD send.
   super->send(
     it_recipients = it_recipients
     iv_subject    = iv_subject
-    iv_body       = lv_body ).
+    iv_body       = lv_body
+    iv_express    = iv_express
+    io_sender     = io_sender ).
 
   " Set it back
   IF lo_file IS NOT INITIAL.

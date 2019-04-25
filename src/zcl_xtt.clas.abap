@@ -47,7 +47,9 @@ public section.
     importing
       !IT_RECIPIENTS type RMPS_RECIPIENT_BCS
       !IV_SUBJECT type SO_OBJ_DES
-      !IV_BODY type CSEQUENCE .
+      !IV_BODY type CSEQUENCE
+      !IV_EXPRESS type ABAP_BOOL default ABAP_TRUE
+      !IO_SENDER type ref to IF_SENDER_BCS optional .
 protected section.
   data MO_FILE type ref to ZIF_XTT_FILE .
 private section.
@@ -313,7 +315,7 @@ METHOD send.
 
       " Add recipients
       LOOP AT it_recipients INTO lo_recipient.
-        lo_mail->add_recipient( i_recipient = lo_recipient i_express = abap_true ).
+        lo_mail->add_recipient( i_recipient = lo_recipient i_express = iv_express ).
       ENDLOOP.
 
       " Set to null in children to avoid sending attachment
@@ -351,6 +353,11 @@ METHOD send.
          i_attachment_size    = lv_size
          i_att_content_hex    = lt_data
          i_attachment_header  = lt_header ).
+      ENDIF.
+
+      " TODO event ?
+      IF io_sender IS NOT INITIAL.
+        lo_mail->set_sender( io_sender ).
       ENDIF.
 
       " And send

@@ -30,7 +30,7 @@ CLASS cl_main IMPLEMENTATION.
     SELECT DISTINCT objid text INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata
     FROM wwwdata
     WHERE objid LIKE 'ZXXT_%'
-    ORDER BY objid.
+    ORDER BY objid. "#EC CI_NOFIRST
 
     " Fill examples
     LOOP AT lt_wwwdata ASSIGNING <ls_wwwdata>.

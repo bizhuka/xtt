@@ -85,6 +85,7 @@ private section.
   data MV_PATH_IN_ARC type STRING .
   data MV_SKIP_TAGS type ABAP_BOOL .
   data MO_ZIP type ref to CL_ABAP_ZIP .
+  data MV_IS_TABLE type ABAP_BOOL .
 ENDCLASS.
 
 
@@ -374,7 +375,31 @@ ENDMETHOD.
 
 METHOD get_raw.
   DATA:
-   lr_content TYPE REF TO xstring.
+    lr_content TYPE REF TO xstring,
+    lv_len     TYPE i,
+    lt_match   TYPE match_result_tab,
+    ls_match   TYPE REF TO match_result.
+
+  " for Word format only
+  DO 1 TIMES.
+    CHECK mv_is_table = abap_true
+     AND mv_body_tag = 'w:body'
+     AND mv_row_tag  = 'w:tr'.
+
+    " Delete last page break
+    FIND ALL OCCURRENCES OF '<w:br w:type="page"/>' IN mv_file_content RESULTS lt_match.
+    CHECK sy-subrc = 0.
+
+    " Last OCCURRENCES OF page-break
+    lv_len = lines( lt_match ).
+    READ TABLE lt_match REFERENCE INTO ls_match INDEX lv_len.
+    CHECK sy-subrc = 0.
+
+    lv_len = ls_match->offset + ls_match->length.
+    CONCATENATE
+     mv_file_content(ls_match->offset)
+     mv_file_content+lv_len INTO mv_file_content.
+  ENDDO.
 
   IF mv_path_in_arc IS INITIAL.
     " Can convert XML or HTML result to pdf or attach to email for example
@@ -402,7 +427,6 @@ METHOD merge.
   DATA:
     lo_replace_block        TYPE REF TO zcl_xtt_replace_block,
     lv_typekind             TYPE abap_typekind,
-    lv_first_level_is_table TYPE abap_bool,
     lv_before               TYPE string,
     lv_after                TYPE string.
 
@@ -415,13 +439,13 @@ METHOD merge.
   " Special case
   DESCRIBE FIELD is_block TYPE lv_typekind.
   IF lv_typekind = cl_abap_typedescr=>typekind_table.
-    lv_first_level_is_table = abap_true.
+    mv_is_table = abap_true.
   ENDIF.
 
   " Divide to 3 parts
   split_by_tag(
    EXPORTING
-    iv_first_level_is_table = lv_first_level_is_table
+    iv_first_level_is_table = mv_is_table
     iv_tag                  = mv_body_tag
     iv_block_name           = iv_block_name
    CHANGING
@@ -432,7 +456,7 @@ METHOD merge.
   " Update middle part (Body)
   do_merge(
    EXPORTING
-    iv_first_level_is_table = lv_first_level_is_table
+    iv_first_level_is_table = mv_is_table
     io_replace_block        = lo_replace_block
    CHANGING
     cv_content              = mv_file_content ).

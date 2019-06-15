@@ -395,6 +395,7 @@ METHOD get_raw.
     READ TABLE lt_match REFERENCE INTO ls_match INDEX lv_len.
     CHECK sy-subrc = 0.
 
+    " Delete last '<w:br w:type="page"/>'
     lv_len = ls_match->offset + ls_match->length.
     CONCATENATE
      mv_file_content(ls_match->offset)

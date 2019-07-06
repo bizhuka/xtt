@@ -30,7 +30,7 @@ CLASS cl_main IMPLEMENTATION.
     SELECT DISTINCT objid text INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata
     FROM wwwdata
     WHERE objid LIKE 'ZXXT_%'
-    ORDER BY objid. "#EC CI_NOFIRST
+    ORDER BY objid.                                     "#EC CI_NOFIRST
 
     " Fill examples
     LOOP AT lt_wwwdata ASSIGNING <ls_wwwdata>.
@@ -73,6 +73,22 @@ CLASS cl_main IMPLEMENTATION.
         ls_screen_opt-class_name = 'ZCL_XTT_HTML'.
         lv_desc                  = 'Html'.
       ENDIF.
+
+      " Additional parameters
+      CASE lv_grp.
+        WHEN 02.
+          ls_screen_opt-show_row_count = abap_true.
+
+        WHEN 03.
+          ls_screen_opt-show_row_count   = abap_true.
+          ls_screen_opt-show_block_count = abap_true.
+
+        WHEN 05.
+          ls_screen_opt-show_row_count   = abap_true.
+
+        WHEN 08.
+          ls_screen_opt-show_row_count   = abap_true.
+      ENDCASE.
 
       " Add with description
       add_to_list <ls_wwwdata>-text.

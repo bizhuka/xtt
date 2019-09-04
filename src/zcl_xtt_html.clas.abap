@@ -56,11 +56,13 @@ METHOD send.
   ENDIF.
 
   super->send(
-    it_recipients = it_recipients
-    iv_subject    = iv_subject
-    iv_body       = lv_body
-    iv_express    = iv_express
-    io_sender     = io_sender ).
+    it_recipients     = it_recipients
+    it_recipients_bcs = it_recipients_bcs
+    iv_subject        = iv_subject
+    iv_body           = lv_body
+    iv_express        = iv_express
+    io_sender         = io_sender
+    iv_commit         = iv_commit ).
 
   " Set it back
   IF lo_file IS NOT INITIAL.

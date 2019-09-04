@@ -7,6 +7,17 @@ public section.
   type-pools ABAP .
   type-pools OLE2 .
 
+  types:
+    BEGIN OF TS_RECIPIENT_BCS,
+      RECIPIENT  TYPE REF TO IF_RECIPIENT_BCS,
+      EXPRESS    TYPE OS_BOOLEAN,
+      COPY       TYPE OS_BOOLEAN,
+      BLIND_COPY TYPE OS_BOOLEAN,
+      NO_FORWARD TYPE OS_BOOLEAN,
+   END OF TS_RECIPIENT_BCS .
+  types:
+    TT_RECIPIENTS_BCS type STANDARD TABLE OF TS_RECIPIENT_BCS WITH DEFAULT KEY .
+
   constants MC_BY_OLE type STRING value 'BY_OLE' ##NO_TEXT.
 
   class-events PBO
@@ -45,11 +56,13 @@ public section.
   final .
   methods SEND
     importing
-      !IT_RECIPIENTS type RMPS_RECIPIENT_BCS
+      !IT_RECIPIENTS type RMPS_RECIPIENT_BCS optional
+      !IT_RECIPIENTS_BCS type TT_RECIPIENTS_BCS optional
       !IV_SUBJECT type SO_OBJ_DES
       !IV_BODY type CSEQUENCE
       !IV_EXPRESS type ABAP_BOOL default ABAP_TRUE
-      !IO_SENDER type ref to IF_SENDER_BCS optional .
+      !IO_SENDER type ref to IF_SENDER_BCS optional
+      !IV_COMMIT type ABAP_BOOL default ABAP_FALSE .
 protected section.
   data MO_FILE type ref to ZIF_XTT_FILE .
 private section.
@@ -300,6 +313,8 @@ METHOD send.
     lv_value     TYPE xstring,
     lv_filename  TYPE string,
     lv_body      TYPE string.
+  FIELD-SYMBOLS:
+    <ls_recipient> LIKE LINE OF it_recipients_bcs.
 
   TRY.
       " Request
@@ -313,9 +328,19 @@ METHOD send.
        i_text    = lt_body
        i_subject = iv_subject ).
 
-      " Add recipients
+      " № 1 - Add recipients
       LOOP AT it_recipients INTO lo_recipient.
         lo_mail->add_recipient( i_recipient = lo_recipient i_express = iv_express ).
+      ENDLOOP.
+
+      " № 2 - Add recipients
+      LOOP AT it_recipients_bcs ASSIGNING <ls_recipient>.
+        lo_mail->add_recipient(
+          i_recipient  = <ls_recipient>-recipient
+          i_express    = <ls_recipient>-express
+          i_copy       = <ls_recipient>-copy
+          i_blind_copy = <ls_recipient>-blind_copy
+          i_no_forward = <ls_recipient>-no_forward ).
       ENDLOOP.
 
       " Set to null in children to avoid sending attachment
@@ -355,7 +380,7 @@ METHOD send.
          i_attachment_header  = lt_header ).
       ENDIF.
 
-      " TODO event ?
+      " Change sender if necessary
       IF io_sender IS NOT INITIAL.
         lo_mail->set_sender( io_sender ).
       ENDIF.
@@ -365,7 +390,10 @@ METHOD send.
       lo_mail->set_send_immediately( abap_true ).
       lo_mail->send( ).
 
-      COMMIT WORK AND WAIT.
+      " Sometimes force send email
+      IF iv_commit = abap_true.
+        COMMIT WORK AND WAIT.
+      ENDIF.
     CATCH cx_bcs INTO lo_exp.
       lv_text = lo_exp->if_message~get_text( ).
       MESSAGE lv_text TYPE 'E'.

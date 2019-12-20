@@ -16,14 +16,14 @@ CLASS lcl_main IMPLEMENTATION.
       ls_handle      TYPE cntl_handle.
 
     DO 1 TIMES.
+      " Set default status. thanks to monty79
+      SET PF-STATUS 'STATUS_100'.
+
       " Create 1 time only
       CHECK mo_cont IS INITIAL.
       CREATE OBJECT mo_cont
         EXPORTING
           container_name = 'EMPTY_AREA'.
-
-      " Set default status
-      SET PF-STATUS 'STATUS_100'.
 
       " Convert to table
       lv_data = sender->get_raw( ).

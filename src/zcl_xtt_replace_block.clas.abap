@@ -57,6 +57,8 @@ public section.
     END OF ts_row_offset .
   types:
     tt_row_offset TYPE SORTED TABLE OF ts_row_offset WITH UNIQUE KEY level top if_where .
+  types:
+    tt_std_ref_data TYPE STANDARD TABLE OF REF TO DATA .
 
   constants MC_CHAR_BLOCK_BEGIN type CHAR1 value '{' ##NO_TEXT.
   constants MC_CHAR_BLOCK_END type CHAR1 value '}' ##NO_TEXT.
@@ -87,7 +89,8 @@ public section.
     exporting
       value(IR_TREE) type ref to TS_TREE
       value(IR_DATA) type ref to DATA
-      value(IR_SUB_DATA) type ref to DATA optional .
+      value(IR_SUB_DATA) type ref to DATA optional
+      value(IT_SUB_DATA_REF) type TT_STD_REF_DATA optional .
   class-events ON_TREE_CHANGE_LEVEL
     exporting
       value(IR_TREE) type ref to ZCL_XTT_REPLACE_BLOCK=>TS_TREE
@@ -588,6 +591,9 @@ METHOD get_as_string.
     <l_date>   TYPE d,
     <l_time>   TYPE t.
 
+  " Just skip
+  CHECK is_field->dref IS NOT INITIAL OR is_field->oref IS NOT INITIAL.
+
   " Convert field to a string
   CASE is_field->typ.
       " String
@@ -1081,7 +1087,7 @@ METHOD tree_initialize.
 
         " Use mask and don't delete dots in ZCL_XTT_REPLACE_BLOCK=>get_as_string
       WHEN cl_abap_typedescr=>typekind_num OR cl_abap_typedescr=>typekind_numeric.
-        CONCATENATE ` n LENGTH ` lv_len ` DECIMALS ` lv_dec INTO lv_type. "#EC NOTEXT
+        CONCATENATE ` n LENGTH ` lv_len INTO lv_type. "#EC NOTEXT   thanks to Zhukov, Evgenii  No need ` DECIMALS ` lv_dec
 
         " Double
       WHEN cl_abap_typedescr=>typekind_packed OR cl_abap_typedescr=>typekind_float OR
@@ -1151,9 +1157,10 @@ ENDMETHOD.
 
 METHOD tree_raise_prepare.
   DATA:
-    ls_tree  TYPE REF TO zcl_xtt_replace_block=>ts_tree,
-    lr_table TYPE REF TO data,
-    lv_level TYPE i.
+    ls_tree      TYPE REF TO zcl_xtt_replace_block=>ts_tree,
+    lr_table     TYPE REF TO data,
+    lr_table_ref TYPE zcl_xtt_replace_block=>tt_std_ref_data, " For data changing
+    lv_level     TYPE i.
   FIELD-SYMBOLS:
     <ls_tree_attr> TYPE zcl_xtt_replace_block=>ts_tree_attr,
     <ls_sub_tree>  TYPE zcl_xtt_replace_block=>ts_tree,
@@ -1185,15 +1192,19 @@ METHOD tree_raise_prepare.
       ASSIGN <ls_tree_attr>-attr->* TO <ls_sub_tree>.
       ASSIGN <ls_sub_tree>-data->* TO <ls_row>.
 
-      APPEND <ls_row> TO <lt_std_table>.
+      " 2 kinds
+      APPEND:
+       <ls_row>           TO <lt_std_table>, " Copy of data (convenient for handler to process)
+       <ls_sub_tree>-data TO lr_table_ref.   " Original refs to data (to change it in handler)
     ENDLOOP.
   ENDIF.
 
   " Own call
   RAISE EVENT prepare_tree
    EXPORTING
-     ir_tree     = ir_tree
-     ir_data     = ir_tree->data
-     ir_sub_data = lr_table.
+     ir_tree         = ir_tree
+     ir_data         = ir_tree->data
+     ir_sub_data     = lr_table
+     it_sub_data_ref = lr_table_ref.
 ENDMETHOD.
 ENDCLASS.

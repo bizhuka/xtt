@@ -11,35 +11,32 @@ public section.
   methods CONSTRUCTOR
     importing
       !IV_CLASSNAME type SBDST_CLASSNAME
-      !IV_CLASSTYPE type SBDST_CLASSTYPE optional
+      !IV_CLASSTYPE type SBDST_CLASSTYPE default 'OT'
       !IV_OBJECT_KEY type SBDST_OBJECT_KEY
-      !IV_ARCHIV_LINK type ABAP_BOOL default ABAP_FALSE
-      !IV_FILENAME type CSEQUENCE optional
-      !IV_DESCRIPTION type CSEQUENCE optional
-      !IV_LANGUAGE type CSEQUENCE optional
-      !IV_VERSION type BAPISIGNAT-DOC_VER_NO optional .
+      !IV_FILENAME type CSEQUENCE .
 protected section.
-private section.
+PRIVATE SECTION.
 
-  types:
-    BEGIN OF ty_signature,
-    objid             TYPE bapicompo2-objid,
-    file_name         TYPE bapicompo2-file_name,
-    doc_ver_no        TYPE bapisignat-doc_ver_no,
-    doc_id            TYPE bapisignat-doc_id,
+  TYPES:
+    BEGIN OF ts_signature,
+      objid            TYPE bapicompo2-objid,
+      file_name        TYPE bapicompo2-file_name,
+      doc_ver_no       TYPE bapisignat-doc_ver_no,
+      doc_id           TYPE bapisignat-doc_id,
+      class            TYPE sdok_class,
 *    bds_documenttype  TYPE string,
 *    bds_documentclass TYPE string,
 *    created_at        TYPE string,
 *    created_by        TYPE string,
-    description       TYPE string,
-    language          TYPE string,
+      description      TYPE string,
+      language         TYPE string,
 *    last_changed_at   TYPE string,
 *    last_changed_by   TYPE string,
 *    state             TYPE string,
-    storage_category  TYPE TEXT128,
-   END OF ty_signature .
+      storage_category TYPE text128,
+    END OF ts_signature.
 
-  data MS_SIGNATURE type TY_SIGNATURE .
+  DATA ms_signature TYPE ts_signature.
 ENDCLASS.
 
 
@@ -49,54 +46,54 @@ CLASS ZCL_XTT_FILE_OAOR IMPLEMENTATION.
 
 METHOD constructor.
   DATA:
-    lt_signature         TYPE STANDARD TABLE OF ty_signature,
-    ls_signature         TYPE REF TO ty_signature,
+    lt_signature         TYPE STANDARD TABLE OF ts_signature,
+    ls_signature         TYPE REF TO ts_signature,
 
     lt_sbdst_signature   TYPE sbdst_signature,
     ls_sbdst_signature   TYPE REF TO bapisignat,
     lt_sbdst_components2 TYPE sbdst_components2,
     ls_sbdst_components2 TYPE REF TO bapicompo2,
-    lt_connect           TYPE srm_bdsconn_t,
-    ls_connect           TYPE REF TO bapiconnec,
-    lv_maxver            LIKE iv_version,
-    lv_type              TYPE toav0-sap_object,
-    lv_objid             TYPE toav0-object_id,
-    lt_conn              TYPE STANDARD TABLE OF toav0,
-    ls_conn              TYPE REF TO toav0,
+*    lt_connect           TYPE srm_bdsconn_t,
+*    ls_connect           TYPE REF TO bapiconnec,
+*    lv_maxver            LIKE iv_version,
+*    lv_type              TYPE toav0-sap_object,
+*    lv_objid             TYPE toav0-object_id,
+*    lt_conn              TYPE STANDARD TABLE OF toav0,
+*    ls_conn              TYPE REF TO toav0,
     lv_cnt               TYPE i.
   FIELD-SYMBOLS:
    <l_val>               TYPE csequence.
 
-  " Special case for archive link or GOS(Generic Object Services)
-  IF iv_archiv_link = abap_true.
-    lv_type  = iv_classname.
-    lv_objid = iv_object_key.
-    CALL FUNCTION 'ARCHIV_GET_CONNECTIONS'
-      EXPORTING
-        objecttype    = lv_type
-        object_id     = lv_objid
-      TABLES
-        connections   = lt_conn
-      EXCEPTIONS
-        OTHERS        = 2.
-    CHECK sy-subrc = 0.
-
-    " Get last one
-    SORT lt_conn BY ar_date.
-    lv_cnt = lines( lt_conn ).
-    READ TABLE lt_conn REFERENCE INTO ls_conn INDEX lv_cnt.
-
-    " Last version by date
-    IF sy-subrc = 0.
-      ms_signature-storage_category = ls_conn->archiv_id.
-      ms_signature-objid            = ls_conn->arc_doc_id.
-
-      " TODO only from importing parameter
-      ms_signature-file_name        = iv_filename.
-    ENDIF.
-
-    RETURN.
-  ENDIF.
+*  " Special case for archive link or GOS(Generic Object Services)
+*  IF iv_archiv_link = abap_true.
+*    lv_type  = iv_classname.
+*    lv_objid = iv_object_key.
+*    CALL FUNCTION 'ARCHIV_GET_CONNECTIONS'
+*      EXPORTING
+*        objecttype    = lv_type
+*        object_id     = lv_objid
+*      TABLES
+*        connections   = lt_conn
+*      EXCEPTIONS
+*        OTHERS        = 2.
+*    CHECK sy-subrc = 0.
+*
+*    " Get last one
+*    SORT lt_conn BY ar_date.
+*    lv_cnt = lines( lt_conn ).
+*    READ TABLE lt_conn REFERENCE INTO ls_conn INDEX lv_cnt.
+*
+*    " Last version by date
+*    IF sy-subrc = 0.
+*      ms_signature-storage_category = ls_conn->archiv_id.
+*      ms_signature-objid            = ls_conn->arc_doc_id.
+*
+*      " TODO only from importing parameter
+*      ms_signature-file_name        = iv_filename.
+*    ENDIF.
+*
+*    RETURN.
+*  ENDIF.
 
 **********************************************************************
 * To edit files in OAOR  -> SM30 -> V_TOADD
@@ -112,7 +109,7 @@ METHOD constructor.
     object_key          = iv_object_key
    IMPORTING
     extended_components = lt_sbdst_components2
-    connections         = lt_connect
+    "connections         = lt_connect
    CHANGING
     signature           = lt_sbdst_signature
    EXCEPTIONS
@@ -133,6 +130,7 @@ METHOD constructor.
        INDEX ls_sbdst_signature->doc_count.
       ls_signature->objid     = ls_sbdst_components2->objid.
       ls_signature->file_name = ls_sbdst_components2->file_name.
+      ls_signature->class     = ls_sbdst_components2->class.
     ENDAT.
 
     " Find field by name
@@ -143,83 +141,56 @@ METHOD constructor.
     <l_val> = ls_sbdst_signature->prop_value.
   ENDLOOP.
 
-  " Apply filters
-  IF iv_filename IS NOT INITIAL.
-    DELETE lt_signature WHERE file_name NS iv_filename.
-  ENDIF.
+  " Apply filter
+  DELETE lt_signature WHERE file_name <> iv_filename.
 
-  IF iv_description IS NOT INITIAL.
-    DELETE lt_signature WHERE description NP iv_description.
-  ENDIF.
+  " Read the last version
+  lv_cnt = lines( lt_signature ).
+  READ TABLE lt_signature INTO ms_signature INDEX lv_cnt.
 
-  IF iv_language IS NOT INITIAL.
-    DELETE lt_signature WHERE language NS iv_language.
-  ENDIF.
-
-  " If explicitly set version
-  IF iv_version IS NOT INITIAL.
-    DELETE lt_signature WHERE doc_ver_no <> iv_version.
-  ELSE.
-    " Find the current(maximum) version
-    LOOP AT lt_connect REFERENCE INTO ls_connect.
-      CLEAR lv_maxver.
-      LOOP AT lt_signature REFERENCE INTO ls_signature WHERE doc_id = ls_connect->doc_id.
-        IF ls_signature->doc_ver_no > lv_maxver.
-          lv_maxver = ls_signature->doc_ver_no.
-        ENDIF.
-      ENDLOOP.
-
-      " Leave only the maximum version
-      DELETE lt_signature WHERE
-       doc_id      =  ls_connect->doc_id AND
-       doc_ver_no  <> lv_maxver.
-    ENDLOOP.
-  ENDIF.
-
-  " Check count
-  IF lines( lt_signature ) <> 1.
-    MESSAGE 'Unable to detect the file'(udf) TYPE 'X'.
-  ENDIF.
-
-  " Save result
-  READ TABLE lt_signature INTO ms_signature INDEX 1.
+  CHECK sy-subrc <> 0.
+  MESSAGE 'Unable to detect the file'(udf) TYPE 'X'.
 ENDMETHOD.
 
 
 METHOD zif_xtt_file~get_content.
   DATA:
-    lt_info      TYPE STANDARD TABLE OF scms_acinf,
-    ls_info      TYPE REF TO scms_acinf,
+    ls_object_id TYPE sdokobject,
+    lt_info      TYPE STANDARD TABLE OF sdokfilaci,
+    ls_info      TYPE REF TO sdokfilaci,
     lt_text      TYPE STANDARD TABLE OF sdokcntasc,
     lt_bin       TYPE STANDARD TABLE OF sdokcntbin,
     lv_file_size TYPE i.
   FIELD-SYMBOLS:
    <lt_table>   TYPE STANDARD TABLE.
 
-  CALL FUNCTION 'SCMS_R3DB_IMPORT'
+  ls_object_id-class = ms_signature-class.
+  ls_object_id-objid = ms_signature-objid.
+
+  CALL FUNCTION 'SDOK_PHIO_LOAD_CONTENT'
     EXPORTING
-      crep_id      = ms_signature-storage_category
-      doc_id       = ms_signature-objid
+      object_id           = ls_object_id
+      text_as_stream      = abap_true
     TABLES
-      content_info = lt_info
-      content_txt  = lt_text
-      content_bin  = lt_bin
+      file_access_info    = lt_info
+      file_content_ascii  = lt_text
+      file_content_binary = lt_bin
     EXCEPTIONS
-      OTHERS       = 3.
+      OTHERS              = 5.
   CHECK sy-subrc = 0.
 
   READ TABLE lt_info REFERENCE INTO ls_info INDEX 1.
   CHECK sy-subrc = 0.
 
   " Text or binary
-  IF ls_info->binary_flg = abap_true.
+  IF lt_bin[] IS NOT INITIAL.
     ASSIGN lt_bin  TO <lt_table>.
   ELSE.
     ASSIGN lt_text TO <lt_table>.
   ENDIF.
 
   " Detect file size
-  lv_file_size = ls_info->comp_size.
+  lv_file_size = ls_info->file_size.
 
   " Result as a xstring
   IF ev_as_xstring IS REQUESTED.

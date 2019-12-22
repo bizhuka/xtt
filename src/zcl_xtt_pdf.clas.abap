@@ -24,9 +24,10 @@ CLASS ZCL_XTT_PDF IMPLEMENTATION.
 
 METHOD constructor.
   super->constructor(
-   io_file        = io_file
-   iv_body_tag    = 'template'
-   iv_row_tag     = 'subform' ).
+   io_file             = io_file
+   iv_body_tag         = 'template'
+   iv_row_tag          = 'subform'
+   iv_table_page_break = '<breakAfter targetType="pageArea"/>' ).
 ENDMETHOD.
 
 

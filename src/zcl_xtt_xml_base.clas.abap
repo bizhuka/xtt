@@ -5,17 +5,16 @@ class ZCL_XTT_XML_BASE definition
 
 public section.
   type-pools ABAP .
-
-  CLASS ZCL_XTT_REPLACE_BLOCK DEFINITION LOAD.
+  class ZCL_XTT_REPLACE_BLOCK definition load .
 
   types:
-   BEGIN OF ts_text_match.
+    BEGIN OF ts_text_match.
     INCLUDE TYPE zcl_xtt_replace_block=>ts_tree_group.
     types:
     text  TYPE string,
    END OF ts_text_match .
   types:
-    tt_text_match TYPE SORTED TABLE OF ts_text_match WITH UNIQUE KEY level top if_where.
+    tt_text_match TYPE SORTED TABLE OF ts_text_match WITH UNIQUE KEY level top if_where .
 
   methods CONSTRUCTOR
     importing
@@ -25,7 +24,8 @@ public section.
       !IV_PATH_IN_ARC type CSEQUENCE optional
       !IV_FILE_FORMAT type I optional
       !IV_FILE_FORMAT_EXT type STRING optional
-      !IV_SKIP_TAGS type ABAP_BOOL optional .
+      !IV_SKIP_TAGS type ABAP_BOOL optional
+      !IV_TABLE_PAGE_BREAK type STRING optional .
 
   methods DOWNLOAD
     redefinition .
@@ -86,6 +86,7 @@ private section.
   data MV_SKIP_TAGS type ABAP_BOOL .
   data MO_ZIP type ref to CL_ABAP_ZIP .
   data MV_IS_TABLE type ABAP_BOOL .
+  data MV_IF_TABLE_PAGE_BREAK type STRING .
 ENDCLASS.
 
 
@@ -99,10 +100,11 @@ METHOD constructor.
   super->constructor( io_file = io_file ).
 
   " For regex
-  mv_body_tag        = iv_body_tag.
-  mv_row_tag         = iv_row_tag.
-  mv_path_in_arc     = iv_path_in_arc.
-  mv_skip_tags       = iv_skip_tags.
+  mv_body_tag            = iv_body_tag.
+  mv_row_tag             = iv_row_tag.
+  mv_path_in_arc         = iv_path_in_arc.
+  mv_skip_tags           = iv_skip_tags.
+  mv_if_table_page_break = iv_table_page_break.
 
   " For download method
   mv_file_format     = iv_file_format.
@@ -383,11 +385,10 @@ METHOD get_raw.
   " for Word format only
   DO 1 TIMES.
     CHECK mv_is_table = abap_true
-     AND mv_body_tag = 'w:body'
-     AND mv_row_tag  = 'w:tr'.
+      AND mv_if_table_page_break IS NOT INITIAL.
 
     " Delete last page break
-    FIND ALL OCCURRENCES OF '<w:br w:type="page"/>' IN mv_file_content RESULTS lt_match.
+    FIND ALL OCCURRENCES OF mv_if_table_page_break IN mv_file_content RESULTS lt_match.
     CHECK sy-subrc = 0.
 
     " Last OCCURRENCES OF page-break
@@ -395,7 +396,7 @@ METHOD get_raw.
     READ TABLE lt_match REFERENCE INTO ls_match INDEX lv_len.
     CHECK sy-subrc = 0.
 
-    " Delete last '<w:br w:type="page"/>'
+    " Delete last page break
     lv_len = ls_match->offset + ls_match->length.
     CONCATENATE
      mv_file_content(ls_match->offset)

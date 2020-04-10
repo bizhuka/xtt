@@ -20,21 +20,14 @@ public section.
 
   constants MC_BY_OLE type STRING value 'BY_OLE' ##NO_TEXT.
 
-  class-events PBO
-    exporting
-      value(SENDER) type ref to ZCL_XTT
-      value(IO_APP_OBJ) type OLE2_OBJECT .
-  class-events PAI
-    exporting
-      value(SENDER) type ref to ZCL_XTT
-      value(IV_CMD) type SYUCOMM .
   events PREPARE_RAW
     exporting
       value(IR_CONTENT) type ref to XSTRING .
 
   methods CONSTRUCTOR
     importing
-      !IO_FILE type ref to ZIF_XTT_FILE .
+      !IO_FILE type ref to ZIF_XTT_FILE
+      !IV_OLE_EXT type STRING optional .
   methods MERGE
   abstract
     importing
@@ -53,7 +46,9 @@ public section.
       !CV_OLE_DOC type OLE2_OBJECT optional
       !CV_FULLPATH type STRING optional .
   methods SHOW
-  final .
+  final
+    importing
+      !IO_HANDLER type ref to OBJECT optional .
   methods SEND
     importing
       !IT_RECIPIENTS type RMPS_RECIPIENT_BCS optional
@@ -63,15 +58,15 @@ public section.
       !IV_EXPRESS type ABAP_BOOL default ABAP_TRUE
       !IO_SENDER type ref to IF_SENDER_BCS optional
       !IV_COMMIT type ABAP_BOOL default ABAP_FALSE .
-protected section.
-  data MO_FILE type ref to ZIF_XTT_FILE .
-private section.
-
-  methods IS_WEB_DYNPRO
-    importing
-      !IV_INPLACE type ABAP_BOOL
+  class-methods IS_COMMON_GUI
     returning
-      value(RV_WD) type ABAP_BOOL .
+      value(RV_OK) type ABAP_BOOL .
+protected section.
+
+  constants MC_BY_OLE_HIDE type STRING value 'BY_OLE_HIDE' ##NO_TEXT.
+  data MV_FILE_NAME type STRING .
+  data MV_OLE_EXT type STRING .
+private section.
 ENDCLASS.
 
 
@@ -80,31 +75,22 @@ CLASS ZCL_XTT IMPLEMENTATION.
 
 
 METHOD constructor.
-  mo_file = io_file.
+  mv_file_name = io_file->get_name( ).
+  mv_ole_ext   = iv_ole_ext.
 ENDMETHOD.
 
 
 METHOD download.
-  DATA:
-*    cv_fullpath  TYPE string,
-    lv_content   TYPE xstring,
-    lt_data      TYPE solix_tab,
-    lv_file_size TYPE i,
-    lv_filename  TYPE string,
-    lv_no_ext    TYPE string,
-    lv_ext       TYPE string,
-    lv_path      TYPE string,
-    lv_sep       TYPE char1,
-    lv_len       TYPE i,
-    lv_dest      TYPE rfcdes-rfcdest,
-    lv_cpath     TYPE text255,
-    lo_zip       TYPE REF TO cl_abap_zip,
-    lv_ole_app   TYPE text255,
-    lv_ole_doc   TYPE text255,
-    lo_docs      TYPE ole2_object.
-
-  " Just attach file
-  CHECK is_web_dynpro( iv_inplace = abap_false ) IS INITIAL.
+  DATA lv_content   TYPE xstring.
+  DATA lv_filename  TYPE string.
+  DATA lv_no_ext    TYPE string.
+  DATA lv_ext       TYPE string.
+  DATA lv_path      TYPE string.
+  DATA lo_zip       TYPE REF TO cl_abap_zip.
+  " New functionality
+  DATA lo_eui_file  TYPE REF TO zcl_eui_file.
+  DATA lo_error     TYPE REF TO zcx_eui_exception.
+  DATA lv_visible   TYPE abap_bool.
 
   " As a xstring (implemented in subclasses)
   lv_content = get_raw( ).
@@ -112,52 +98,25 @@ METHOD download.
   " Use existing path
   IF cv_fullpath IS INITIAL.
     " Just name without path
-    cv_fullpath = mo_file->get_name( ).
+    cv_fullpath = mv_file_name.
   ENDIF.
 
-  " New file name
-  zcl_xtt_util=>split_file_path(
+  " Could be file name
+  zcl_eui_file=>split_file_path(
     EXPORTING
       iv_fullpath       = cv_fullpath
     IMPORTING
       ev_filename       = lv_filename
-      ev_filename_noext = lv_no_ext
+      ev_file_noext     = lv_no_ext
       ev_extension      = lv_ext
       ev_path           = lv_path ).
-
-  IF lv_path IS INITIAL.
-    " No need to clean files (cl_gui_frontend_services=>file_delete). SAP gui cleans 'SAP GUI\tmp\' automatically
-    cl_gui_frontend_services=>get_temp_directory( CHANGING temp_dir = lv_path EXCEPTIONS OTHERS = 1 ).
-    CHECK sy-subrc = 0.
-
-    " Add file separator
-    cl_gui_frontend_services=>get_file_separator(
-     CHANGING
-       file_separator = lv_sep ).
-    cl_gui_cfw=>flush( ).
-
-    lv_len = strlen( lv_path ) - 1.
-    IF lv_path+lv_len(1) <> lv_sep.
-      CONCATENATE lv_path lv_sep INTO lv_path.
-    ENDIF.
-  ENDIF.
-
-  " For OLE
-  TRANSLATE lv_ext TO LOWER CASE.
-  zcl_xtt_util=>get_ole_info(
-   EXPORTING
-     io_xtt      = me
-   CHANGING
-     cv_ole_app  = lv_ole_app
-     cv_ole_doc  = lv_ole_doc
-     cv_file_ext = lv_ext ).
 
   " For plain XMLs only (meaningless for docx & xlsx)
   IF iv_zip = abap_true.
     lv_ext = 'zip'.
     CREATE OBJECT lo_zip.
 
-    zcl_xtt_util=>xml_to_zip(
+    zcl_eui_conv=>xml_to_zip(
      io_zip  = lo_zip
      iv_name = lv_filename
      iv_xdoc = lv_content ).
@@ -169,129 +128,71 @@ METHOD download.
   " Create fullpath again
   CONCATENATE lv_path lv_no_ext `.` lv_ext INTO cv_fullpath.
 
-  " Already exist. Add date and time
-  IF cl_gui_frontend_services=>file_exist( cv_fullpath ) = abap_true.
-    CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` lv_ext INTO cv_fullpath.
-  ENDIF.
+  " delegate to new class
+  TRY.
+      IF mv_ole_ext IS NOT INITIAL.
+        lv_ext = mv_ole_ext.
+      ENDIF.
 
-  " Convert to table
-  zcl_xtt_util=>xstring_to_binary(
-   EXPORTING
-     iv_xstring = lv_content
-   IMPORTING
-     ev_length  = lv_file_size
-     et_table   = lt_data ).
+      CREATE OBJECT lo_eui_file
+        EXPORTING
+          iv_xstring   = lv_content
+          iv_file_name = lv_ext.
 
-  IF lv_file_size < 10000000.
-    " For small files
-    CALL FUNCTION 'GUI_DOWNLOAD'
-      EXPORTING
-        filename     = cv_fullpath
-        filetype     = 'BIN'
-        bin_filesize = lv_file_size
-      TABLES
-        data_tab     = lt_data
-      EXCEPTIONS
-        OTHERS       = 1.
-    CHECK sy-subrc = 0.
-  ELSE.
-    " For big files
-    CALL FUNCTION 'SCMS_FE_START_REG_SERVER'
-      EXPORTING
-        destname    = 'SAPFTP'
-      IMPORTING
-        destination = lv_dest
-      EXCEPTIONS
-        OTHERS      = 1.
-    CHECK sy-subrc = 0.
+      lo_eui_file->download(
+       iv_full_path   = cv_fullpath
+       iv_save_dialog = abap_false ).
 
-    " create_folders( cv_fullpath ).
-    lv_cpath = cv_fullpath.
-    CALL FUNCTION 'FTP_R3_TO_CLIENT'
-      EXPORTING
-        fname           = lv_cpath
-        rfc_destination = lv_dest
-        blob_length     = lv_file_size
-      TABLES
-        blob            = lt_data
-      EXCEPTIONS
-        OTHERS          = 3.
-    CHECK sy-subrc = 0.
+      " Where saved
+      cv_fullpath = lo_eui_file->get_full_path( ).
 
-    CALL FUNCTION 'SCMS_FE_STOP_REG_SERVER'
-      CHANGING
-        destination = lv_dest.
-  ENDIF.
+      " And open file
+      CHECK iv_open IS NOT INITIAL AND
+            is_common_gui( ) = abap_true.
 
-  " And open file
-  CHECK iv_open IS NOT INITIAL AND
-        zcl_xtt_util=>is_common_gui( ) = abap_true.
+      " Open ?
+      CASE iv_open.
+        WHEN zcl_xtt=>mc_by_ole.
+          lv_visible = abap_true.
 
-  " Just open
-  IF  iv_open <> zcl_xtt=>mc_by_ole OR
-    ( iv_open IS NOT INITIAL AND iv_zip = abap_true ). " Open as zip
-    cl_gui_cfw=>flush( ).
-    cl_gui_frontend_services=>execute(
-     EXPORTING
-      document               = cv_fullpath
-      operation              = 'OPEN'
-     EXCEPTIONS
-      OTHERS                 = 1 ).
-    IF sy-subrc <> 0.
-      MESSAGE ID sy-msgid TYPE 'S' NUMBER sy-msgno WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 DISPLAY LIKE 'E'.
-    ENDIF.
-    RETURN.
-  ENDIF.
+        WHEN zcl_xtt=>mc_by_ole_hide.
+          lv_visible = abap_false.
 
-  " Meaningless
-  CHECK iv_zip <> abap_true.
+        WHEN OTHERS.
+          lv_visible = abap_undefined.
+      ENDCASE.
 
-  " Open with OLE for call a macro. Only for .docx, .docm, .xlsx, .xlsm
-  CREATE OBJECT cv_ole_app lv_ole_app.
+      " Just open
+      IF  lv_visible = abap_undefined OR
+        ( iv_open IS NOT INITIAL AND iv_zip = abap_true ). " Open as zip
+        lo_eui_file->open( ).
+        RETURN.
+      ENDIF.
 
-  " Cannot use variables!
-  CASE lv_ole_doc.
-    WHEN 'Workbooks'.
-      GET PROPERTY OF cv_ole_app 'Workbooks' = lo_docs.
-    WHEN 'Documents'.
-      GET PROPERTY OF cv_ole_app 'Documents' = lo_docs.
-    WHEN OTHERS.
-      MESSAGE x002(zsy_xtt) WITH lv_ole_doc.
-  ENDCASE.
+      " Meaningless
+      CHECK iv_zip <> abap_true.
 
-  CALL METHOD OF lo_docs 'Open' = cv_ole_doc
-    EXPORTING
-      #1 = cv_fullpath.
-
-  SET PROPERTY OF cv_ole_app 'Visible' = 1.
+      lo_eui_file->open_by_ole(
+       EXPORTING
+         iv_visible = lv_visible
+       CHANGING
+         cv_ole_app = cv_ole_app
+         cv_ole_doc = cv_ole_doc ).
+    CATCH zcx_eui_exception INTO lo_error.
+      MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+  ENDTRY.
 ENDMETHOD.
 
 
-METHOD is_web_dynpro.
-  DATA:
-    lv_content  TYPE xstring,
-    lv_filename TYPE string.
+METHOD IS_COMMON_GUI.
+  " Background process
+  CHECK sy-batch <> abap_true.
 
-  " Check Web Dynpro
-  CHECK wdr_task=>application IS NOT INITIAL.
+  " Web dynpro  (TODO SAPUI5)
+  CHECK wdr_task=>application IS INITIAL.
 
-  " As a xstring (implemented in subclasses)
-  lv_content = get_raw( ).
-
-  " File name
-  lv_filename = mo_file->get_name( ).
-
-  " Add as an attachment
-  cl_wd_runtime_services=>attach_file_to_response(
-    EXPORTING
-      i_filename      = lv_filename  " File name with extension
-      i_content       = lv_content
-      i_mime_type     = 'RAW'        " No need to specify
-      i_in_new_window = abap_false
-      i_inplace       = iv_inplace ).
-
-  " Is web dynpro
-  rv_wd = abap_true.
+  " Is Ok
+  rv_ok = abap_true.
 ENDMETHOD.
 
 
@@ -344,14 +245,14 @@ METHOD send.
       ENDLOOP.
 
       " Set to null in children to avoid sending attachment
-      IF mo_file IS NOT INITIAL.
+      IF mv_file_name IS NOT INITIAL.
         " File name
         APPEND INITIAL LINE TO lt_header REFERENCE INTO ls_header.
-        lv_filename = mo_file->get_name( ).
+        lv_filename = mv_file_name.
         CONCATENATE '&SO_FILENAME=' lv_filename INTO ls_header->line.
 
         " Show icon
-        zcl_xtt_util=>split_file_path(
+        zcl_eui_file=>split_file_path(
          EXPORTING
           iv_fullpath       = lv_filename
          IMPORTING
@@ -360,7 +261,7 @@ METHOD send.
 
         " Convert to table
         lv_value = get_raw( ).
-        zcl_xtt_util=>xstring_to_binary(
+        zcl_eui_conv=>xstring_to_binary(
          EXPORTING
            iv_xstring = lv_value
          IMPORTING
@@ -402,11 +303,35 @@ ENDMETHOD.
 
 
 METHOD show.
-  " Try to open inplace in browser
-  CHECK is_web_dynpro( iv_inplace = abap_true ) IS INITIAL.
+  DATA lv_content   TYPE xstring.
+  DATA lv_file_name TYPE string.
+  DATA lo_eui_file  TYPE REF TO zcl_eui_file.
+  DATA lv_name      TYPE string.
+  DATA lo_error     TYPE REF TO zcx_eui_exception.
 
-  CALL FUNCTION 'Z_SHOW_XTT_SCREEN'
+  lv_content = get_raw( ).
+
+  " Get from file name
+  IF mv_ole_ext IS NOT INITIAL.
+    " Call save as
+    me->download(
+     EXPORTING
+       iv_open     = mc_by_ole_hide
+     CHANGING
+       cv_fullpath = lv_file_name ).
+  ELSE.
+    lv_file_name = mv_file_name.
+  ENDIF.
+
+  CREATE OBJECT lo_eui_file
     EXPORTING
-      io_xtt = me.
+      iv_xstring   = lv_content
+      iv_file_name = lv_file_name.
+
+  TRY.
+      lo_eui_file->show( io_handler = io_handler ).
+    CATCH zcx_eui_exception INTO lo_error.
+      MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+  ENDTRY.
 ENDMETHOD.
 ENDCLASS.

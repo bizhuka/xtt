@@ -30,7 +30,7 @@ METHOD constructor.
   IF iv_xstring IS SUPPLIED.
     mv_xstring = iv_xstring.
   ELSEIF iv_string IS SUPPLIED.
-    mv_xstring = zcl_xtt_util=>string_to_xstring( iv_string ).
+    mv_xstring = zcl_eui_conv=>string_to_xstring( iv_string ).
   ENDIF.
 ENDMETHOD.
 
@@ -39,7 +39,7 @@ METHOD zif_xtt_file~get_content.
   IF ev_as_xstring IS REQUESTED.
     ev_as_xstring = mv_xstring.
   ELSEIF ev_as_string IS REQUESTED.
-    ev_as_string = zcl_xtt_util=>xstring_to_string( mv_xstring ).
+    ev_as_string = zcl_eui_conv=>xstring_to_string( mv_xstring ).
   ENDIF.
 ENDMETHOD.
 

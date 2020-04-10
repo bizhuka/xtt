@@ -5,7 +5,7 @@
 TYPE-POOLS:
  abap.
 
-CLASS ZCL_XTT_REPLACE_BLOCK DEFINITION LOAD.
+CLASS zcl_xtt_replace_block DEFINITION LOAD.
 
 TYPES:
   " Cell of Excel
@@ -37,8 +37,8 @@ TYPES:
 
   BEGIN OF ts_cell_match.
     INCLUDE TYPE zcl_xtt_replace_block=>ts_tree_group.
-  types:
-    cells TYPE tt_ex_cell,
+TYPES:
+  cells TYPE tt_ex_cell,
   END OF ts_cell_match,
   tt_cell_match TYPE SORTED TABLE OF ts_cell_match WITH UNIQUE KEY level top if_where,
 
@@ -90,12 +90,6 @@ TYPES:
   END OF ts_ex_list_object,
   tt_ex_list_object TYPE STANDARD TABLE OF ts_ex_list_object WITH DEFAULT KEY,
 
-  " For speed
-  BEGIN OF ts_col_ind,
-    col TYPE char3,
-    ind TYPE i,
-  END OF ts_col_ind,
-
   BEGIN OF ts_cell_ref,
     r   TYPE i,
     c   TYPE i,
@@ -122,11 +116,6 @@ CLASS cl_ex_sheet DEFINITION FINAL.
       ms_cell         TYPE REF TO ts_ex_cell,
       mt_column_dir   TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line,
       mt_cell_ref     TYPE SORTED TABLE OF ts_cell_ref WITH UNIQUE KEY r c.
-
-    CLASS-DATA:
-      " Backward compatibility (could be 1)
-      mt_col_ind TYPE SORTED TABLE OF ts_col_ind WITH UNIQUE KEY col,
-      mt_ind_col TYPE SORTED TABLE OF ts_col_ind WITH UNIQUE KEY ind.
 
     METHODS:
       constructor
@@ -177,15 +166,7 @@ CLASS cl_ex_sheet DEFINITION FINAL.
           ct_cells      TYPE tt_ex_cell
           ct_cells_end  TYPE tt_ex_cell
           ct_cells_mid  TYPE tt_ex_cell
-          ct_cell_match TYPE tt_cell_match,
-
-      convert_column2int
-        IMPORTING VALUE(iv_column) TYPE char3
-        RETURNING VALUE(rv_column) TYPE i,
-
-      convert_column2alpha
-        IMPORTING VALUE(iv_column) TYPE i
-        RETURNING VALUE(rv_column) TYPE char3.
+          ct_cell_match TYPE tt_cell_match.
 ENDCLASS.                    "cl_ex_sheet DEFINITION
 
 

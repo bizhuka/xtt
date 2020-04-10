@@ -37,9 +37,9 @@ ENDMETHOD.
 
 METHOD send.
   DATA:
-    lv_body TYPE string,
-    lv_raw  TYPE xstring,
-    lo_file LIKE mo_file.
+    lv_body      TYPE string,
+    lv_raw       TYPE xstring,
+    lv_file_name LIKE mv_file_name.
 
   " Default body
   lv_body = iv_body.
@@ -48,11 +48,11 @@ METHOD send.
   IF lv_body IS INITIAL AND mv_as_email_body = abap_true.
     " Get as HTML text
     lv_raw = get_raw( ).
-    lv_body = zcl_xtt_util=>xstring_to_string( lv_raw ).
+    lv_body = zcl_eui_conv=>xstring_to_string( lv_raw ).
 
     " Do not have any attachments
-    lo_file = mo_file.
-    CLEAR mo_file.
+    lv_file_name = mv_file_name.
+    CLEAR mv_file_name.
   ENDIF.
 
   super->send(
@@ -65,8 +65,8 @@ METHOD send.
     iv_commit         = iv_commit ).
 
   " Set it back
-  IF lo_file IS NOT INITIAL.
-    mo_file = lo_file.
+  IF lv_file_name IS NOT INITIAL.
+    mv_file_name = lv_file_name.
   ENDIF.
 ENDMETHOD.
 ENDCLASS.

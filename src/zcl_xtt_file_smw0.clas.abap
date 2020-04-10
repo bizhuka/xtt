@@ -65,6 +65,10 @@ METHOD zif_xtt_file~get_content.
   FIELD-SYMBOLS:
    <lt_table>   TYPE STANDARD TABLE.
 
+  CLEAR:
+   ev_as_string,
+   ev_as_xstring.
+
   " Read by key
   CALL FUNCTION 'WWWDATA_IMPORT'
     EXPORTING
@@ -75,7 +79,7 @@ METHOD zif_xtt_file~get_content.
     EXCEPTIONS
       OTHERS = 1.
   IF sy-subrc <> 0.
-    MESSAGE 'Could not load file'(001) TYPE 'X'.
+    zcx_xtt_exception=>raise_dump( iv_message = 'Could not load file'(001) ).
   ENDIF.
 
   " Text or binary
@@ -90,14 +94,14 @@ METHOD zif_xtt_file~get_content.
 
   " Result as a xstring
   IF ev_as_xstring IS REQUESTED.
-    ev_as_xstring = zcl_xtt_util=>binary_to_xstring(
+    ev_as_xstring = zcl_eui_conv=>binary_to_xstring(
      it_table  = <lt_table>
      iv_length = lv_file_size ).
     RETURN.
   ENDIF.
 
   " Result as a string. if ev_as_STRING Is Requested
-  ev_as_string = zcl_xtt_util=>binary_to_string(
+  ev_as_string = zcl_eui_conv=>binary_to_string(
    it_table  = <lt_table>
    iv_length = lv_file_size ).
 ENDMETHOD.
@@ -112,11 +116,11 @@ METHOD zif_xtt_file~get_name.
   lv_ext  = me->get_param( 'fileextension' ).
 
   " Return only file name
-  zcl_xtt_util=>split_file_path(
+  zcl_eui_file=>split_file_path(
     EXPORTING
-     iv_fullpath       = rv_name
+     iv_fullpath   = rv_name
     IMPORTING
-     ev_filename_noext = rv_name ).
+     ev_file_noext = rv_name ).
 
   " Sometimes path too long for extension
   CONCATENATE rv_name lv_ext INTO rv_name.

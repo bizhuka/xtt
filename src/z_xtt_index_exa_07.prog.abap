@@ -25,8 +25,7 @@ METHOD example_07.
     io_file = lo_file.
 
   SET HANDLER:
-   on_prepare_raw_07 FOR ro_xtt,
-   on_pbo_07.
+   on_prepare_raw_07 FOR ro_xtt.
 
   CASE 'X'.
     WHEN p_dwnl.
@@ -37,13 +36,11 @@ METHOD example_07.
         cv_fullpath = p_path
         cv_ole_app  = lv_ole_app ).      " Get ole2_object back
 
-      " Call macro (the same code for send method)
-      on_pbo_07(
-       sender     = ro_xtt
-       io_app_obj = lv_ole_app ).
+      " Call macro Ok
+      check_ole_07( io_ole_app = lv_ole_app ).
 
     WHEN p_show.
-      ro_xtt->show( ).
+      ro_xtt->show( io_handler = me ).
   ENDCASE.
 
   " Skip further execution
@@ -53,20 +50,39 @@ ENDMETHOD.
 " Macro always will execute for download method (regardless VBA security level)
 " Show method depends on security options (that's why do not call macro)
 METHOD on_pbo_07.
-  DATA:
-   lv_charts TYPE ole2_object.
+  " Just for test. @SHOW( )
+  APPEND 'EXIT' TO sender->ms_status-exclude.
+  APPEND 'CANC' TO sender->ms_status-exclude.
+
+  " 1 time only
+  CHECK io_container IS NOT INITIAL.
+
+  DATA lo_eui_file TYPE REF TO zcl_eui_file.
+  DATA ls_ole_info TYPE zcl_eui_file=>ts_ole_info.
+
+  lo_eui_file ?= sender.
+  ls_ole_info = lo_eui_file->get_ole_info( ).
+
+  " Call macro Error
+  check_ole_07( io_ole_app = ls_ole_info-app ).
+ENDMETHOD.
+
+METHOD check_ole_07.
+  DATA lv_charts TYPE ole2_object.
 
   " Better to use XML than macro
+  CHECK io_ole_app IS NOT INITIAL.
+
   " @see on_prepare_raw_07
-  CALL METHOD OF io_app_obj 'Run'
+  CALL METHOD OF io_ole_app 'Run'
     EXPORTING
       #1 = 'MAIN.start'
       #2 = 'From SAP'.
 
   " OR Call OLE like that
-  SET PROPERTY OF io_app_obj 'StatusBar' = 'OLE Call'.
+  SET PROPERTY OF io_ole_app 'StatusBar' = 'OLE Call'.
 
-  GET PROPERTY OF io_app_obj 'Charts' = lv_charts.
+  GET PROPERTY OF io_ole_app 'Charts' = lv_charts.
   CALL METHOD OF lv_charts 'Add'.
 ENDMETHOD.
 
@@ -106,7 +122,7 @@ METHOD on_prepare_raw_07.
   ENDCASE.
 
   " Get content as a string from file
-  zcl_xtt_util=>xml_from_zip(
+  zcl_eui_conv=>xml_from_zip(
    EXPORTING
     io_zip    = lo_zip
     iv_name   = lv_path_in_arc
@@ -133,7 +149,7 @@ METHOD on_prepare_raw_07.
   ENDIF.
 
   " Write data back
-  zcl_xtt_util=>xml_to_zip(
+  zcl_eui_conv=>xml_to_zip(
    io_zip  = lo_zip
    iv_name = lv_path_in_arc
    io_xmldoc = lo_xml ). " Or use --> iv_sdoc = lv_xml

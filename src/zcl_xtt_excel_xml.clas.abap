@@ -6,14 +6,11 @@ class ZCL_XTT_EXCEL_XML definition
 
 public section.
 
-  constants MC_XL_OPEN_XML_WORKBOOK type I value 51. "#EC NOTEXT
-  constants MC_XL_OPEN_XML_WORKBOOK_EXT type STRING value '.xlsx'. "#EC NOTEXT
-
   methods CONSTRUCTOR
     importing
       !IO_FILE type ref to ZIF_XTT_FILE
-      !IV_FILE_FORMAT type I default MC_XL_OPEN_XML_WORKBOOK
-      !IV_FILE_FORMAT_EXT type STRING default MC_XL_OPEN_XML_WORKBOOK_EXT .
+      !IV_OLE_EXT type STRING default ZCL_EUI_FILE=>MC_EXTENSION-XLSX
+      !IV_OLE_EXT_FORMAT type I default 51 .
   class-methods HIDE_EXCEL_WARNING .
 protected section.
 
@@ -34,8 +31,10 @@ METHOD constructor.
    io_file            = io_file
    iv_body_tag        = 'Worksheet'
    iv_row_tag         = 'Row'
-   iv_file_format     = iv_file_format
-   iv_file_format_ext = iv_file_format_ext ).
+   iv_ole_ext         = iv_ole_ext
+   iv_ole_ext_format  = iv_ole_ext_format ).
+
+  " REPLACE ALL OCCURRENCES OF `.xml` IN mv_file_name WITH `.xls` IGNORING CASE.
 
   " Delete row count in sheet and row index (Delete blank rows)
   REPLACE ALL OCCURRENCES OF REGEX:
@@ -102,7 +101,7 @@ METHOD hide_excel_warning.
     lv_len   TYPE i.                                        "#EC NEEDED
 
   " Can change registry
-  CHECK zcl_xtt_util=>is_common_gui( ) = abap_true.
+  CHECK is_common_gui( ) = abap_true.
 
   " Get current excel version
   cl_gui_frontend_services=>registry_get_value(

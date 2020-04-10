@@ -6,14 +6,11 @@ class ZCL_XTT_WORD_XML definition
 
 public section.
 
-  constants MC_WD_FORMAT_XML_DOCUMENT type I value 12 ##NO_TEXT.
-  constants MC_WD_FORMAT_XML_DOCUMENT_EXT type STRING value '.docx' ##NO_TEXT.
-
   methods CONSTRUCTOR
     importing
       !IO_FILE type ref to ZIF_XTT_FILE
-      !IV_FILE_FORMAT type I default MC_WD_FORMAT_XML_DOCUMENT
-      !IV_FILE_FORMAT_EXT type STRING default MC_WD_FORMAT_XML_DOCUMENT_EXT .
+      !IV_OLE_EXT type STRING default ZCL_EUI_FILE=>MC_EXTENSION-DOCX
+      !IV_OLE_EXT_FORMAT type I default 12 .
 protected section.
 private section.
 ENDCLASS.
@@ -28,9 +25,11 @@ METHOD constructor.
    io_file             = io_file
    iv_body_tag         = 'w:body'
    iv_row_tag          = 'w:tr'
-   iv_file_format      = iv_file_format
-   iv_file_format_ext  = iv_file_format_ext
+   iv_ole_ext          = iv_ole_ext
+   iv_ole_ext_format   = iv_ole_ext_format
    iv_skip_tags        = abap_true
    iv_table_page_break = zcl_xtt_word_docx=>mc_table_page_break ).
+
+  " REPLACE ALL OCCURRENCES OF `.xml` IN mv_file_name WITH `.doc` IGNORING CASE.
 ENDMETHOD.
 ENDCLASS.

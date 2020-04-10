@@ -207,37 +207,37 @@ METHOD area_read_xml.
 ENDMETHOD.                    "area_read_xml
 
 
-METHOD CELL_INIT.
-    DATA:
-     l_len  TYPE i,
-     l_off  TYPE i,
-     l_char TYPE char1.
+METHOD cell_init.
+  DATA:
+    l_len  TYPE i,
+    l_off  TYPE i,
+    l_char TYPE char1.
 
-    l_len = strlen( iv_coordinate ).
-    DO l_len TIMES.
-      l_off  = l_len - sy-index.
-      l_char = iv_coordinate+l_off(1).
+  l_len = strlen( iv_coordinate ).
+  DO l_len TIMES.
+    l_off  = l_len - sy-index.
+    l_char = iv_coordinate+l_off(1).
 
-      " Find last pos
-      IF l_char < '0' OR l_char > '9'.
-        l_off = l_off + 1.
-        EXIT.
-      ENDIF.
-    ENDDO.
-
-    " Oops
-    IF l_off = 0 OR l_off = l_len.
-      RAISE wrong_format.
+    " Find last pos
+    IF l_char < '0' OR l_char > '9'.
+      l_off = l_off + 1.
+      EXIT.
     ENDIF.
+  ENDDO.
 
-    " Row
-    l_len          = l_len - l_off.
-    is_cell->c_row = iv_coordinate+l_off(l_len).
+  " Oops
+  IF l_off = 0 OR l_off = l_len.
+    RAISE wrong_format.
+  ENDIF.
 
-    " Column
-    is_cell->c_col     = iv_coordinate(l_off).
-    is_cell->c_col_ind = cl_ex_sheet=>convert_column2int( is_cell->c_col ).
-  ENDMETHOD.                    "cell_init
+  " Row
+  l_len          = l_len - l_off.
+  is_cell->c_row = iv_coordinate+l_off(l_len).
+
+  " Column
+  is_cell->c_col     = iv_coordinate(l_off).
+  is_cell->c_col_ind = zcl_eui_file_io=>column_2_int( is_cell->c_col ).
+ENDMETHOD.                    "cell_init
 
 
 METHOD CELL_IS_STRING.
@@ -314,7 +314,8 @@ METHOD cell_write_xml.
     lv_index     TYPE i,
     lv_merge_col TYPE char3,
     lv_from      TYPE string,
-    lv_to        TYPE string.
+    lv_to        TYPE string,
+    lo_error     TYPE REF TO zcx_eui_exception.
 
   " Update formula
   DEFINE replace_all_with_buck.
@@ -327,7 +328,11 @@ METHOD cell_write_xml.
 
   " To text
   int_2_text iv_new_row lv_new_row.
-  lv_new_col = cl_ex_sheet=>convert_column2alpha( iv_new_col_ind ).
+  TRY.
+      lv_new_col = zcl_eui_file_io=>int_2_column( iv_new_col_ind ).
+    CATCH zcx_eui_exception INTO lo_error.
+      zcx_eui_exception=>raise_dump( io_error = lo_error ).
+  ENDTRY.
 
   " Formula
   IF is_cell->c_formula IS NOT INITIAL.
@@ -387,7 +392,11 @@ METHOD cell_write_xml.
     int_2_text lv_index lv_number.
 
     lv_index = is_cell->c_col_ind + is_cell->c_merge_col_dx.
-    lv_merge_col = cl_ex_sheet=>convert_column2alpha( lv_index  ).
+    TRY.
+        lv_merge_col = zcl_eui_file_io=>int_2_column( lv_index  ).
+      CATCH zcx_eui_exception INTO lo_error.
+        zcx_eui_exception=>raise_dump( io_error = lo_error ).
+    ENDTRY.
 
     CONCATENATE cv_merge_cells `<mergeCell ref="`
       is_cell->c_col  lv_new_row `:`
@@ -484,7 +493,7 @@ METHOD CONSTRUCTOR.
 
 ***************************************
   " Main work book
-  zcl_xtt_util=>xml_from_zip(
+  zcl_eui_conv=>xml_from_zip(
    EXPORTING
     io_zip     = mo_zip
     iv_name    = 'xl/workbook.xml'      "#EC NOTEXT
@@ -493,7 +502,7 @@ METHOD CONSTRUCTOR.
 
 ***************************************
   " Shared strings. Mainly <t> tags
-  zcl_xtt_util=>xml_from_zip(
+  zcl_eui_conv=>xml_from_zip(
    EXPORTING
     io_zip     = mo_zip
     iv_name    = 'xl/sharedStrings.xml' "#EC NOTEXT
@@ -629,7 +638,7 @@ METHOD get_raw.
   ENDLOOP.
   CONCATENATE l_val `</sst>` INTO l_val.
 
-  zcl_xtt_util=>xml_to_zip(
+  zcl_eui_conv=>xml_to_zip(
    io_zip   = mo_zip
    iv_name  = `xl/sharedStrings.xml`
    iv_sdoc  = l_val ).
@@ -670,9 +679,9 @@ METHOD get_raw.
 
   " Write XML to zip
   IF mt_defined_names IS NOT INITIAL.
-    zcl_xtt_util=>xml_to_zip(
+    zcl_eui_conv=>xml_to_zip(
      io_zip    = mo_zip
-     iv_name   = 'xl/workbook.xml' "#EC NOTEXT
+     iv_name   = 'xl/workbook.xml'                          "#EC NOTEXT
      io_xmldoc = mo_workbook ).
   ENDIF.
 
@@ -718,7 +727,7 @@ METHOD LIST_OBJECT_READ_XML.
      ls_area_ref      TYPE REF TO ts_ex_area.
 
     " Read relations
-    zcl_xtt_util=>xml_from_zip(
+    zcl_eui_conv=>xml_from_zip(
      EXPORTING
       io_zip    = mo_zip
       iv_name   = iv_path
@@ -739,7 +748,7 @@ METHOD LIST_OBJECT_READ_XML.
       CONCATENATE `xl/tables/` l_val+10 INTO ls_list_object-arc_path. "#EC NOTEXT
 
       " Dom
-      zcl_xtt_util=>xml_from_zip(
+      zcl_eui_conv=>xml_from_zip(
        EXPORTING
         io_zip    = mo_zip
         iv_name   = ls_list_object-arc_path

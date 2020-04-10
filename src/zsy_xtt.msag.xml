@@ -11,6 +11,12 @@
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>000</MSGNR>
+     <TEXT>&amp;1&amp;2&amp;3&amp;4</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
      <MSGNR>001</MSGNR>
      <TEXT>Error in the template</TEXT>
     </T100>

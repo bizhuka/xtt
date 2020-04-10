@@ -28,7 +28,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     CONCATENATE `xl/worksheets/sheet` l_sheet_ind `.xml` INTO mv_full_path. "#EC NOTEXT
 
     " Content as an object
-    zcl_xtt_util=>xml_from_zip(
+    zcl_eui_conv=>xml_from_zip(
      EXPORTING
        io_zip     = io_xlsx->mo_zip
        iv_name    = mv_full_path
@@ -389,7 +389,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     ENDIF.
 
     " Transform to string
-    zcl_xtt_util=>xml_to_str(
+    zcl_eui_conv=>xml_to_str(
      EXPORTING
        io_doc    = mo_dom
      IMPORTING
@@ -403,7 +403,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     ENDIF.
 
     " Replace XML file
-    zcl_xtt_util=>xml_to_zip(
+    zcl_eui_conv=>xml_to_zip(
      io_zip  = io_xlsx->mo_zip
      iv_name = mv_full_path
      iv_sdoc = l_str ).
@@ -434,7 +434,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lo_table->set_attribute( name = 'ref' value = lv_address ). "#EC NOTEXT
 
       " Replace in zip
-      zcl_xtt_util=>xml_to_zip(
+      zcl_eui_conv=>xml_to_zip(
        io_zip     = io_xlsx->mo_zip
        iv_name    = ls_list_object->arc_path
        io_xmldoc  = ls_list_object->dom ).
@@ -894,87 +894,6 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     " Begin!
     DELETE ct_cells FROM lv_ind_beg.
   ENDMETHOD.                    "split_2_content
-*--------------------------------------------------------------------*
-  METHOD convert_column2int.
-    DATA: lv_uccpi   TYPE i,
-          lv_factor  TYPE i,
-          lv_offset  TYPE i,
-          lv_char    TYPE c,
-          lr_col_ind TYPE REF TO ts_col_ind,
-          ls_col_ind TYPE ts_col_ind.
-
-*   Upper case
-    TRANSLATE iv_column TO UPPER CASE.
-    CONDENSE iv_column NO-GAPS.
-
-    " For speed
-    READ TABLE mt_col_ind REFERENCE INTO lr_col_ind
-     WITH TABLE KEY col = iv_column.
-    IF sy-subrc = 0.
-      rv_column = lr_col_ind->ind.
-      RETURN.
-    ENDIF.
-
-*   Get string lenght and align to right
-    lv_offset = 3 - strlen( iv_column ).
-
-    SHIFT iv_column RIGHT BY lv_offset PLACES.
-
-*   Claculate column position
-    DO 3 TIMES.
-      lv_offset = sy-index - 1.
-      lv_char = iv_column+lv_offset(1).
-      IF lv_char IS INITIAL.
-        CONTINUE.
-      ENDIF.
-      lv_uccpi   = cl_abap_conv_out_ce=>uccpi( lv_char ).
-      lv_factor  = 26 ** ( 3 - sy-index ).
-      rv_column  = rv_column + ( lv_uccpi MOD 64 ) * lv_factor.
-    ENDDO.
-
-    " Add to both tables
-    CONDENSE iv_column.
-    ls_col_ind-col = iv_column.
-    ls_col_ind-ind = rv_column.
-    INSERT ls_col_ind INTO TABLE mt_col_ind.
-    INSERT ls_col_ind INTO TABLE mt_ind_col.
-  ENDMETHOD.                    "convert_column2int
-
-  METHOD convert_column2alpha.
-    DATA:
-      lr_col_ind TYPE REF TO ts_col_ind,
-      ls_col_ind TYPE ts_col_ind,
-      lv_module  TYPE i,
-      lv_uccpi   TYPE i,
-      lv_text    TYPE sychar02.
-    IF iv_column > 16384 OR iv_column < 1.
-      MESSAGE x005(zsy_xtt) WITH iv_column.
-    ENDIF.
-
-    " For speed
-    READ TABLE mt_ind_col REFERENCE INTO lr_col_ind
-     WITH TABLE KEY ind = iv_column.
-    IF sy-subrc = 0.
-      rv_column = lr_col_ind->col.
-      RETURN.
-    ENDIF.
-
-    ls_col_ind-ind = iv_column.
-    WHILE iv_column GT 0.
-      lv_module = ( iv_column - 1 ) MOD 26.
-      lv_uccpi  = 65 + lv_module.
-
-      iv_column = ( iv_column - lv_module ) / 26.
-
-      lv_text   = cl_abap_conv_in_ce=>uccpi( lv_uccpi ).
-      CONCATENATE lv_text rv_column INTO rv_column.
-    ENDWHILE.
-
-    " Add to both tables
-    ls_col_ind-col = rv_column.
-    INSERT ls_col_ind INTO TABLE mt_col_ind.
-    INSERT ls_col_ind INTO TABLE mt_ind_col.
-  ENDMETHOD.
 *--------------------------------------------------------------------*
 ENDCLASS.                    "cl_ex_sheet IMPLEMENTATION
 

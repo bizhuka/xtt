@@ -186,21 +186,7 @@ CLASS cl_main IMPLEMENTATION.
             IF p_stru = abap_true.
               l_show = abap_false.
             ELSEIF screen-name CP '*P_SHOW*'.
-              zcl_xtt_util=>get_ole_info(
-               EXPORTING
-                 iv_class_name = ls_screen_opt-class_name
-               CHANGING
-                 cv_proxy_app  = lv_proxy_app
-                 cv_file_ext   = lv_ext ).
-
-              CLEAR l_show.
-              IF lv_proxy_app IS NOT INITIAL OR lv_ext IS NOT INITIAL.
-                l_show = abap_true.
-              ENDIF.
-
-              IF l_show <> abap_true.
-                p_show = abap_false.
-              ENDIF.
+              l_show = abap_true.
             ENDIF.
 
           WHEN OTHERS.
@@ -264,12 +250,20 @@ CLASS cl_main IMPLEMENTATION.
     CHECK lo_xtt IS NOT INITIAL.
     CASE 'X'.
       WHEN p_dwnl.
-        lo_xtt->download(        " All parameters are optional
-         EXPORTING
-          iv_open     = p_open
-          iv_zip      = p_zip
-         CHANGING
-          cv_fullpath = p_path ).
+        IF p_open = abap_true.
+          lo_xtt->download(        " All parameters are optional
+           EXPORTING
+            iv_zip      = p_zip
+           CHANGING
+            cv_fullpath = p_path ).
+        ELSE.
+          lo_xtt->download(
+           EXPORTING
+            iv_open     = p_open " Could be ZCL_XTT=>MC_BY_OLE
+            iv_zip      = p_zip
+           CHANGING
+            cv_fullpath = p_path ).
+        ENDIF.
 
       WHEN p_show.
         lo_xtt->show( ).

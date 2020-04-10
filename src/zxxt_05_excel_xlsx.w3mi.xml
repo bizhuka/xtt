@@ -8,6 +8,12 @@
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.xlsx</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
      <NAME>filename</NAME>
      <VALUE>zxxt_05_excel.xlsx</VALUE>
     </WWWPARAMS>
@@ -16,12 +22,6 @@
      <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
      <NAME>mimetype</NAME>
      <VALUE>msexcel/application</VALUE>
-    </WWWPARAMS>
-    <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
-     <NAME>fileextension</NAME>
-     <VALUE>.xlsx</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

@@ -52,7 +52,7 @@ METHOD constructor.
     lt_sbdst_signature   TYPE sbdst_signature,
     ls_sbdst_signature   TYPE REF TO bapisignat,
     lt_sbdst_components2 TYPE sbdst_components2,
-    ls_sbdst_components2 TYPE REF TO bapicompo2,
+    ls_sbdst_components2 TYPE REF TO bapicompo2.
 *    lt_connect           TYPE srm_bdsconn_t,
 *    ls_connect           TYPE REF TO bapiconnec,
 *    lv_maxver            LIKE iv_version,
@@ -60,7 +60,7 @@ METHOD constructor.
 *    lv_objid             TYPE toav0-object_id,
 *    lt_conn              TYPE STANDARD TABLE OF toav0,
 *    ls_conn              TYPE REF TO toav0,
-    lv_cnt               TYPE i.
+*    lv_cnt               TYPE i.
   FIELD-SYMBOLS:
    <l_val>               TYPE csequence.
 
@@ -114,7 +114,10 @@ METHOD constructor.
     signature           = lt_sbdst_signature
    EXCEPTIONS
     OTHERS              = 7 ).
-  CHECK sy-subrc = 0.
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE 'S' NUMBER sy-msgno WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO sy-msgli.
+    zcx_xtt_exception=>raise_dump( iv_message = sy-msgli ).
+  ENDIF.
 
   " lt_sbdst_signature structure is complex
   LOOP AT lt_sbdst_signature REFERENCE INTO ls_sbdst_signature.
@@ -144,9 +147,11 @@ METHOD constructor.
   " Apply filter
   DELETE lt_signature WHERE file_name <> iv_filename.
 
+  " Max versions first
+  SORT lt_signature BY doc_id doc_ver_no DESCENDING.
+
   " Read the last version
-  lv_cnt = lines( lt_signature ).
-  READ TABLE lt_signature INTO ms_signature INDEX lv_cnt.
+  READ TABLE lt_signature INTO ms_signature INDEX 1.
 
   CHECK sy-subrc <> 0.
   MESSAGE 'Unable to detect the file'(udf) TYPE 'X'.
@@ -164,6 +169,10 @@ METHOD zif_xtt_file~get_content.
   FIELD-SYMBOLS:
    <lt_table>   TYPE STANDARD TABLE.
 
+  CLEAR:
+    ev_as_string,
+    ev_as_xstring.
+
   ls_object_id-class = ms_signature-class.
   ls_object_id-objid = ms_signature-objid.
 
@@ -177,7 +186,10 @@ METHOD zif_xtt_file~get_content.
       file_content_binary = lt_bin
     EXCEPTIONS
       OTHERS              = 5.
-  CHECK sy-subrc = 0.
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE 'S' NUMBER sy-msgno WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4 INTO sy-msgli.
+    zcx_xtt_exception=>raise_dump( iv_message = sy-msgli ).
+  ENDIF.
 
   READ TABLE lt_info REFERENCE INTO ls_info INDEX 1.
   CHECK sy-subrc = 0.
@@ -194,20 +206,20 @@ METHOD zif_xtt_file~get_content.
 
   " Result as a xstring
   IF ev_as_xstring IS REQUESTED.
-    ev_as_xstring = zcl_xtt_util=>binary_to_xstring(
+    ev_as_xstring = zcl_eui_conv=>binary_to_xstring(
      it_table  = <lt_table>
      iv_length = lv_file_size ).
     RETURN.
   ENDIF.
 
   " Result as a string. if ev_as_STRING Is Requested
-  ev_as_string = zcl_xtt_util=>binary_to_string(
+  ev_as_string = zcl_eui_conv=>binary_to_string(
    it_table  = <lt_table>
    iv_length = lv_file_size ).
 ENDMETHOD.
 
 
-method ZIF_XTT_FILE~GET_NAME.
+METHOD zif_xtt_file~get_name.
   rv_name = ms_signature-file_name.
-endmethod.
+ENDMETHOD.
 ENDCLASS.

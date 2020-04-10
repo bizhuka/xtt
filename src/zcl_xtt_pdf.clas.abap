@@ -28,6 +28,9 @@ METHOD constructor.
    iv_body_tag         = 'template'
    iv_row_tag          = 'subform'
    iv_table_page_break = '<breakAfter targetType="pageArea"/>' ).
+
+  " Change extension
+  REPLACE ALL OCCURRENCES OF `.xdp` IN mv_file_name WITH `.pdf` IGNORING CASE.
 ENDMETHOD.
 
 

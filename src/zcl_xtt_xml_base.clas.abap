@@ -22,8 +22,8 @@ public section.
       !IV_BODY_TAG type CSEQUENCE
       !IV_ROW_TAG type CSEQUENCE
       !IV_PATH_IN_ARC type CSEQUENCE optional
-      !IV_FILE_FORMAT type I optional
-      !IV_FILE_FORMAT_EXT type STRING optional
+      !IV_OLE_EXT type STRING optional
+      !IV_OLE_EXT_FORMAT type I optional
       !IV_SKIP_TAGS type ABAP_BOOL optional
       !IV_TABLE_PAGE_BREAK type STRING optional .
 
@@ -35,11 +35,13 @@ public section.
     redefinition .
 protected section.
 
+  data MV_OLE_EXT_FORMAT type I .
   data MV_BODY_TAG type STRING .
   data MV_ROW_TAG type STRING .
   data MV_FILE_CONTENT type STRING .
   data MV_VALUE type STRING .
   data MV_PREFIX type STRING .
+
   methods DO_MERGE
     importing
       !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL default ABAP_FALSE
@@ -80,8 +82,6 @@ protected section.
       !IV_POS_END .
 private section.
 
-  data MV_FILE_FORMAT type I .
-  data MV_FILE_FORMAT_EXT type STRING .
   data MV_PATH_IN_ARC type STRING .
   data MV_SKIP_TAGS type ABAP_BOOL .
   data MO_ZIP type ref to CL_ABAP_ZIP .
@@ -97,7 +97,9 @@ CLASS ZCL_XTT_XML_BASE IMPLEMENTATION.
 METHOD constructor.
   DATA:
     lv_value TYPE xstring.
-  super->constructor( io_file = io_file ).
+  super->constructor(
+   io_file    = io_file
+   iv_ole_ext = iv_ole_ext  ).
 
   " For regex
   mv_body_tag            = iv_body_tag.
@@ -106,9 +108,8 @@ METHOD constructor.
   mv_skip_tags           = iv_skip_tags.
   mv_if_table_page_break = iv_table_page_break.
 
-  " For download method
-  mv_file_format     = iv_file_format.
-  mv_file_format_ext = iv_file_format_ext.
+  " For download & show methods
+  mv_ole_ext_format = iv_ole_ext_format.
 
   " As text
   IF mv_path_in_arc IS INITIAL.
@@ -126,7 +127,7 @@ METHOD constructor.
   mo_zip->load( lv_value ).
 
   " Get content as a string from file
-  zcl_xtt_util=>xml_from_zip(
+  zcl_eui_conv=>xml_from_zip(
    EXPORTING
     io_zip   = mo_zip
     iv_name  = mv_path_in_arc
@@ -143,7 +144,7 @@ METHOD download.
 
   " If need saveAs
   lv_open = iv_open.
-  IF mv_file_format IS NOT INITIAL AND mv_file_format_ext IS NOT INITIAL.
+  IF iv_open IS NOT SUPPLIED AND mv_ole_ext IS NOT INITIAL AND mv_ole_ext_format IS NOT INITIAL.
     lv_open = mc_by_ole.
   ENDIF.
 
@@ -157,26 +158,33 @@ METHOD download.
      cv_fullpath = cv_fullpath ).
 
   " If opened as OLE
-  CHECK lv_open = mc_by_ole.
+  IF lv_open <> mc_by_ole AND lv_open <> mc_by_ole_hide.
+    RETURN.
+  ENDIF.
 
   " New file name
-  zcl_xtt_util=>split_file_path(
+  zcl_eui_file=>split_file_path(
     EXPORTING
-      iv_fullpath       = cv_fullpath
+      iv_fullpath   = cv_fullpath
     IMPORTING
-      ev_filename_noext = lv_no_ext
-      ev_path           = lv_path ).
-  CONCATENATE lv_path lv_no_ext mv_file_format_ext INTO cv_fullpath.
+      ev_file_noext = lv_no_ext
+      ev_path       = lv_path ).
+  CONCATENATE lv_path lv_no_ext `.` mv_ole_ext INTO cv_fullpath.
 
   " Already exist. Add date and time
   IF cl_gui_frontend_services=>file_exist( cv_fullpath ) = abap_true.
-    CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` mv_file_format_ext INTO cv_fullpath.
+    CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` mv_ole_ext INTO cv_fullpath.
   ENDIF.
 
   CALL METHOD OF cv_ole_doc 'SaveAs'
     EXPORTING
       #1 = cv_fullpath
-      #2 = mv_file_format.
+      #2 = mv_ole_ext_format.
+
+  IF lv_open = mc_by_ole_hide.
+    CALL METHOD OF cv_ole_app 'QUIT'.
+    FREE OBJECT: cv_ole_doc, cv_ole_app.
+  ENDIF.
 ENDMETHOD.
 
 
@@ -256,6 +264,11 @@ METHOD do_merge.
         cv_before     = lv_before
         cv_middle     = cv_content
         cv_after      = lv_after ).
+
+      " TODO silent mode?
+      IF lv_before IS INITIAL AND lv_after IS INITIAL.
+        CONTINUE.
+      ENDIF.
     ENDIF.
 
     CASE ls_field->typ.
@@ -405,10 +418,10 @@ METHOD get_raw.
 
   IF mv_path_in_arc IS INITIAL.
     " Can convert XML or HTML result to pdf or attach to email for example
-    rv_content = zcl_xtt_util=>string_to_xstring( mv_file_content ).
+    rv_content = zcl_eui_conv=>string_to_xstring( mv_file_content ).
   ELSE.
     " Replace XML file
-    zcl_xtt_util=>xml_to_zip(
+    zcl_eui_conv=>xml_to_zip(
      io_zip  = mo_zip
      iv_name = mv_path_in_arc
      iv_sdoc = mv_file_content ).
@@ -427,10 +440,10 @@ ENDMETHOD.
 
 METHOD merge.
   DATA:
-    lo_replace_block        TYPE REF TO zcl_xtt_replace_block,
-    lv_typekind             TYPE abap_typekind,
-    lv_before               TYPE string,
-    lv_after                TYPE string.
+    lo_replace_block TYPE REF TO zcl_xtt_replace_block,
+    lv_typekind      TYPE abap_typekind,
+    lv_before        TYPE string,
+    lv_after         TYPE string.
 
   " Prepare for replacement
   CREATE OBJECT lo_replace_block
@@ -454,6 +467,11 @@ METHOD merge.
     cv_before               = lv_before
     cv_middle               = mv_file_content
     cv_after                = lv_after ).
+
+***  " TODO silent mode?
+***  IF lv_before IS INITIAL AND lv_after IS INITIAL.
+***    RETURN.
+***  ENDIF.
 
   " Update middle part (Body)
   do_merge(
@@ -535,6 +553,11 @@ METHOD split_by_tag.
 *************
   " 1 - Text before body
   READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_first_match.
+
+  " TODO silent mode ?
+  IF sy-subrc <> 0.
+    RETURN.
+  ENDIF.
 
   " Does need an open tag?
   IF lv_with_tag = abap_true.

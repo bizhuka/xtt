@@ -142,10 +142,14 @@ CLASS cl_main DEFINITION FINAL.
             sender
             ir_content, " Type Ref To XSTRING
 
-      on_pbo_07 FOR EVENT pbo OF zcl_xtt
+      on_pbo_07 FOR EVENT pbo_event OF zif_eui_manager
         IMPORTING
             sender
-            io_app_obj,
+            io_container,
+
+      check_ole_07
+        IMPORTING
+          io_ole_app TYPE ole2_object,
 
       example_08                                            "#EC CALLED
         IMPORTING

@@ -10,3 +10,6 @@ XTT helps you to automate your reporting routine in SAP
 - That's all!
 
 For more information read [wiki](https://github.com/bizhuka/xtt/wiki)
+
+### From 2020
+You have to install [EUI](https://github.com/bizhuka/eui) library first 

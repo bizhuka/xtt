@@ -20,8 +20,9 @@ METHOD example_08.
   " No need to fill for empty template
   IF p_temp <> abap_true.
     " {R-T} in a temaplte. @see get_random_table description
-    ls_root-t = cl_main=>get_random_table( ).
-
+    cl_main=>get_random_table(
+     IMPORTING
+       et_table = ls_root-t ).
     LOOP AT ls_root-t REFERENCE INTO ls_item.
       APPEND INITIAL LINE TO lt_rows REFERENCE INTO ls_row.
       MOVE-CORRESPONDING ls_item->* TO ls_row->*.

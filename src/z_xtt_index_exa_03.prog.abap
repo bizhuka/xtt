@@ -36,7 +36,9 @@ METHOD example_03.
       CONCATENATE `Bottom ` lv_num INTO ls_root->bottom.
 
       " @see get_random_table description
-      ls_root->t = cl_main=>get_random_table( ).
+      cl_main=>get_random_table(
+       IMPORTING
+         et_table = ls_root->t ).
 
       CASE lv_rem.
         WHEN 1.

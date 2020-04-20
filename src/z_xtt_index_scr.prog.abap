@@ -10,6 +10,9 @@ PARAMETERS:
   " Row count
   p_r_cnt TYPE int4 DEFAULT 15 MODIF ID oth,
 
+  " Column count
+  p_c_cnt TYPE numc2 DEFAULT 36 MODIF ID oth,
+
   " Block count
   p_b_cnt TYPE int4 DEFAULT 3  MODIF ID oth,
 

@@ -101,6 +101,12 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_C_CNT</KEY>
+     <ENTRY>Column count</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_DWNL</KEY>
      <ENTRY>Download</ENTRY>
      <LENGTH>16</LENGTH>

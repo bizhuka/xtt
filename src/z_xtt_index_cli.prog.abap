@@ -88,6 +88,10 @@ CLASS cl_main IMPLEMENTATION.
 
         WHEN 08.
           ls_screen_opt-show_row_count   = abap_true.
+
+        WHEN 09.
+          ls_screen_opt-show_row_count   = abap_true.
+          ls_screen_opt-show_colum_count = abap_true.
       ENDCASE.
 
       " Add with description
@@ -192,6 +196,8 @@ CLASS cl_main IMPLEMENTATION.
           WHEN OTHERS.
             IF screen-name CP '*P_R_CNT*'.
               l_show = ls_screen_opt-show_row_count.
+            ELSEIF screen-name CP '*P_C_CNT*'.
+              l_show = ls_screen_opt-show_colum_count.
             ELSEIF screen-name CP '*P_B_CNT*'.
               l_show = ls_screen_opt-show_block_count.
             ELSEIF screen-name CP '*P_ZIP*'.
@@ -337,29 +343,35 @@ CLASS cl_main IMPLEMENTATION.
     DATA:
       lo_rand_i TYPE REF TO cl_abap_random_int,
       lo_rand_p TYPE REF TO cl_abap_random_packed,
-      lv_int    TYPE i.
+      ls_no_sum TYPE ts_no_sum,
+      lv_int    TYPE i,
+      lv_column TYPE string.
     FIELD-SYMBOLS:
-     <ls_item> LIKE LINE OF rt_table.
+      <ls_item> TYPE any,
+      <lv_sum>  TYPE bf_rbetr. " P with sign
+
+    CLEAR et_table.
 
     " A,B,C,D chars
     lo_rand_i = cl_abap_random_int=>create( min = 0 max = 3 ).
     " SUMS
     lo_rand_p = cl_abap_random_packed=>create( min = 0 max = 1000000 ).
     DO p_r_cnt TIMES.
-      APPEND INITIAL LINE TO rt_table ASSIGNING <ls_item>.
+      " Fill without sums
+      CLEAR ls_no_sum.
 
       " Special XML symbols <>
-      <ls_item>-caption = sy-index.
-      CONCATENATE `<Caption ` <ls_item>-caption `/>` INTO <ls_item>-caption.
+      ls_no_sum-caption = sy-index.
+      CONCATENATE `<Caption ` ls_no_sum-caption `/>` INTO ls_no_sum-caption.
 
       " Date
       lv_int = lo_rand_i->get_next( ).
-      <ls_item>-date = sy-datum - lv_int.
+      ls_no_sum-date = sy-datum - lv_int.
 
       " 3 different groups
       lv_int = lv_int + 65.
-      <ls_item>-group = cl_abap_conv_in_ce=>uccpi( lv_int ).
-      CONCATENATE `GRP ` <ls_item>-group INTO <ls_item>-group.
+      ls_no_sum-group = cl_abap_conv_in_ce=>uccpi( lv_int ).
+      CONCATENATE `GRP ` ls_no_sum-group INTO ls_no_sum-group.
 
       " And finally sums
 **********************************************************************
@@ -367,11 +379,28 @@ CLASS cl_main IMPLEMENTATION.
       " If 'N' type has conversion exit it will transformed to mask type
       " Use ;type=mask addition in template for using WRITE ... TO
 **********************************************************************
-      <ls_item>-sum1 = lo_rand_p->get_next( ). " / 100
-      <ls_item>-sum1 = <ls_item>-sum1 / 100.
 
-      <ls_item>-sum2 = lo_rand_p->get_next( ). " / 100
-      <ls_item>-sum2 = <ls_item>-sum2 / 100.
+      " Write without sums
+      APPEND INITIAL LINE TO et_table ASSIGNING <ls_item>.
+      MOVE-CORRESPONDING ls_no_sum TO <ls_item>.
+
+      " Fill R-T-SUM*
+      DO iv_column_cnt TIMES.
+        " Get column name
+        lv_column = sy-index.
+        CONDENSE lv_column.
+        CONCATENATE `SUM` lv_column INTO lv_column.
+
+        " Exist ?
+        ASSIGN COMPONENT lv_column OF STRUCTURE <ls_item> TO <lv_sum>.
+        IF sy-subrc <> 0.
+          zcx_xtt_exception=>raise_dump( iv_message = `Check data structure` ).
+        ENDIF.
+
+        " Show with decimals
+        <lv_sum> = lo_rand_p->get_next( ). " / 100
+        <lv_sum> = <lv_sum> / 100.
+      ENDDO.
     ENDDO.
   ENDMETHOD.
 
@@ -383,5 +412,6 @@ CLASS cl_main IMPLEMENTATION.
   INCLUDE z_xtt_index_exa_06.
   INCLUDE z_xtt_index_exa_07.
   INCLUDE z_xtt_index_exa_08.
+  INCLUDE z_xtt_index_exa_09.
 
 ENDCLASS.

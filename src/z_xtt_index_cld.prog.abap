@@ -8,13 +8,18 @@ TYPE-POOLS:
 CLASS cl_main DEFINITION FINAL.
   PUBLIC SECTION.
     TYPES:
-      " Random table data
-      BEGIN OF ts_rand_data,
+      BEGIN OF ts_no_sum,
         group   TYPE string,
         caption TYPE string,
         date    TYPE d,
-        sum1    TYPE p LENGTH 13 DECIMALS 2,
-        sum2    TYPE p LENGTH 13 DECIMALS 2,
+      END OF ts_no_sum,
+
+      " Random table data
+      BEGIN OF ts_rand_data.
+        INCLUDE TYPE ts_no_sum.
+    TYPES:
+      sum1 TYPE bf_rbetr, " P with sign
+      sum2 TYPE bf_rbetr, " P with sign
       END OF ts_rand_data,
       tt_rand_data TYPE STANDARD TABLE OF ts_rand_data WITH DEFAULT KEY,
 
@@ -22,6 +27,7 @@ CLASS cl_main DEFINITION FINAL.
       BEGIN OF ts_screen_opt,
         key              TYPE char5,
         show_row_count   TYPE abap_bool,
+        show_colum_count TYPE abap_bool,
         show_block_count TYPE abap_bool,
         show_zip         TYPE abap_bool,
         class_name       TYPE string,
@@ -155,12 +161,21 @@ CLASS cl_main DEFINITION FINAL.
         IMPORTING
                   iv_class_name TYPE csequence
                   iv_template   TYPE csequence
+        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+
+      example_09                                            "#EC CALLED
+        IMPORTING
+                  iv_class_name TYPE csequence
+                  iv_template   TYPE csequence
         RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt.
 
     CLASS-METHODS:
       " Random data for tables
       get_random_table
-        RETURNING VALUE(rt_table) TYPE tt_rand_data.
+        IMPORTING
+          iv_column_cnt TYPE numc2 DEFAULT 2
+        EXPORTING
+          et_table      TYPE STANDARD TABLE.
 
     DATA:
        mt_screen_opt TYPE tt_screen_opt.

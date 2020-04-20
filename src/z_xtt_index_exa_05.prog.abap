@@ -16,14 +16,16 @@ METHOD example_05.
     ls_item  TYPE REF TO ts_rand_data,
     lt_rows  TYPE tt_tree_05,
     ls_row   TYPE REF TO ts_tree_05,
-    lr_table TYPE REF TO DATA.
+    lr_table TYPE REF TO data.
 
   " No need to fill for empty template
   IF p_temp <> abap_true.
     ls_root-title = `Title`.
 
     " @see get_random_table description
-    lt_items = cl_main=>get_random_table( ).
+    cl_main=>get_random_table(
+     IMPORTING
+       et_table = lt_items ).
     LOOP AT lt_items REFERENCE INTO ls_item.
       APPEND INITIAL LINE TO lt_rows REFERENCE INTO ls_row.
       MOVE-CORRESPONDING ls_item->* TO ls_row->*.

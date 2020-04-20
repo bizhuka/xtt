@@ -20,7 +20,9 @@ METHOD example_02.
   " No need to fill for empty template
   IF p_temp <> abap_true.
     " {R-T} in a temaplte. @see get_random_table description
-    ls_root-t      = cl_main=>get_random_table( ).
+    cl_main=>get_random_table(
+     IMPORTING
+       et_table = ls_root-t ).
 
     " For printing
     ls_root-footer = 'Footer'.

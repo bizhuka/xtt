@@ -5,7 +5,7 @@ METHOD example_09.
   TYPES:
     " Document structure
     BEGIN OF ts_merge0,
-      a TYPE REF TO data, " Tree 1 In template {R-T}
+      a TYPE REF TO data, " Tree 1 In template {C-A}
     END OF ts_merge0,
 
     BEGIN OF ts_merge1,
@@ -106,7 +106,7 @@ METHOD example_09.
     " Columns
     ro_xtt->merge( is_block = ls_merge0 iv_block_name = 'C' ).
 
-*    " Rows
+    " Rows
     ro_xtt->merge( ls_merge1 ).
   ENDIF.
 ENDMETHOD.

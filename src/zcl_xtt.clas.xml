@@ -50,6 +50,12 @@
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>SEND_AS_BODY</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Send document as message body to email OR sap user</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>SHOW</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Show inplace (@see PBO and PAI events)</DESCRIPT>

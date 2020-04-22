@@ -58,14 +58,6 @@ public section.
       !IV_EXPRESS type ABAP_BOOL default ABAP_TRUE
       !IO_SENDER type ref to IF_SENDER_BCS optional
       !IV_COMMIT type ABAP_BOOL default ABAP_FALSE .
-  methods SEND_AS_BODY
-    importing
-      !IT_RECIPIENTS type RMPS_RECIPIENT_BCS optional
-      !IT_RECIPIENTS_BCS type TT_RECIPIENTS_BCS optional
-      !IV_SUBJECT type SO_OBJ_DES
-      !IV_EXPRESS type ABAP_BOOL default ABAP_TRUE
-      !IO_SENDER type ref to IF_SENDER_BCS optional
-      !IV_COMMIT type ABAP_BOOL default ABAP_FALSE .
   class-methods IS_COMMON_GUI
     returning
       value(RV_OK) type ABAP_BOOL .
@@ -303,73 +295,6 @@ METHOD send.
       IF iv_commit = abap_true.
         COMMIT WORK AND WAIT.
       ENDIF.
-    CATCH cx_bcs INTO lo_exp.
-      lv_text = lo_exp->if_message~get_text( ).
-      MESSAGE lv_text TYPE 'E'.
-  ENDTRY.
-ENDMETHOD.
-
-
-METHOD send_as_body.
-  DATA:
-    lo_mail      TYPE REF TO cl_bcs,
-    lo_doc       TYPE REF TO cl_document_bcs,
-    lo_recipient TYPE REF TO if_recipient_bcs,
-    lt_header    TYPE soli_tab,
-    ls_header    TYPE REF TO soli,
-    lv_subject   TYPE sood-objdes,
-    lv_ext       TYPE soodk-objtp,
-    lv_size      TYPE sood-objlen,
-    lv_file_size TYPE i,
-    lt_data      TYPE solix_tab,
-    lo_exp       TYPE REF TO cx_bcs,
-    lv_text      TYPE string,
-    lt_body      TYPE soli_tab,
-    lv_filename  TYPE string,
-    lv_value     TYPE xstring,
-    lv_body      TYPE string.
-  FIELD-SYMBOLS:
-      <ls_recipient> LIKE LINE OF it_recipients_bcs.
-
-  TRY.
-      lv_value = get_raw( ).
-      " Request
-      lo_mail = cl_bcs=>create_persistent( ).
-
-      " Body
-      DATA lt_solix TYPE solix_tab.
-      lt_solix = cl_document_bcs=>xstring_to_solix( lv_value ).
-      lo_doc = cl_document_bcs=>create_document(
-       i_type    = 'HTM'
-       i_hex = lt_solix
-       i_subject = iv_subject ).
-
-      " № 1 - Add recipients
-      LOOP AT it_recipients INTO lo_recipient.
-        lo_mail->add_recipient( i_recipient = lo_recipient i_express = iv_express ).
-      ENDLOOP.
-
-      " № 2 - Add recipients
-      LOOP AT it_recipients_bcs ASSIGNING <ls_recipient>.
-        lo_mail->add_recipient(
-          i_recipient  = <ls_recipient>-recipient
-          i_express    = <ls_recipient>-express
-          i_copy       = <ls_recipient>-copy
-          i_blind_copy = <ls_recipient>-blind_copy
-          i_no_forward = <ls_recipient>-no_forward ).
-      ENDLOOP.
-
-      " Change sender if necessary
-      IF io_sender IS NOT INITIAL.
-        lo_mail->set_sender( io_sender ).
-      ENDIF.
-
-      " And send
-      lo_mail->set_document( lo_doc ).
-      lo_mail->set_send_immediately( abap_true ).
-      lo_mail->send( ).
-
-      COMMIT WORK AND WAIT.
     CATCH cx_bcs INTO lo_exp.
       lv_text = lo_exp->if_message~get_text( ).
       MESSAGE lv_text TYPE 'E'.

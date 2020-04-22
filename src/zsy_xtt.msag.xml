@@ -45,6 +45,43 @@
      <TEXT>Wrong column index &amp;1</TEXT>
     </T100>
    </T100>
+   <I18N_LANGS>
+    <LANGU>R</LANGU>
+   </I18N_LANGS>
+   <T100T>
+    <T100T>
+     <SPRSL>R</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <STEXT>Сообщения в XML Toolkit</STEXT>
+    </T100T>
+   </T100T>
+   <T100_TEXTS>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>001</MSGNR>
+     <TEXT>Ошибка в шаблоне</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>002</MSGNR>
+     <TEXT>Неизвестный тип &amp;1</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>003</MSGNR>
+     <TEXT>&amp;1 ошибка интерпретации</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>004</MSGNR>
+     <TEXT>&amp;1 - ссылка в никуда</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>005</MSGNR>
+     <TEXT>Неправильный индекс колонки &amp;1</TEXT>
+    </item>
+   </T100_TEXTS>
   </asx:values>
  </asx:abap>
 </abapGit>

@@ -652,7 +652,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
           " Date
         WHEN zcl_xtt_replace_block=>mc_type_date.
-          ASSIGN is_field->dref->* TO <l_date>.
+          ASSIGN is_field->dref->* TO <l_date> CASTING. " allow accept char(8) as date
           CLEAR ms_cell->c_type.
 
           " Time

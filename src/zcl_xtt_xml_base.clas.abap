@@ -172,7 +172,16 @@ METHOD download.
   CONCATENATE lv_path lv_no_ext `.` mv_ole_ext INTO cv_fullpath.
 
   " Already exist. Add date and time
-  IF cl_gui_frontend_services=>file_exist( cv_fullpath ) = abap_true.
+  DATA lv_exist TYPE abap_bool.
+  cl_gui_frontend_services=>file_exist(
+    EXPORTING
+      file = cv_fullpath
+    RECEIVING
+      result = lv_exist
+    EXCEPTIONS
+      OTHERS = 0 "prevent GUI messages when file not found
+  ).
+  IF lv_exist = abap_true.
     CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` mv_ole_ext INTO cv_fullpath.
   ENDIF.
 

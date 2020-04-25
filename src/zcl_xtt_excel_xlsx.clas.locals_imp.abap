@@ -657,7 +657,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
           " Time
         WHEN zcl_xtt_replace_block=>mc_type_time.
-          ASSIGN is_field->dref->* TO <l_time>.
+          ASSIGN is_field->dref->* TO <l_time> CASTING. " allow accept char(6) as time
           CLEAR ms_cell->c_type.
 
         WHEN zcl_xtt_replace_block=>mc_type_boolean.

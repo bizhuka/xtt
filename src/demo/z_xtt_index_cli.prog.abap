@@ -49,29 +49,29 @@ CLASS cl_main IMPLEMENTATION.
 
       IF <ls_wwwdata>-objid CP '*_DOC*'.
         ls_screen_opt-class_name = 'ZCL_XTT_WORD_DOCX'.
-        lv_desc                  = 'Word'. "#EC NOTEXT
+        lv_desc                  = 'Word'.                  "#EC NOTEXT
 
       ELSEIF <ls_wwwdata>-objid CP '*_XLS*'.
         ls_screen_opt-class_name = 'ZCL_XTT_EXCEL_XLSX'.
-        lv_desc                  = 'Excel'. "#EC NOTEXT
+        lv_desc                  = 'Excel'.                 "#EC NOTEXT
 
       ELSEIF <ls_wwwdata>-objid CP '*WORD*_XML'.
         ls_screen_opt-class_name = 'ZCL_XTT_WORD_XML'.
-        lv_desc                  = 'Word XML'. "#EC NOTEXT
+        lv_desc                  = 'Word XML'.              "#EC NOTEXT
         ls_screen_opt-show_zip = abap_true.
 
       ELSEIF <ls_wwwdata>-objid CP '*EXCEL*_XML'.
         ls_screen_opt-class_name = 'ZCL_XTT_EXCEL_XML'.
-        lv_desc                  = 'Excel XML'. "#EC NOTEXT
+        lv_desc                  = 'Excel XML'.             "#EC NOTEXT
         ls_screen_opt-show_zip = abap_true.
 
       ELSEIF <ls_wwwdata>-objid CP '*_PDF' OR <ls_wwwdata>-objid CP '*_XDP'.
         ls_screen_opt-class_name = 'ZCL_XTT_PDF'.
-        lv_desc                  = 'Adobe PDF'. "#EC NOTEXT
+        lv_desc                  = 'Adobe PDF'.             "#EC NOTEXT
 
       ELSEIF <ls_wwwdata>-objid CP '*_HTM*'.
         ls_screen_opt-class_name = 'ZCL_XTT_HTML'.
-        lv_desc                  = 'Html'. "#EC NOTEXT
+        lv_desc                  = 'Html'.                  "#EC NOTEXT
       ENDIF.
 
       " Additional parameters
@@ -112,7 +112,7 @@ CLASS cl_main IMPLEMENTATION.
     SELECT SINGLE adr6~smtp_addr INTO p_email
     FROM adr6
     INNER JOIN usr21 ON usr21~addrnumber = adr6~addrnumber AND usr21~persnumber = adr6~persnumber
-    WHERE usr21~bname = sy-uname.                          "#EC CI_NOORDER
+    WHERE usr21~bname = sy-uname.                       "#EC CI_NOORDER
 
     " First item
     p_exa = '01-00'.
@@ -148,9 +148,8 @@ CLASS cl_main IMPLEMENTATION.
     CONCATENATE lv_date  lv_time  INTO lv_datetime_db.
     CONCATENATE sy-datum sy-uzeit INTO lv_datetime_now.
 
-    IF lv_datetime_now > lv_datetime_db.
-      MESSAGE 'Activate ZXTT_BREAK_POINT in tr. SAAB'(tbr) TYPE 'S' DISPLAY LIKE 'E'.
-    ENDIF.
+    CHECK lv_datetime_now > lv_datetime_db.
+    MESSAGE 'Activate ZXTT_BREAK_POINT in tr. SAAB'(tbr) TYPE 'S' DISPLAY LIKE 'E'.
   ENDMETHOD.
 
   METHOD pbo.
@@ -254,9 +253,8 @@ CLASS cl_main IMPLEMENTATION.
         ro_xtt        = lo_xtt.
 
     " Call respective method
-    if lo_xtt IS NOT BOUND.
-      RETURN.
-    ENDIF.
+    CHECK lo_xtt IS NOT INITIAL.
+
     CASE 'X'.
       WHEN p_dwnl.
         IF p_open = abap_true.
@@ -293,13 +291,12 @@ CLASS cl_main IMPLEMENTATION.
             lv_text = lo_err->if_message~get_text( ).
             MESSAGE lv_text TYPE 'S' DISPLAY LIKE 'E'.
         ENDTRY.
-        IF lt_recipient IS NOT INITIAL.
 
-          lo_xtt->send(
-           it_recipients = lt_recipient
-           iv_subject    = p_title
-           iv_body       = p_text ).
-        ENDIF.
+        CHECK lt_recipient IS NOT INITIAL.
+        lo_xtt->send(
+         it_recipients = lt_recipient
+         iv_subject    = p_title
+         iv_body       = p_text ).
     ENDCASE.
   ENDMETHOD.
 
@@ -321,9 +318,8 @@ CLASS cl_main IMPLEMENTATION.
         user_action = lv_result
       EXCEPTIONS
         OTHERS      = 1 ).
-    if sy-subrc = 0 AND lv_result = cl_gui_frontend_services=>action_ok.
-      cv_fullpath = lv_fullpath.
-    ENDIF.
+    CHECK sy-subrc = 0 AND lv_result = cl_gui_frontend_services=>action_ok.
+    cv_fullpath = lv_fullpath.
   ENDMETHOD.
 
   METHOD f4_dir_browse.
@@ -340,9 +336,9 @@ CLASS cl_main IMPLEMENTATION.
         selected_folder = lv_path
       EXCEPTIONS
         OTHERS          = 1 ).
-    if sy-subrc = 0 AND lv_path IS NOT INITIAL.
-      cv_path = lv_path.
-    ENDIF.
+
+    CHECK sy-subrc = 0 AND lv_path IS NOT INITIAL.
+    cv_path = lv_path.
   ENDMETHOD.
 
   METHOD get_random_table.

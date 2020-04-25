@@ -318,7 +318,7 @@ METHOD catch_prepare_tree.
         ENDIF.
 
       WHEN OTHERS.
-        MESSAGE X006(ZSY_XTT). "Unknown function
+        zcx_xtt_exception=>raise_dump( iv_message = `Unknown function` ).  "#EC NOTEXT
     ENDCASE.
   ENDLOOP.
 ENDMETHOD.

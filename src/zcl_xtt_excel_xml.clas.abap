@@ -67,9 +67,7 @@ METHOD find_bounds.
   CASE iv_tag.
     WHEN mv_body_tag.
       ev_with_tag    = iv_first_level_is_table.
-      IF ev_with_tag = abap_false.
-        RETURN.
-      ENDIF.
+      CHECK ev_with_tag = abap_true.
 
       " Detect bounds
       CONCATENATE `<Worksheet*ss:Name="` zcl_xtt_replace_block=>mc_char_block_begin iv_block_name `*` INTO lv_pattern.
@@ -103,9 +101,8 @@ METHOD hide_excel_warning.
     lv_len   TYPE i.                                        "#EC NEEDED
 
   " Can change registry
-  IF is_common_gui( ) = abap_false.
-    RETURN.
-  ENDIF.
+  CHECK is_common_gui( ) = abap_true.
+
   " Get current excel version
   cl_gui_frontend_services=>registry_get_value(
    EXPORTING
@@ -115,29 +112,28 @@ METHOD hide_excel_warning.
     reg_value            = lv_value
    EXCEPTIONS
     OTHERS               = 1 ).
-  IF sy-subrc = 0 AND lv_value IS NOT INITIAL.
+  CHECK sy-subrc = 0 AND lv_value IS NOT INITIAL.
 
-    " two last digits are excel current version
-    lv_len   = strlen( lv_value ). " - 2
-    lv_len   = lv_len - 2.
-    lv_value = lv_value+lv_len.
+  " two last digits are excel current version
+  lv_len   = strlen( lv_value ). " - 2
+  lv_len   = lv_len - 2.
+  lv_value = lv_value+lv_len.
 
-    " Write value
-    CONCATENATE `Software\Microsoft\Office\` lv_value `.0\Excel\Security` INTO lv_value.
-    cl_gui_frontend_services=>registry_set_dword_value(
-     EXPORTING
-      root                 = cl_gui_frontend_services=>hkey_current_user
-      key                  = lv_value
-      value                = 'ExtensionHardening'
-      dword_value          = 0
-     IMPORTING
-      rc                   = lv_len
-     EXCEPTIONS
-      OTHERS               = 1 ).
-    IF sy-subrc = 0.
-      cl_gui_cfw=>flush( ).
-    ENDIF.
-  ENDIF.
+  " Write value
+  CONCATENATE `Software\Microsoft\Office\` lv_value `.0\Excel\Security` INTO lv_value.
+  cl_gui_frontend_services=>registry_set_dword_value(
+   EXPORTING
+    root                 = cl_gui_frontend_services=>hkey_current_user
+    key                  = lv_value
+    value                = 'ExtensionHardening'
+    dword_value          = 0
+   IMPORTING
+    rc                   = lv_len
+   EXCEPTIONS
+    OTHERS               = 1 ).
+
+  CHECK sy-subrc = 0.
+  cl_gui_cfw=>flush( ).
 ENDMETHOD.
 
 

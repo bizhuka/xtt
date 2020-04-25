@@ -55,17 +55,16 @@ METHOD on_pbo_07.
   APPEND 'CANC' TO sender->ms_status-exclude.
 
   " 1 time only
-  if io_container IS NOT INITIAL.
+  CHECK io_container IS NOT INITIAL.
 
-    DATA lo_eui_file TYPE REF TO zcl_eui_file.
-    DATA ls_ole_info TYPE zcl_eui_file=>ts_ole_info.
+  DATA lo_eui_file TYPE REF TO zcl_eui_file.
+  DATA ls_ole_info TYPE zcl_eui_file=>ts_ole_info.
 
-    lo_eui_file ?= sender.
-    ls_ole_info = lo_eui_file->get_ole_info( ).
+  lo_eui_file ?= sender.
+  ls_ole_info = lo_eui_file->get_ole_info( ).
 
-    " Call macro Error
-    check_ole_07( io_ole_app = ls_ole_info-app ).
-  ENDIF.
+  " Call macro Error
+  check_ole_07( io_ole_app = ls_ole_info-app ).
 ENDMETHOD.
 
 METHOD check_ole_07.
@@ -81,7 +80,7 @@ METHOD check_ole_07.
       #2 = 'From SAP'. "#EC NOTEXT
 
   " OR Call OLE like that
-  SET PROPERTY OF io_ole_app 'StatusBar' = 'OLE Call'. "#EC NOTEXT
+  SET PROPERTY OF io_ole_app 'StatusBar' = 'OLE Call'.      "#EC NOTEXT
 
   GET PROPERTY OF io_ole_app 'Charts' = lv_charts.
   CALL METHOD OF lv_charts 'Add'.
@@ -116,10 +115,10 @@ METHOD on_prepare_raw_07.
   " For new MS Office Open XML formats is a zip archive
   CASE lv_class_name.
     WHEN 'ZCL_XTT_EXCEL_XLSX'. " OR 'ZCL_XTT_EXCEL_XML'.
-      lv_path_in_arc = 'xl/worksheets/sheet1.xml'. "#EC NOTEXT
+      lv_path_in_arc = 'xl/worksheets/sheet1.xml'.          "#EC NOTEXT
 
     WHEN 'ZCL_XTT_WORD_DOCX'. " OR 'ZCL_XTT_WORD_XML'.
-      lv_path_in_arc = 'word/document.xml'. "#EC NOTEXT
+      lv_path_in_arc = 'word/document.xml'.                 "#EC NOTEXT
   ENDCASE.
 
   " Get content as a string from file
@@ -144,7 +143,7 @@ METHOD on_prepare_raw_07.
       lv_mod = sy-index MOD 2.
       IF lv_mod = 0.
         lo_col->set_attribute(
-          name = 'hidden' "#EC NOTEXT
+          name = 'hidden'                                   "#EC NOTEXT
           value = '1' ).
       ENDIF.
       lo_col ?= lo_col->get_next( ).

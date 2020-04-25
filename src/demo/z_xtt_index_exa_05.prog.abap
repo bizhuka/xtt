@@ -20,7 +20,7 @@ METHOD example_05.
 
   " No need to fill for empty template
   IF p_temp <> abap_true.
-    ls_root-title = `Title`.
+    ls_root-title = `Title`. "#EC NOTEXT
 
     " @see get_random_table description
     cl_main=>get_random_table(

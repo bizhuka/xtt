@@ -17,10 +17,10 @@ METHOD example_01.
 
   " No need to fill for empty template
   IF p_temp <> abap_true.
-    ls_root-title   = 'Document title'.
-    ls_root-text    = 'Just string'.
+    ls_root-title   = 'Document title'. "#EC NOTEXT
+    ls_root-text    = 'Just string'. "#EC NOTEXT
     ls_root-int     = 3.
-    ls_root-bottom  = 'bottom'.
+    ls_root-bottom  = 'bottom'. "#EC NOTEXT
   ENDIF.
 
   " Show data structure only

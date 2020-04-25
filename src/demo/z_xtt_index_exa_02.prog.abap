@@ -25,8 +25,8 @@ METHOD example_02.
        et_table = ls_root-t ).
 
     " For printing
-    ls_root-footer = 'Footer'.
-    ls_root-header = 'Header'.
+    ls_root-footer = 'Footer'. "#EC NOTEXT
+    ls_root-header = 'Header'. "#EC NOTEXT
 
     " Date and time in header and footer
     ls_root-date   = sy-datum.

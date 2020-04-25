@@ -47,8 +47,8 @@ PARAMETERS:
   p_send  RADIOBUTTON GROUP meth   MODIF ID met,
   p_email TYPE adr6-smtp_addr      MODIF ID snd,
   p_user  TYPE syuname             MODIF ID snd DEFAULT sy-uname,
-  p_title TYPE so_obj_des          MODIF ID snd DEFAULT 'Letter subject',
-  p_text  TYPE text255             MODIF ID snd DEFAULT 'The body of the letter'.
+  p_title TYPE so_obj_des          MODIF ID snd DEFAULT 'Letter subject', "#EC NOTEXT
+  p_text  TYPE text255             MODIF ID snd DEFAULT 'The body of the letter'. "#EC NOTEXT
 SELECTION-SCREEN END OF   BLOCK bl_method.
 
 SELECTION-SCREEN BEGIN OF SCREEN 1010.

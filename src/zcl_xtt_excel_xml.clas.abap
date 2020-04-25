@@ -29,8 +29,8 @@ CLASS ZCL_XTT_EXCEL_XML IMPLEMENTATION.
 METHOD constructor.
   super->constructor(
    io_file            = io_file
-   iv_body_tag        = 'Worksheet'
-   iv_row_tag         = 'Row'
+   iv_body_tag        = 'Worksheet' "#EC NOTEXT
+   iv_row_tag         = 'Row'       "#EC NOTEXT
    iv_ole_ext         = iv_ole_ext
    iv_ole_ext_format  = iv_ole_ext_format ).
 
@@ -38,8 +38,8 @@ METHOD constructor.
 
   " Delete row count in sheet and row index (Delete blank rows)
   REPLACE ALL OCCURRENCES OF REGEX:
-   `(<Table [^>]+)\bss:ExpandedRowCount="[^"]*"` IN mv_file_content WITH `$1`,
-   `(<Row [^>]+)\bss:Index="[^"]*"`              IN mv_file_content WITH `$1`.
+   `(<Table [^>]+)\bss:ExpandedRowCount="[^"]*"` IN mv_file_content WITH `$1`, "#EC NOTEXT
+   `(<Row [^>]+)\bss:Index="[^"]*"`              IN mv_file_content WITH `$1`. "#EC NOTEXT
 ENDMETHOD.
 
 
@@ -67,7 +67,9 @@ METHOD find_bounds.
   CASE iv_tag.
     WHEN mv_body_tag.
       ev_with_tag    = iv_first_level_is_table.
-      CHECK ev_with_tag = abap_true.
+      IF ev_with_tag = abap_false.
+        RETURN.
+      ENDIF.
 
       " Detect bounds
       CONCATENATE `<Worksheet*ss:Name="` zcl_xtt_replace_block=>mc_char_block_begin iv_block_name `*` INTO lv_pattern.
@@ -101,8 +103,9 @@ METHOD hide_excel_warning.
     lv_len   TYPE i.                                        "#EC NEEDED
 
   " Can change registry
-  CHECK is_common_gui( ) = abap_true.
-
+  IF is_common_gui( ) = abap_false.
+    RETURN.
+  ENDIF.
   " Get current excel version
   cl_gui_frontend_services=>registry_get_value(
    EXPORTING
@@ -112,27 +115,29 @@ METHOD hide_excel_warning.
     reg_value            = lv_value
    EXCEPTIONS
     OTHERS               = 1 ).
-  CHECK sy-subrc = 0 AND lv_value IS NOT INITIAL.
+  IF sy-subrc = 0 AND lv_value IS NOT INITIAL.
 
-  " two last digits are excel current version
-  lv_len   = strlen( lv_value ). " - 2
-  lv_len   = lv_len - 2.
-  lv_value = lv_value+lv_len.
+    " two last digits are excel current version
+    lv_len   = strlen( lv_value ). " - 2
+    lv_len   = lv_len - 2.
+    lv_value = lv_value+lv_len.
 
-  " Write value
-  CONCATENATE `Software\Microsoft\Office\` lv_value `.0\Excel\Security` INTO lv_value.
-  cl_gui_frontend_services=>registry_set_dword_value(
-   EXPORTING
-    root                 = cl_gui_frontend_services=>hkey_current_user
-    key                  = lv_value
-    value                = 'ExtensionHardening'
-    dword_value          = 0
-   IMPORTING
-    rc                   = lv_len
-   EXCEPTIONS
-    OTHERS               = 1 ).
-  CHECK sy-subrc = 0.
-  cl_gui_cfw=>flush( ).
+    " Write value
+    CONCATENATE `Software\Microsoft\Office\` lv_value `.0\Excel\Security` INTO lv_value.
+    cl_gui_frontend_services=>registry_set_dword_value(
+     EXPORTING
+      root                 = cl_gui_frontend_services=>hkey_current_user
+      key                  = lv_value
+      value                = 'ExtensionHardening'
+      dword_value          = 0
+     IMPORTING
+      rc                   = lv_len
+     EXCEPTIONS
+      OTHERS               = 1 ).
+    IF sy-subrc = 0.
+      cl_gui_cfw=>flush( ).
+    ENDIF.
+  ENDIF.
 ENDMETHOD.
 
 
@@ -153,7 +158,7 @@ METHOD on_match_found.
   l_start = iv_pos_beg - 8.
   DO 1 TIMES.
     " original type is string
-    CHECK <lv_content>+l_start(6)    = 'String'.
+    CHECK <lv_content>+l_start(6)    = 'String'. "#EC NO_TEXT
 
     " ends with template delimiter (Value takes exactly whole cell)
     CONCATENATE zcl_xtt_replace_block=>mc_char_block_end  '</' INTO lv_cell_block_end.
@@ -171,25 +176,25 @@ METHOD on_match_found.
         " Both parts
         ASSIGN <l_string>(8)     TO <l_date> CASTING.
         ASSIGN <l_string>+8(6)   TO <l_time> CASTING.
-        me->mv_prefix = 'DateTime">'.
+        me->mv_prefix = 'DateTime">'. "#EC NO_TEXT
 
         " Date
       WHEN zcl_xtt_replace_block=>mc_type_date.
         ASSIGN is_field->dref->* TO <l_date>.
-        me->mv_prefix = 'DateTime">'.
+        me->mv_prefix = 'DateTime">'. "#EC NO_TEXT
 
         " Time
       WHEN zcl_xtt_replace_block=>mc_type_time.
         ASSIGN is_field->dref->* TO <l_time>.
-        me->mv_prefix = 'DateTime">'.
+        me->mv_prefix = 'DateTime">'. "#EC NOTEXT
 
         " Boolean
       WHEN zcl_xtt_replace_block=>mc_type_boolean.
-        me->mv_prefix = 'Boolean">'.
+        me->mv_prefix = 'Boolean">'. "#EC NOTEXT
 
         " Number
       WHEN zcl_xtt_replace_block=>mc_type_integer OR zcl_xtt_replace_block=>mc_type_double.
-        me->mv_prefix = 'Number">'.
+        me->mv_prefix = 'Number">'. "#EC NOTEXT
 
         " Just string
       WHEN OTHERS.
@@ -197,7 +202,7 @@ METHOD on_match_found.
     ENDCASE.
 
     " For date and time
-    CHECK me->mv_prefix = 'DateTime">'.
+    CHECK me->mv_prefix = 'DateTime">'. "#EC NOTEXT
 
     " Date only
     IF <l_date> IS ASSIGNED.
@@ -217,11 +222,11 @@ METHOD on_match_found.
 
     IF     `1899-12-31T00:00:00` = me->mv_value.
       me->mv_value  = ` `.
-      me->mv_prefix = `String">`.
+      me->mv_prefix = `String">`. "#EC NOTEXT
       " Use WRITE ... TO
     ELSEIF `1899-12-31T`         > me->mv_value.
       CLEAR me->mv_value.
-      me->mv_prefix = `String">`.
+      me->mv_prefix = `String">`. "#EC NOTEXT
     ENDIF.
   ENDDO.
 

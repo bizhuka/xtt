@@ -32,8 +32,8 @@ METHOD example_03.
       lv_rem = sy-index MOD 4.
 
       APPEND INITIAL LINE TO lt_root REFERENCE INTO ls_root.
-      CONCATENATE `Title ` lv_num INTO ls_root->title.
-      CONCATENATE `Bottom ` lv_num INTO ls_root->bottom.
+      CONCATENATE `Title ` lv_num INTO ls_root->title. "#EC NOTEXT
+      CONCATENATE `Bottom ` lv_num INTO ls_root->bottom. "#EC NOTEXT
 
       " @see get_random_table description
       cl_main=>get_random_table(
@@ -53,8 +53,8 @@ METHOD example_03.
     ENDDO.
 
     " second merge
-    ls_doc-f_title = `First title`.
-    ls_doc-l_title = `Last title`.
+    ls_doc-f_title = `First title`. "#EC NOTEXT
+    ls_doc-l_title = `Last title`. "#EC NOTEXT
   ENDIF.
 
   " Show data structure only

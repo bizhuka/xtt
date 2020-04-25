@@ -58,6 +58,11 @@
    <T100_TEXTS>
     <item>
      <SPRSL>R</SPRSL>
+     <MSGNR>000</MSGNR>
+     <TEXT>&amp;1&amp;2&amp;3&amp;4</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
      <MSGNR>001</MSGNR>
      <TEXT>Ошибка в шаблоне</TEXT>
     </item>

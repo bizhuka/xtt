@@ -175,12 +175,11 @@ METHOD download.
   DATA lv_exist TYPE abap_bool.
   cl_gui_frontend_services=>file_exist(
     EXPORTING
-      file = cv_fullpath
+      file   = cv_fullpath
     RECEIVING
       result = lv_exist
     EXCEPTIONS
-      OTHERS = 0 "prevent GUI messages when file not found
-  ).
+      OTHERS = 0 ). " prevent GUI messages when file not found
   IF lv_exist = abap_true.
     CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` mv_ole_ext INTO cv_fullpath.
   ENDIF.

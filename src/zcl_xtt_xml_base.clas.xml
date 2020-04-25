@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>XML without parsing</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>CONSTRUCTOR</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>MO_ZIP</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Zip Utility</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>MV_IF_TABLE_PAGE_BREAK</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>If pass a table to Merge() method</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>MV_IS_TABLE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>For word &amp; pdf</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>MV_OLE_EXT_FORMAT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>For SaveAs</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>SPLIT_BY_TAG</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Split content to header, body and footer</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>TS_TEXT_MATCH</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>1 match for a TREE</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>TT_TEXT_MATCH</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>all matches for a TREE</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

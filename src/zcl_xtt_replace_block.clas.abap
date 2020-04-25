@@ -318,7 +318,7 @@ METHOD catch_prepare_tree.
         ENDIF.
 
       WHEN OTHERS.
-        MESSAGE 'Unkown function' TYPE 'X'.
+        MESSAGE X006(ZSY_XTT). "Unknown function
     ENDCASE.
   ENDLOOP.
 ENDMETHOD.
@@ -1068,7 +1068,9 @@ METHOD tree_initialize.
   lo_struc ?= cl_abap_typedescr=>describe_by_data( <lv_any> ).
 
   " Structure declaration
-  APPEND `REPORT DYNAMIC_IF. TYPES: BEGIN OF TS_ROW, ` TO lt_code.
+  APPEND `REPORT DYNAMIC_IF.` TO lt_code.
+  APPEND `TYPE-POOLS ABAP.` TO lt_code. "Required by ABAP 7.01
+  APPEND `TYPES: BEGIN OF TS_ROW, ` TO lt_code.
 
   LOOP AT lo_struc->components REFERENCE INTO ls_comp.
     " Convert to strings

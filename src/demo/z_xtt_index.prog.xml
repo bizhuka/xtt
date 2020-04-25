@@ -12,6 +12,12 @@
    <TPOOL>
     <item>
      <ID>I</ID>
+     <KEY>EXA</KEY>
+     <ENTRY>Example</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>F4F</KEY>
      <ENTRY>Select fullpath</ENTRY>
      <LENGTH>25</LENGTH>
@@ -24,9 +30,27 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>MET</KEY>
+     <ENTRY>Method</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>NDA</KEY>
+     <ENTRY>No data at all</ENTRY>
+     <LENGTH>24</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>PSE</KEY>
      <ENTRY>Please select example</ENTRY>
      <LENGTH>42</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>RES</KEY>
+     <ENTRY>Result</ENTRY>
+     <LENGTH>16</LENGTH>
     </item>
     <item>
      <ID>I</ID>

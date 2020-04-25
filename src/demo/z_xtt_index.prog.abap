@@ -12,7 +12,7 @@ INCLUDE z_xtt_index_cli.
 
 **********************************************************************
 DATA:
- go_main TYPE REF TO cl_main.
+ go_main TYPE REF TO cl_main. "#EC NEEDED
 
 INITIALIZATION.
   CREATE OBJECT go_main.

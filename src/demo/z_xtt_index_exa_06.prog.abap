@@ -20,17 +20,19 @@ METHOD example_06.
 
   " No need to fill for empty template
   IF p_temp <> abap_true.
-    ls_root-title = `Title`.
+    ls_root-title = `Title`. "#EC NOTEXT
 
     " Show directory
     CALL SELECTION-SCREEN 1010 STARTING AT 5 5.
-    CHECK sy-subrc = 0.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
 
     " Delete file separator
     cl_gui_frontend_services=>get_file_separator(
      CHANGING
        file_separator = lv_sep ).
-    cl_gui_cfw=>flush( EXCEPTIONS OTHERS = 1 ).
+    cl_gui_cfw=>flush( EXCEPTIONS OTHERS = 0 ).
 
     lv_len = strlen( p_r_path ) - 1.
     IF p_r_path+lv_len(1) = lv_sep.
@@ -100,23 +102,24 @@ METHOD fill_with_folders.
      count            = lv_cnt
    EXCEPTIONS
      OTHERS           = 1 ).
-  CHECK sy-subrc = 0 AND lv_cnt > 0.
+  if sy-subrc = 0 AND lv_cnt > 0.
 
-  " Add one by one
-  LOOP AT lt_folder REFERENCE INTO lv_folder.
-    " New item
-    APPEND INITIAL LINE TO ct_folder REFERENCE INTO ls_folder.
-    CONCATENATE iv_dir iv_sep lv_folder->* INTO ls_folder->dir.
-    ls_folder->par_dir = iv_dir.
+    " Add one by one
+    LOOP AT lt_folder REFERENCE INTO lv_folder.
+      " New item
+      APPEND INITIAL LINE TO ct_folder REFERENCE INTO ls_folder.
+      CONCATENATE iv_dir iv_sep lv_folder->* INTO ls_folder->dir.
+      ls_folder->par_dir = iv_dir.
 
-    " Next level
-    fill_with_folders(
-     EXPORTING
-       iv_dir    = ls_folder->dir
-       iv_sep    = iv_sep
-     CHANGING
-       ct_folder = ct_folder ).
-  ENDLOOP.
+      " Next level
+      fill_with_folders(
+       EXPORTING
+         iv_dir    = ls_folder->dir
+         iv_sep    = iv_sep
+       CHANGING
+         ct_folder = ct_folder ).
+    ENDLOOP.
+  ENDIF.
 ENDMETHOD.
 
 METHOD on_prepare_tree_06.

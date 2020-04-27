@@ -208,8 +208,7 @@ METHOD send.
     lv_size      TYPE sood-objlen,
     lv_file_size TYPE i,
     lt_data      TYPE solix_tab,
-    lo_exp       TYPE REF TO cx_bcs,
-    lv_text      TYPE string,
+    lo_error     TYPE REF TO cx_bcs,
     lt_body      TYPE soli_tab,
     lv_value     TYPE xstring,
     lv_filename  TYPE string,
@@ -295,9 +294,8 @@ METHOD send.
       IF iv_commit = abap_true.
         COMMIT WORK AND WAIT.
       ENDIF.
-    CATCH cx_bcs INTO lo_exp.
-      lv_text = lo_exp->if_message~get_text( ).
-      MESSAGE lv_text TYPE 'E'.
+    CATCH cx_bcs INTO lo_error.
+      MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
   ENDTRY.
 ENDMETHOD.
 

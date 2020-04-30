@@ -9,7 +9,38 @@ XTT helps you to automate your reporting routine in SAP
 - Use **`download()|send()|show()`** method for appropreate action
 - That's all!
 
-For more information read [wiki](https://github.com/bizhuka/xtt/wiki)
+---
+
+###  Template
+![image](https://user-images.githubusercontent.com/36256417/80579411-6b7c0600-8a23-11ea-8166-d48e63b7d085.png)
+
+### Code
+
+```abap
+" Template storage class (tr OAOR -> zcl_xtt_file_oaor, external sources -> ZCL_XTT_FILE_RAW)
+DATA(lo_file) = NEW zcl_xtt_file_smw0( 'Z_TEMPLATE_ID.XLSX' ).
+
+" Excel (Use ZCL_XTT_WORD_DOCX, ZCL_XTT_PDF for word and pdf respectively)
+DATA(lo_xtt) = NEW zcl_xtt_excel_xlsx( io_file = lo_file ).
+
+" R is a marker in the IV_TEMPLATE
+lo_xtt->merge( iv_block_name = 'R'
+               is_block = VALUE ts_root(
+                begda = pn-begda
+                endda = pn-endda
+                
+                " for hierarchies use ZCL_XTT_REPLACE_BLOCK=>TREE_CREATE* methods
+                t     = lt_alv    
+               ) ).
+
+" Download to sap_tmp. You could specify path. Show SaveAs dialogue
+" Call SHOW( ) for inplace mode
+lo_xtt->download( ).
+```
+
+---
+
+For more information please read [wiki](https://github.com/bizhuka/xtt/wiki)
 
 ### From 2020
 You have to install [EUI](https://github.com/bizhuka/eui) library first 

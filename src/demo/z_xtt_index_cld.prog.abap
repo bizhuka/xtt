@@ -127,8 +127,7 @@ CLASS cl_main DEFINITION FINAL.
       on_prepare_tree_06 FOR EVENT prepare_tree OF zcl_xtt_replace_block
         IMPORTING
             ir_tree
-            ir_data
-            ir_sub_data,
+            ir_data,
 
       fill_with_folders
         IMPORTING

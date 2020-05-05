@@ -67,7 +67,7 @@ ENDMETHOD.
 METHOD on_prepare_tree_05.
   FIELD-SYMBOLS:
     <ls_data>     TYPE ts_tree_05,
-    <lt_sub_data> TYPE ANY TABLE,
+    <lt_sub_data> TYPE tt_tree_05,
     <ls_sub_data> TYPE ts_tree_05.
 
   CHECK ir_sub_data IS NOT INITIAL AND
@@ -76,7 +76,7 @@ METHOD on_prepare_tree_05.
   " Cast to specefic data
   ASSIGN:
    ir_data->*        TO <ls_data>,
-   ir_sub_data->*    TO <lt_sub_data>.
+   ir_sub_data->*    TO <lt_sub_data> CASTING.
 
   " Virtual field
   <ls_data>-ch_count = lines( <lt_sub_data> ).                 " -----> ;func=COUNT

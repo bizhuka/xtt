@@ -27,7 +27,8 @@ CLASS cl_main IMPLEMENTATION.
     END-OF-DEFINITION.
 
     " Parameter settings for Web Reporting
-    SELECT DISTINCT objid text INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata
+    SELECT DISTINCT objid text  "##TOO_MANY_ITAB_FIELDS
+       INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata
     FROM wwwdata
     WHERE objid LIKE 'ZXXT_%'
     ORDER BY objid.                                     "#EC CI_NOFIRST
@@ -155,9 +156,7 @@ CLASS cl_main IMPLEMENTATION.
   METHOD pbo.
     DATA:
       ls_screen_opt TYPE ts_screen_opt,
-      l_show        TYPE abap_bool,
-      lv_proxy_app  TYPE string,
-      lv_ext        TYPE string.
+      l_show        TYPE abap_bool.
 
     " Show or hide controls
     READ TABLE mt_screen_opt INTO ls_screen_opt

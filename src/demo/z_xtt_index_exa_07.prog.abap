@@ -93,7 +93,6 @@ METHOD on_prepare_raw_07.
     lo_desc        TYPE REF TO cl_abap_classdescr,
     lv_class_name  TYPE string,
     lv_path_in_arc TYPE string,
-    lv_xml         TYPE string,
     lo_xml         TYPE REF TO if_ixml_document,
     lo_col         TYPE REF TO if_ixml_element,
     lv_mod         TYPE i.
@@ -128,7 +127,8 @@ METHOD on_prepare_raw_07.
     iv_name   = lv_path_in_arc
    IMPORTING
     eo_xmldoc = lo_xml    " As REF TO if_ixml_document
-    ev_sdoc   = lv_xml ). " As STRING
+*    ev_sdoc   = lv_xml " As STRING
+   ).
 
   " do some action with lv_xml and write data back
   " Usually with REGEX

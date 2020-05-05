@@ -31,12 +31,12 @@ METHOD example_04.
     CONCATENATE sy-datum sy-uzeit INTO ls_root-datetime.
 
     " Assign Internal to Language-Dependent Unit
-    SELECT msehi msehl INTO CORRESPONDING FIELDS OF TABLE ls_root-u
+    SELECT msehi msehl INTO CORRESPONDING FIELDS OF TABLE ls_root-u "##TOO_MANY_ITAB_FIELDS
     FROM t006a
     WHERE spras = sy-langu.
 
     " Country Names
-    SELECT land1 landx INTO CORRESPONDING FIELDS OF TABLE ls_root-c
+    SELECT land1 landx INTO CORRESPONDING FIELDS OF TABLE ls_root-c "##TOO_MANY_ITAB_FIELDS
     FROM t005t
     WHERE spras = sy-langu.
 

@@ -44,20 +44,20 @@ For more information please read [wiki](https://github.com/bizhuka/xtt/wiki)
 
 | English| Русский |
 |-------------|-------------|
-|[Installation guide](https://github.com/bizhuka/aqo/wiki/Installation-guide)| [Инструкция по установке](https://github.com/bizhuka/aqo/wiki/Инструкция-по-установке) |
-|[Main features](https://github.com/bizhuka/aqo/wiki/Main-features)| [Ключевые особенности](https://github.com/bizhuka/aqo/wiki/Ключевые-особенности)  |
+|[Installation guide](https://github.com/bizhuka/xtt/wiki/Installation-guide)| [Инструкция по установке](https://github.com/bizhuka/xtt/wiki/Инструкция-по-установке) |
+|[Main features](https://github.com/bizhuka/xtt/wiki/Main-features)| [Ключевые особенности](https://github.com/bizhuka/xtt/wiki/Ключевые-особенности)  |
 | tr. Z_XTT_INDEX | тр. Z_XTT_INDEX |
-| [Example №01 Simple structure](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9601-Simple-structure) | [Пример №01 Вывод простой структуры](https://github.com/bizhuka/aqo/wiki/Пример-№01-Вывод-простой-структуры) |
-| [Example №02 Basic tables](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9602-Basic-tables) | [Пример №02 Вывод простой таблицы](https://github.com/bizhuka/aqo/wiki/Пример-№02-Вывод-простой-таблицы) |
-| [Example №03 Nested blocks](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9603-Nested-blocks) | [Пример №03 Вложенные блоки](https://github.com/bizhuka/aqo/wiki/Пример-№03-Вложенные-блоки) |
-| [Example №04 Data types & Excel post processing](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9604-Data-types-&-Excel-post-processing) | [Пример №04 Типы данных и пост обработка Excel](https://github.com/bizhuka/aqo/wiki/Пример-№04-Типы-данных-и-пост-обработка-Excel) |
-| [Example №05 Tree (group by fields)](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9605-Tree-(group-by-fields)) | [Пример №05 Деревья (группировка по полям)](https://github.com/bizhuka/aqo/wiki/Пример-№05-Деревья-(группировка-по-полям)) |
-| [Example №05_co Output level by condition](https://github.com/bizhuka/aqo/wiki/Example-№05_co-Output-level-by-condition) |[Пример №05_co Вывод уровня по условию](https://github.com/bizhuka/aqo/wiki/Пример-№05_co-Вывод-уровня-по-условию) |
-| [Example №05_fm Aggregation functions](https://github.com/bizhuka/aqo/wiki/Example-№05_fm-Aggregation-functions) |[Пример №05_fm Функции агрегации](https://github.com/bizhuka/aqo/wiki/Пример-№05_fm-Функции-агрегации) |
-| [Example №06 Tree (group by field relations)](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9606-Tree-(group-by-field-relations)) | [Пример №06 Деревья (на основе связи родитель дочерний)](https://github.com/bizhuka/aqo/wiki/Пример-№06-Деревья-(на-основе-связи-родитель-дочерний)) |
-| [Example №07 Macro call & prepare_raw event](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9607-Macro-call-&-prepare_raw-event) | [Пример №07 Вызов макроса и событие prepare_raw](https://github.com/bizhuka/aqo/wiki/Пример-№07-Вызов-макроса-и-событие-prepare_raw) |
-| [Example №08 ;direction=column addition](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9608-;direction=column-addition) | [Пример №08 Дополнение ;direction=column](https://github.com/bizhuka/aqo/wiki/Пример-№08-Дополнение-;direction=column) |
-| [Example №09 Dynamic table (tree)](https://github.com/bizhuka/aqo/wiki/Example-%E2%84%9609-Dynamic-table) | [Пример №09 Динамическая таблица (дерево)](https://github.com/bizhuka/aqo/wiki/Пример-№09-Динамическая-таблица) |
+| [Example №01 Simple structure](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9601-Simple-structure) | [Пример №01 Вывод простой структуры](https://github.com/bizhuka/xtt/wiki/Пример-№01-Вывод-простой-структуры) |
+| [Example №02 Basic tables](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9602-Basic-tables) | [Пример №02 Вывод простой таблицы](https://github.com/bizhuka/xtt/wiki/Пример-№02-Вывод-простой-таблицы) |
+| [Example №03 Nested blocks](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9603-Nested-blocks) | [Пример №03 Вложенные блоки](https://github.com/bizhuka/xtt/wiki/Пример-№03-Вложенные-блоки) |
+| [Example №04 Data types & Excel post processing](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9604-Data-types-&-Excel-post-processing) | [Пример №04 Типы данных и пост обработка Excel](https://github.com/bizhuka/xtt/wiki/Пример-№04-Типы-данных-и-пост-обработка-Excel) |
+| [Example №05 Tree (group by fields)](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9605-Tree-(group-by-fields)) | [Пример №05 Деревья (группировка по полям)](https://github.com/bizhuka/xtt/wiki/Пример-№05-Деревья-(группировка-по-полям)) |
+| [Example №05_co Output level by condition](https://github.com/bizhuka/xtt/wiki/Example-№05_co-Output-level-by-condition) |[Пример №05_co Вывод уровня по условию](https://github.com/bizhuka/xtt/wiki/Пример-№05_co-Вывод-уровня-по-условию) |
+| [Example №05_fm Aggregation functions](https://github.com/bizhuka/xtt/wiki/Example-№05_fm-Aggregation-functions) |[Пример №05_fm Функции агрегации](https://github.com/bizhuka/xtt/wiki/Пример-№05_fm-Функции-агрегации) |
+| [Example №06 Tree (group by field relations)](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9606-Tree-(group-by-field-relations)) | [Пример №06 Деревья (на основе связи родитель дочерний)](https://github.com/bizhuka/xtt/wiki/Пример-№06-Деревья-(на-основе-связи-родитель-дочерний)) |
+| [Example №07 Macro call & prepare_raw event](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9607-Macro-call-&-prepare_raw-event) | [Пример №07 Вызов макроса и событие prepare_raw](https://github.com/bizhuka/xtt/wiki/Пример-№07-Вызов-макроса-и-событие-prepare_raw) |
+| [Example №08 ;direction=column addition](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9608-;direction=column-addition) | [Пример №08 Дополнение ;direction=column](https://github.com/bizhuka/xtt/wiki/Пример-№08-Дополнение-;direction=column) |
+| [Example №09 Dynamic table (tree)](https://github.com/bizhuka/xtt/wiki/Example-%E2%84%9609-Dynamic-table) | [Пример №09 Динамическая таблица (дерево)](https://github.com/bizhuka/xtt/wiki/Пример-№09-Динамическая-таблица) |
 
 ---
 

@@ -24,7 +24,7 @@ METHOD example_06.
 
     " Show directory. TODO ZCL_EUI_SCREEN
     CALL SELECTION-SCREEN 1010 STARTING AT 5 5.
-    CHECK sy-subrc <> 0.
+    CHECK sy-subrc = 0.
 
     " Delete file separator
     cl_gui_frontend_services=>get_file_separator(

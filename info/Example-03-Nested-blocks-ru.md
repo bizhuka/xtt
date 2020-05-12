@@ -22,7 +22,7 @@ ro_xtt->merge( is_block = lt_root iv_block_name = 'R' ).
 
 ---
 
-Для MS Word границами области {R} будет сам документ с завершающим «Разрывом страницы»\
+Для MS Word границами области {R} будет сам документ с завершающим «Разрывом страницы»<br/>
 А границами {R-T} будет 1 строка без заголовка
 
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/nested_bl_word_templ.png)

@@ -1,11 +1,11 @@
-Все, что вам нужно сделать, это с **merge-ить** ваши столбцы в первую очередь\
-А затем просто вставить основную таблицу вторым **merge**
+All you have to do is to **merge** your columns first<br/>
+And then just insert main table with the second **merge**
 
-шаблон
+template
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/09_templ.png)
 
 
-Объявление
+Declaration
 ```abap
     " Document structure
     BEGIN OF ts_merge0,
@@ -17,7 +17,7 @@
     END OF ts_merge1.
 ```
 
-Вставьте столбцы как __table__ или __tree__, а затем вставьте основные данные
+Insert columns as __table__ or __tree__ and then insert main data
 ```abap
     " Columns
     ro_xtt->merge( is_block = ls_merge0 iv_block_name = 'C' ).

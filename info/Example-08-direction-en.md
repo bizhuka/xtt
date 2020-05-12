@@ -1,5 +1,5 @@
-All tables and trees in you template could be populated with rows and columns as well.\
-But the feature works only for the `ZCL_XTT_EXCEL_XLSX` class and 2 file types (xlsx & xlsm).\
+All tables and trees in you template could be populated with rows and columns as well.<br/>
+But the feature works only for the `ZCL_XTT_EXCEL_XLSX` class and 2 file types (xlsx & xlsm).<br/>
 To do this just add special marker {;direction=column} for your table or tree wherever you want.
 
 ABAP code is similar to the [Example №05](Example-%E2%84%9605-Tree-(group-by-fields))

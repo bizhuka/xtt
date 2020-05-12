@@ -16,17 +16,23 @@
     ls_root-int     = 3.
     ls_root-bottom  = 'bottom'.
 ```
-\
-Шаблон в Excel, Word или pdf может выглядеть так:\
-\
-Basic example\
-Title: **_{R-TITLE}_**\
-Just put markers where you want\
-Just string    **_{R-TEXT}_**\
-Integer        **_{R-INT}_**\
-Bottom: **_{R-BOTTOM}_**
+
+Шаблон в Excel, Word или pdf может выглядеть так:
+
 ***
-\
+Basic example
+
+Title: **_{R-TITLE}_**
+
+Just put markers where you want
+
+Just string    **{R-TEXT}**
+
+Integer        _{R-INT}_
+
+Bottom: ~~{R-BOTTOM}~~
+***
+
 Код XTT для инициализации будет одинаковым:
 ```abap
   " Info about template (Use ZCL_XTT_FILE_OAOR for tr. OAOR)
@@ -44,19 +50,26 @@ Bottom: **_{R-BOTTOM}_**
   lo_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
 ```
 
-После вызова методов lo_xtt **DOWNLOAD** или **SHOW** конечный результат будет таким:\
-\
-Basic example\
-Title: **_Document title_**\
-Just put markers where you want\
-Just string    **_Just string_**\
-Integer        **_3_**\
-Bottom: **_bottom_**\
-\
+После вызова методов lo_xtt **DOWNLOAD** или **SHOW** конечный результат будет таким:
+
+***
+Basic example
+
+Title: **_Document title_**
+
+Just put markers where you want
+
+Just string    **Just string**
+
+Integer        _3_
+
+Bottom: ~~bottom~~
+***
+
 Все форматирование текста внутри **{}** остается неизменным.
 
-**В word зачастую, блок который выглядит одинаково может состоять из нескольких с одинаковым форматированием.**\
-\
+**В word зачастую, блок который выглядит одинаково может состоять из нескольких с одинаковым форматированием.**
+
 ~~Для исключение подобного случая нужно скопировать блок с {} в notepad, скопировать в нем и вставить обратно~~
 
 Теперь если в Word будет подобное фоматирование (Классы **ZCL_XTT_WORD_DOCX** и **ZCL_XTT_WORD_XML**)

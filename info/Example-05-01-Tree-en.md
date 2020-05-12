@@ -1,6 +1,6 @@
-If you have ordinary table with simple totals you should use abap internal tables.\
-But if you also have to display subtotals and other hierarchical structures it's better to use `trees`.\
-There are 2 methods to create trees. In this page I'll try to explain the first one `TREE_CREATE`.\
+If you have ordinary table with simple totals you should use abap internal tables.<br/>
+But if you also have to display subtotals and other hierarchical structures it's better to use `trees`.<br/>
+There are 2 methods to create trees. In this page I'll try to explain the first one `TREE_CREATE`.<br/>
 About the `TREE_CREATE_RELAT` you can read in the [follwing page](Example-%E2%84%9606-Tree-(group-by-field-relations)).
 
 ### TREE_CREATE

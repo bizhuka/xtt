@@ -16,17 +16,23 @@ The data could look like
     ls_root-int     = 3.
     ls_root-bottom  = 'bottom'.
 ```
-\
-The template in Excel, Word or pdf could be like:\
-\
-Basic example\
-Title: **_{R-TITLE}_**\
-Just put markers where you want\
-Just string    **_{R-TEXT}_**\
-Integer        **_{R-INT}_**\
-Bottom: **_{R-BOTTOM}_**
+
+The template in Excel, Word or pdf could be like:
+
 ***
-\
+Basic example
+
+Title: **_{R-TITLE}_**
+
+Just put markers where you want
+
+Just string    **{R-TEXT}**
+
+Integer        _{R-INT}_
+
+Bottom: ~~{R-BOTTOM}~~
+***
+
  XTT code for initialization will be the same all the time:
 ```abap
   " Info about template (Use ZCL_XTT_FILE_OAOR for tr. OAOR)
@@ -44,19 +50,26 @@ Bottom: **_{R-BOTTOM}_**
   lo_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
 ```
 
-After calling `download` or `show` methods of **lo_xtt** the final result would be like that:\
-\
-Basic example\
-Title: **_Document title_**\
-Just put markers where you want\
-Just string    **_Just string_**\
-Integer        **_3_**\
-Bottom: **_bottom_**\
-\
+After calling `download` or `show` methods of **lo_xtt** the final result would be like that:
+
+***
+Basic example
+
+Title: **_Document title_**
+
+Just put markers where you want
+
+Just string    **Just string**
+
+Integer        _3_
+
+Bottom: ~~bottom~~
+***
+
 All text formatting within **{}** remains the same.
 
-**In a word, a block that looks the same can consist of several with the same formatting.**\
-\
+**In a word, a block that looks the same can consist of several with the same formatting.**
+
 ~~To exclude such a case, you need to copy the block from {} to notepad, copy it and paste it back~~
 
 From new version **ZCL_XTT_WORD_DOCX** & **ZCL_XTT_WORD_XML** classes in such cases

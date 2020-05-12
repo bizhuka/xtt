@@ -21,7 +21,7 @@ after that you can call a macro by name
 ```
 This way of calling a macro works regardless of VBA security level. 
 
-* SHOW\
+* SHOW<br/>
 If you decided to call a macro within SAP gui you should use special pbo event handler.
 
 ```abap

@@ -40,5 +40,5 @@ If you have in Excel
 
 They would be 'streched' after data pasting in `ZCL_XTT_EXCEL_XLSX` class.
 
-In `ZCL_XTT_EXCEL_XML` only formulas & merged cells would be proccessed correctly\
+In `ZCL_XTT_EXCEL_XML` only formulas & merged cells would be proccessed correctly<br/>
 Since relative references are used in the internal XML (unlike xlsx), there is no need in $ sign.

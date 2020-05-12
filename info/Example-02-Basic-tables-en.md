@@ -26,8 +26,8 @@ The template
 
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/basic_table_templ.png)
 
-The pattern for rows can take several rows (From row with first **{R-T}** to the last one)\
-\
+The pattern for rows can take several rows (From row with first **{R-T}** to the last one)<br/>
+<br/>
 Data filling
 ```abap
     " {R-T} in a temaplte. @see get_random_table description
@@ -37,8 +37,8 @@ Data filling
     ls_root-footer = 'Footer'.
     ls_root-header = 'Header'.
 ```
-\
-\
+<br/>
+<br/>
 The final result for MS Word
 
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/basic_table_word.png)

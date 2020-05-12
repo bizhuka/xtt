@@ -42,20 +42,20 @@ lo_xtt->download( ).
 
 | English| Русский |
 |-------------|-------------|
-|[Installation guide](info/Installation-guide.md)| [Инструкция по установке](info/Инструкция-по-установке.md)|
-|[Main features](info/Main-features.md)| [Ключевые особенности](info/Ключевые-особенности)  |
+|[Installation guide](info/Installation-guide-en.md)| [Инструкция по установке](info/Installation-guide-ru.md)|
+|[Main features](info/Main-features-en.md)| [Ключевые особенности](info/Main-features-ru.md)  |
 | tr. Z_XTT_INDEX | тр. Z_XTT_INDEX |
-| [Example №01 Simple structure](info/Example-№01-Simple-structure.md)| [Пример №01 Вывод простой структуры](info/Пример-№01-Вывод-простой-структуры.md)|
-| [Example №02 Basic tables](info/Example-№02-Basic-tables.md)| [Пример №02 Вывод простой таблицы](info/Пример-№02-Вывод-простой-таблицы.md)|
-| [Example №03 Nested blocks](info/Example-№03-Nested-blocks.md)| [Пример №03 Вложенные блоки](info/Пример-№03-Вложенные-блоки.md)|
-| [Example №04 Data types & Excel post processing](info/Example-№04-Data-types-&-Excel-post-processing.md)| [Пример №04 Типы данных и пост обработка Excel](info/Пример-№04-Типы-данных-и-пост-обработка-Excel.md)|
-| [Example №05 Tree (group by fields)](info/Example-№05-Tree-(group-by-fields).md)| [Пример №05 Деревья (группировка по полям)](info/Пример-№05-Деревья-(группировка-по-полям).md)|
-| [Example №05_co Output level by condition](info/Example-№05_co-Output-level-by-condition.md)|[Пример №05_co Вывод уровня по условию](info/Пример-№05_co-Вывод-уровня-по-условию.md)|
-| [Example №05_fm Aggregation functions](info/Example-№05_fm-Aggregation-functions.md)|[Пример №05_fm Функции агрегации](info/Пример-№05_fm-Функции-агрегации.md)|
-| [Example №06 Tree (group by field relations)](info/Example-№06-Tree-(group-by-field-relations).md)| [Пример №06 Деревья (на основе связи родитель дочерний)](info/Пример-№06-Деревья-(на-основе-связи-родитель-дочерний).md)|
-| [Example №07 Macro call & prepare_raw event](info/Example-№07-Macro-call-&-prepare_raw-event.md)| [Пример №07 Вызов макроса и событие prepare_raw](info/Пример-№07-Вызов-макроса-и-событие-prepare_raw.md)|
-| [Example №08 ;direction=column addition](info/Example-№08-;direction=column-addition.md)| [Пример №08 Дополнение ;direction=column](info/Пример-№08-Дополнение-;direction=column.md)|
-| [Example №09 Dynamic table (tree)](info/Example-№09-Dynamic-table.md)| [Пример №09 Динамическая таблица (дерево)](info/Пример-№09-Динамическая-таблица.md)|
+| [Example №01 Simple structure](info/Example-01-Simple-structure-en.md)| [Пример №01 Вывод простой структуры](info/Example-01-Simple-structure-ru.md)|
+| [Example №02 Basic tables](info/Example-02-Basic-tables-en.md)| [Пример №02 Вывод простой таблицы](info/Example-02-Basic-tables-ru.md)|
+| [Example №03 Nested blocks](info/Example-03-Nested-blocks-en.md)| [Пример №03 Вложенные блоки](info/Example-03-Nested-blocks-ru.md)|
+| [Example №04 Data types & Excel post processing](info/Example-04-Data-types-en.md)| [Пример №04 Типы данных и пост обработка Excel](info/Example-04-Data-types-ru.md)|
+| [Example №05 Tree (group by fields)](info/Example-05-01-Tree-en.md)| [Пример №05 Деревья (группировка по полям)](info/Example-05-01-Tree-ru.md)|
+| [Example №05_co Output level by condition](info/Example-05-02-Tree-en.md)|[Пример №05_co Вывод уровня по условию](info/Example-05-02-Tree-ru.md)|
+| [Example №05_fm Aggregation functions](info/Example-05-03-Tree-en.md)|[Пример №05_fm Функции агрегации](info/Example-05-03-Tree-ru.md)|
+| [Example №06 Tree (group by field relations)](info/Example-06-Tree-en.md)| [Пример №06 Деревья (на основе связи родитель дочерний)](info/Example-06-Tree-ru.md)|
+| [Example №07 Macro call & prepare_raw event](info/Example-07-Macro-en.md)| [Пример №07 Вызов макроса и событие prepare_raw](info/Example-07-Macro-ru.md)|
+| [Example №08 ;direction=column addition](info/Example-08-direction-en.md)| [Пример №08 Дополнение ;direction=column](info/Example-08-direction-ru.md)|
+| [Example №09 Dynamic table (tree)](info/Example-09-Dynamic-table-en.md)| [Пример №09 Динамическая таблица (дерево)](info/Example-09-Dynamic-table-ru.md)|
 
 ---
 

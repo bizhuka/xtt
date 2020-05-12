@@ -1,4 +1,4 @@
-Maybe trees based on [subtotals](Example-%E2%84%9605-Tree-(group-by-fields)) are more common, but in sap there are some other hierarchical data like WBS elements or HR organizational units.\
+Maybe trees based on [subtotals](Example-%E2%84%9605-Tree-(group-by-fields)) are more common, but in sap there are some other hierarchical data like WBS elements or HR organizational units.<br/>
 For this kind of data when number of sublevels are unknown and there is only relation `parent - child` you can call the method `TREE_CREATE_RELAT`.
 
 ### Folders hierarchy

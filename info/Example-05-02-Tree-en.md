@@ -17,7 +17,7 @@ You could just create levels 55, 66 or 77 in the template (Any fairly large leve
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/05_co_temp1.png)
 
 
-and in the event handler change **IV_LEVEL_INDEX-<br/>>*** with desired level. If you assign a value that is not in the pattern (-1), then the level would simply disappear.
+and in the event handler change **IV_LEVEL_INDEX->*** with desired level. If you assign a value that is not in the pattern (-1), then the level would simply disappear.
 
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/05_co_code2.png)
 

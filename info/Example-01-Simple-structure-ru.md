@@ -31,6 +31,7 @@ Just string    **{R-TEXT}**
 Integer        _{R-INT}_
 
 Bottom: ~~{R-BOTTOM}~~
+
 ***
 
 Код XTT для инициализации будет одинаковым:

@@ -17,7 +17,7 @@
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/05_co_temp1.png)
 
 
-и менять **IV_LEVEL_INDEX-<br/>>*** на требуемый уровень. Если присвоить значение которого нет в шаблоне(-1) то уровень бы просто скрылся.
+и менять **IV_LEVEL_INDEX->*** на требуемый уровень. Если присвоить значение которого нет в шаблоне(-1) то уровень бы просто скрылся.
 
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/05_co_code2.png)
 

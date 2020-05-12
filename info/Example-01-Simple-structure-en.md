@@ -31,6 +31,7 @@ Just string    **{R-TEXT}**
 Integer        _{R-INT}_
 
 Bottom: ~~{R-BOTTOM}~~
+
 ***
 
  XTT code for initialization will be the same all the time:

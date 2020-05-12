@@ -265,10 +265,12 @@ METHOD do_merge.
         cv_middle     = cv_content
         cv_after      = lv_after ).
 
-***      " TODO silent mode?
-***      IF lv_before IS INITIAL AND lv_after IS INITIAL.
-***        CONTINUE.
-***      ENDIF.
+      " TODO silent mode? " No bounds found for top level R field
+      IF lv_before IS INITIAL AND lv_after IS INITIAL
+         " AND iv_first_level_is_table IS SUPPLIED.
+         AND lt_text_match[] IS INITIAL.
+        CONTINUE.
+      ENDIF.
     ENDIF.
 
     CASE ls_field->typ.

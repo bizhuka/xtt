@@ -10,6 +10,12 @@ CLASS lcl_tree_handler DEFINITION FINAL.
       mv_block_name TYPE string,
       mv_check_prog TYPE string.
 
+    CLASS-METHODS:
+      find_extra
+        CHANGING
+          ct_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt
+          cv_content       TYPE string.
+
     METHODS:
       constructor
         IMPORTING
@@ -20,9 +26,9 @@ CLASS lcl_tree_handler DEFINITION FINAL.
 
       add_tree_data
         IMPORTING
-            ir_tree TYPE REF TO zcl_xtt_replace_block=>ts_tree
+          ir_tree TYPE REF TO zcl_xtt_replace_block=>ts_tree
         CHANGING
-            cv_text TYPE string.
+          cv_text TYPE string.
 ENDCLASS.
 
 " Access to private data

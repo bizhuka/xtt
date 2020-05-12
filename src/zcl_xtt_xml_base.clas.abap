@@ -265,10 +265,10 @@ METHOD do_merge.
         cv_middle     = cv_content
         cv_after      = lv_after ).
 
-      " TODO silent mode?
-      IF lv_before IS INITIAL AND lv_after IS INITIAL.
-        CONTINUE.
-      ENDIF.
+***      " TODO silent mode?
+***      IF lv_before IS INITIAL AND lv_after IS INITIAL.
+***        CONTINUE.
+***      ENDIF.
     ENDIF.
 
     CASE ls_field->typ.
@@ -439,6 +439,15 @@ ENDMETHOD.
 
 
 METHOD merge.
+  DATA lt_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt.
+
+  " Find in text TREE declarations
+  lcl_tree_handler=>find_extra(
+   CHANGING
+    ct_extra_tab_opt = lt_extra_tab_opt
+    cv_content       = mv_file_content  ).
+
+**********************************************************************
   DATA:
     lo_replace_block TYPE REF TO zcl_xtt_replace_block,
     lv_typekind      TYPE abap_typekind,
@@ -450,6 +459,9 @@ METHOD merge.
     EXPORTING
       is_block      = is_block
       iv_block_name = iv_block_name.
+
+  " Create trees by declarations
+  lo_replace_block->extra_create_tree( lt_extra_tab_opt ).
 
   " Special case
   DESCRIBE FIELD is_block TYPE lv_typekind.

@@ -24,38 +24,36 @@ METHOD example_03.
     ls_doc  TYPE ts_doc,
     lv_rem  TYPE i.
 
-  " No need to fill for empty template
-  IF p_temp <> abap_true.
-    DO p_b_cnt TIMES.
-      " For detecting blocks
-      WRITE sy-index TO lv_num LEFT-JUSTIFIED.
-      lv_rem = sy-index MOD 4.
+  " Document structure
+  DO p_b_cnt TIMES.
+    " For detecting blocks
+    WRITE sy-index TO lv_num LEFT-JUSTIFIED.
+    lv_rem = sy-index MOD 4.
 
-      APPEND INITIAL LINE TO lt_root REFERENCE INTO ls_root.
-      CONCATENATE `Title ` lv_num INTO ls_root->title. "#EC NOTEXT
-      CONCATENATE `Bottom ` lv_num INTO ls_root->bottom. "#EC NOTEXT
+    APPEND INITIAL LINE TO lt_root REFERENCE INTO ls_root.
+    CONCATENATE `Title ` lv_num INTO ls_root->title.        "#EC NOTEXT
+    CONCATENATE `Bottom ` lv_num INTO ls_root->bottom.      "#EC NOTEXT
 
-      " @see get_random_table description
-      cl_main=>get_random_table(
-       IMPORTING
-         et_table = ls_root->t ).
+    " @see get_random_table description
+    cl_main=>get_random_table(
+     IMPORTING
+       et_table = ls_root->t ).
 
-      CASE lv_rem.
-        WHEN 1.
-          SORT ls_root->t BY caption.
-        WHEN 2.
-          SORT ls_root->t BY group.
-        WHEN 3.
-          SORT ls_root->t BY sum1.
-        WHEN 4.
-          SORT ls_root->t BY sum2.
-      ENDCASE.
-    ENDDO.
+    CASE lv_rem.
+      WHEN 1.
+        SORT ls_root->t BY caption.
+      WHEN 2.
+        SORT ls_root->t BY group.
+      WHEN 3.
+        SORT ls_root->t BY sum1.
+      WHEN 4.
+        SORT ls_root->t BY sum2.
+    ENDCASE.
+  ENDDO.
 
-    " second merge
-    ls_doc-f_title = `First title`. "#EC NOTEXT
-    ls_doc-l_title = `Last title`. "#EC NOTEXT
-  ENDIF.
+  " second merge
+  ls_doc-f_title = `First title`.                           "#EC NOTEXT
+  ls_doc-l_title = `Last title`.                            "#EC NOTEXT
 
   " Show data structure only
   IF p_stru = abap_true.
@@ -73,8 +71,6 @@ METHOD example_03.
     io_file = lo_file.
 
   " Paste data
-  IF p_temp <> abap_true.
-    ro_xtt->merge( is_block = lt_root iv_block_name = 'R' ).
-    ro_xtt->merge( is_block = ls_doc iv_block_name = 'DOC' ).
-  ENDIF.
+  ro_xtt->merge( is_block = lt_root iv_block_name = 'R' ).
+  ro_xtt->merge( is_block = ls_doc iv_block_name = 'DOC' ).
 ENDMETHOD.

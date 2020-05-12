@@ -17,27 +17,25 @@ METHOD example_08.
     lt_rows  TYPE tt_tree_05,
     ls_row   TYPE REF TO ts_tree_05.
 
-  " No need to fill for empty template
-  IF p_temp <> abap_true.
-    " {R-T} in a temaplte. @see get_random_table description
-    cl_main=>get_random_table(
-     IMPORTING
-       et_table = ls_root-t ).
-    LOOP AT ls_root-t REFERENCE INTO ls_item.
-      APPEND INITIAL LINE TO lt_rows REFERENCE INTO ls_row.
-      MOVE-CORRESPONDING ls_item->* TO ls_row->*.
-    ENDLOOP.
+  " Document structure
+  " {R-T} in a temaplte. @see get_random_table description
+  cl_main=>get_random_table(
+   IMPORTING
+     et_table = ls_root-t ).
+  LOOP AT ls_root-t REFERENCE INTO ls_item.
+    APPEND INITIAL LINE TO lt_rows REFERENCE INTO ls_row.
+    MOVE-CORRESPONDING ls_item->* TO ls_row->*.
+  ENDLOOP.
 
-    SET HANDLER on_prepare_tree_05. " ACTIVATION abap_true.
+  SET HANDLER on_prepare_tree_05. " ACTIVATION abap_true.
 
-    GET REFERENCE OF lt_rows INTO lr_table.
-    ls_root-a = zcl_xtt_replace_block=>tree_create(
-     it_table      = lr_table       " from 7.5 REF #(lt_rows)
-     iv_fields     = 'GROUP'   ).   " Name of the fields delimited by ;
+  GET REFERENCE OF lt_rows INTO lr_table.
+  ls_root-a = zcl_xtt_replace_block=>tree_create(
+   it_table      = lr_table       " from 7.5 REF #(lt_rows)
+   iv_fields     = 'GROUP'   ).   " Name of the fields delimited by ;
 
-    "  Will call later in MERGE
-    " SET HANDLER on_prepare_tree_05 ACTIVATION abap_false.
-  ENDIF.
+  "  Will call later in MERGE
+  " SET HANDLER on_prepare_tree_05 ACTIVATION abap_false.
 
   " Show data structure only
   IF p_stru = abap_true.
@@ -55,7 +53,5 @@ METHOD example_08.
     io_file = lo_file.
 
   " Paste data
-  IF p_temp <> abap_true.
-    ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
-  ENDIF.
+  ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
 ENDMETHOD.

@@ -8,20 +8,20 @@
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_06_EXCEL_XLSX</OBJID>
-     <NAME>fileextension</NAME>
-     <VALUE>.xlsx</VALUE>
-    </WWWPARAMS>
-    <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZXXT_06_EXCEL_XLSX</OBJID>
      <NAME>filename</NAME>
-     <VALUE>ZXXT_06_EXCEL.xlsx</VALUE>
+     <VALUE>ZXXT_06_EXCEL.XLSX</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_06_EXCEL_XLSX</OBJID>
      <NAME>mimetype</NAME>
-     <VALUE>xls</VALUE>
+     <VALUE>Excel</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_06_EXCEL_XLSX</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.XLSX</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

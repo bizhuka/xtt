@@ -103,19 +103,19 @@ TYPES:
 CLASS cl_ex_sheet DEFINITION FINAL.
   PUBLIC SECTION.
     DATA:
-      mv_full_path    TYPE string,                  " Path in zip(.xlsx,.xlsm) archive
-      mv_name         TYPE string,
-      mo_dom          TYPE REF TO if_ixml_document, " As an object
-      mt_cells        TYPE tt_ex_cell,
-      mt_rows         TYPE tt_ex_row,
-      mt_columns      TYPE tt_ex_column,
-      mt_list_objects TYPE tt_ex_list_object,
-      mt_data_valid   TYPE tt_ex_area,
+      mv_full_path     TYPE string,                  " Path in zip(.xlsx,.xlsm) archive
+      mv_name          TYPE string,
+      mo_dom           TYPE REF TO if_ixml_document, " As an object
+      mt_cells         TYPE tt_ex_cell,
+      mt_rows          TYPE tt_ex_row,
+      mt_columns       TYPE tt_ex_column,
+      mt_list_objects  TYPE tt_ex_list_object,
+      mt_data_valid    TYPE tt_ex_area,
 
       " Current cell. For event handler
-      ms_cell         TYPE REF TO ts_ex_cell,
-      mt_column_dir   TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line,
-      mt_cell_ref     TYPE SORTED TABLE OF ts_cell_ref WITH UNIQUE KEY r c.
+      ms_cell          TYPE REF TO ts_ex_cell,
+      mt_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt,
+      mt_cell_ref      TYPE SORTED TABLE OF ts_cell_ref WITH UNIQUE KEY r c.
 
     METHODS:
       constructor

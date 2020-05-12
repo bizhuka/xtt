@@ -18,10 +18,8 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       ls_defined_name TYPE REF TO ts_ex_defined_name,
       ls_list_object  TYPE REF TO ts_ex_list_object,
       l_prev_row      TYPE i,
-      l_prev_col      TYPE i,
-      lv_ind          TYPE i,
-      lv_name         TYPE string,
-      ls_blank        TYPE ts_ex_cell.
+      l_prev_col      TYPE i.
+    DATA ls_blank         TYPE ts_ex_cell.
 
     " Path to the sheet
     int_2_text iv_ind l_sheet_ind.
@@ -156,11 +154,14 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
 
-    LOOP AT mt_cells REFERENCE INTO ls_cell WHERE c_value CS `;direction=column`. "#EC NOTEXT
-      " Use columns
-      lv_ind = sy-fdpos - 1.
-      lv_name = ls_cell->c_value+1(lv_ind).
-      INSERT lv_name INTO TABLE mt_column_dir.
+    LOOP AT mt_cells REFERENCE INTO ls_cell WHERE c_value CS `;direction=column`
+                                               OR c_value CS `;group=`. "#EC NOTEXT
+      " Get by declaration
+      zcl_xtt_replace_block=>extra_add_tab_opt(
+       EXPORTING
+        iv_text          = ls_cell->c_value
+       CHANGING
+        ct_extra_tab_opt = mt_extra_tab_opt ).
       CLEAR ls_cell->c_value.
 
       " Add blank cell
@@ -486,8 +487,8 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lr_tree              TYPE REF TO zcl_xtt_replace_block=>ts_tree,
       lv_by_column         TYPE abap_bool.
     FIELD-SYMBOLS:
-      <lt_items> TYPE ANY TABLE.
-*      <ls_item>  TYPE any.
+      <lt_items>         TYPE ANY TABLE,
+      <ls_extra_tab_opt> LIKE LINE OF mt_extra_tab_opt.
 ***************************************
     " merge-1 @see ME->MATCH_FOUND
     SET HANDLER match_found FOR io_replace_block ACTIVATION abap_true.
@@ -530,9 +531,9 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     LOOP AT io_replace_block->mt_fields REFERENCE INTO lr_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
                                                                    OR typ = zcl_xtt_replace_block=>mc_type_tree. "#EC CI_SORTSEQ
       " For columns
-      READ TABLE mt_column_dir TRANSPORTING NO FIELDS
-       WITH TABLE KEY table_line = lr_field->name.
-      IF sy-subrc <> 0.
+      READ TABLE mt_extra_tab_opt ASSIGNING <ls_extra_tab_opt>
+       WITH TABLE KEY name = lr_field->name.
+      IF sy-subrc <> 0 OR <ls_extra_tab_opt>-direction <> 'column'.
         lv_by_column = abap_false.
       ELSE.
         lv_by_column = abap_true.

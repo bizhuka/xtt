@@ -3,6 +3,37 @@
 *"* declarations
 
 CLASS lcl_tree_handler IMPLEMENTATION.
+  METHOD find_extra.
+    DATA lt_match  TYPE match_result_tab.
+    DATA ls_match  TYPE REF TO match_result.
+    DATA lv_text   TYPE string.
+    DATA lv_before TYPE string.
+    DATA lv_after  TYPE string.
+    DATA lv_end    TYPE i.
+
+    " Find dynamic tree declarations
+    FIND ALL OCCURRENCES OF REGEX '\{\b[^>]*;group=\b[^>]*\}' IN cv_content RESULTS lt_match RESPECTING CASE.
+
+    " Should be no repeat in TREE declaration
+    LOOP AT lt_match REFERENCE INTO ls_match.
+      lv_text = cv_content+ls_match->offset(ls_match->length).
+      zcl_xtt_replace_block=>extra_add_tab_opt(
+       EXPORTING
+        iv_text = lv_text
+       CHANGING
+        ct_extra_tab_opt = ct_extra_tab_opt ).
+
+      " Before text
+      lv_before = cv_content(ls_match->offset).
+
+      " lv_after text
+      lv_end = ls_match->offset + ls_match->length.
+      lv_after  = cv_content+lv_end.
+
+      CONCATENATE lv_before lv_after INTO cv_content RESPECTING BLANKS.
+    ENDLOOP.
+  ENDMETHOD.
+
   METHOD constructor.
     mo_owner      = io_owner.
     mv_block_name = iv_block_name.

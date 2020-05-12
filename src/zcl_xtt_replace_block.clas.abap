@@ -49,6 +49,14 @@ public section.
       " funcs    TYPE SORTED TABLE OF ts_func WITH UNIQUE KEY name,
     end OF ts_tree_group .
   types:
+    BEGIN OF ts_extra_tab_opt,
+      name        TYPE string, " Name of table 'R-T'
+      direction   TYPE string, " ;direction=column ?
+      group       TYPE string, " ;group=BUKRS;WERKS or ;group=FILED-FILED_PAR
+    END OF ts_extra_tab_opt .
+  types:
+    TT_EXTRA_TAB_OPT TYPE SORTED TABLE OF ts_extra_tab_opt WITH UNIQUE KEY name .
+  types:
     BEGIN OF ts_row_offset.
       INCLUDE TYPE ts_tree_group.
   types:
@@ -103,6 +111,14 @@ public section.
       !IS_BLOCK type ANY optional
       !IV_BLOCK_NAME type STRING optional
       !IS_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD optional .
+  methods EXTRA_CREATE_TREE
+    importing
+      !IT_EXTRA_TAB_OPT type TT_EXTRA_TAB_OPT .
+  class-methods EXTRA_ADD_TAB_OPT
+    importing
+      !IV_TEXT type STRING
+    changing
+      !CT_EXTRA_TAB_OPT type TT_EXTRA_TAB_OPT .
   methods FIND_MATCH
     importing
       !IV_SKIP_TAGS type ABAP_BOOL optional
@@ -485,6 +501,99 @@ METHOD constructor.
          iv_name     = lv_block_name
          ir_value    = lr_data ).
   ENDCASE.
+ENDMETHOD.
+
+
+METHOD extra_add_tab_opt.
+  DATA ls_extra_tab_opt LIKE LINE OF ct_extra_tab_opt.
+  DATA lv_ind           TYPE i.
+  DATA lv_field         TYPE string.
+  DATA lv_key           TYPE string.
+  DATA lv_value         TYPE string.
+  DATA lt_param         TYPE stringtab.
+
+  " Get without {}
+  lv_ind   = strlen( iv_text ).
+  lv_ind   = lv_ind - 2.
+  lv_field = iv_text+1(lv_ind).
+
+  " First part is a name
+  SPLIT lv_field AT `;` INTO TABLE lt_param.
+  READ TABLE lt_param INTO ls_extra_tab_opt-name INDEX 1.
+
+  " Find a match by name
+  " TRANSLATE ls_extra_tab_opt-name TO UPPER CASE. Better make case sensetive
+  READ TABLE ct_extra_tab_opt TRANSPORTING NO FIELDS
+   WITH TABLE KEY name = ls_extra_tab_opt-name.
+  IF sy-subrc = 0.
+    CONCATENATE 'Filed' ls_extra_tab_opt-name 'declared several times'  INTO lv_field SEPARATED BY space.
+    zcx_xtt_exception=>raise_dump( iv_message = lv_field ).
+  ENDIF.
+
+  " Set additional options
+  LOOP AT lt_param INTO lv_field FROM 2.  "<-- First item is field name
+    SPLIT lv_field AT '=' INTO lv_key lv_value.
+    CASE lv_key.
+      WHEN 'direction'.
+        ls_extra_tab_opt-direction = lv_value.
+      WHEN 'group'.
+        ls_extra_tab_opt-group     = lv_value.
+      WHEN OTHERS.
+        CONCATENATE 'Key: ' lv_key 'is unknown'  INTO lv_field SEPARATED BY space.
+        zcx_xtt_exception=>raise_dump( iv_message = lv_field ).
+    ENDCASE.
+  ENDLOOP.
+
+  " And add
+  INSERT ls_extra_tab_opt INTO TABLE ct_extra_tab_opt.
+ENDMETHOD.
+
+
+METHOD extra_create_tree.
+  " Check extra paramaters
+  CHECK it_extra_tab_opt IS NOT INITIAL.
+
+  DATA lv_group1 TYPE string.
+  DATA lv_group2 TYPE string.
+  FIELD-SYMBOLS <ls_extra_tab_opt> LIKE LINE OF it_extra_tab_opt.
+  FIELD-SYMBOLS <ls_field>         LIKE LINE OF mt_fields.
+
+  " Find matching
+  LOOP AT it_extra_tab_opt ASSIGNING <ls_extra_tab_opt>  "#EC CI_SORTSEQ
+      WHERE direction IS INITIAL. " group could be empty
+    " 1 field
+    READ TABLE mt_fields ASSIGNING <ls_field>
+     WITH TABLE KEY name = <ls_extra_tab_opt>-name.
+
+    " Just skip ?
+    CHECK sy-subrc = 0.
+
+    " Table ?
+    IF <ls_field>-typ <> mc_type_table.
+      CONCATENATE 'Field' <ls_field>-name 'is not table!' INTO lv_group1 SEPARATED BY space.
+      zcx_xtt_exception=>raise_dump( iv_message = lv_group1 ).
+    ENDIF.
+
+    CLEAR lv_group2.
+    SPLIT <ls_extra_tab_opt>-group AT '-' INTO lv_group1 lv_group2.
+
+    " Have both parts
+    IF lv_group2 IS NOT INITIAL.
+      <ls_field>-dref = tree_create_relat(
+        it_table      = <ls_field>-dref
+        iv_node_key   = lv_group1
+        iv_relat_key  = lv_group2 ).
+      CONTINUE.
+    ENDIF.
+
+    " Now is tree
+    <ls_field>-typ = zcl_xtt_replace_block=>mc_type_tree.
+
+    " Fields separeted by ;
+    <ls_field>-dref = tree_create(
+     it_table      = <ls_field>-dref
+     iv_fields     = lv_group1 ).
+  ENDLOOP.
 ENDMETHOD.
 
 

@@ -6,62 +6,76 @@ METHOD example_06.
     " Document structure
     BEGIN OF ts_root,
       title TYPE string,
+
+      " If not tree (just table) could be -> TYPE tt_tree_06
       t     TYPE REF TO data, " <-- Table of trees (better to use general REF TO)
+
+      " Old way
+      c     TYPE REF TO data,
     END OF ts_root.
 
   DATA:
+    lo_screen  TYPE REF TO zcl_eui_screen,
+    lo_error   TYPE REF TO zcx_eui_exception,
     lo_file    TYPE REF TO zif_xtt_file,
     ls_root    TYPE ts_root,
     lt_folders TYPE tt_tree_06,
     ls_folder  TYPE REF TO ts_tree_06,
     lv_sep     TYPE char1,
-    lv_len     TYPE i,
-    lr_table   TYPE REF TO data.
+    lv_len     TYPE i.
 
-  " No need to fill for empty template
-  IF p_temp <> abap_true.
-    ls_root-title = `Title`.                                "#EC NOTEXT
+  " Show directory.
+  TRY.
+      CREATE OBJECT lo_screen
+        EXPORTING
+          iv_dynnr = '1010'.
+    CATCH zcx_eui_exception INTO lo_error.
+      MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+      RETURN.
+  ENDTRY.
 
-    " Show directory. TODO ZCL_EUI_SCREEN
-    CALL SELECTION-SCREEN 1010 STARTING AT 5 5.
-    CHECK sy-subrc = 0.
+  " Choose folder
+  lo_screen->popup( iv_col_end = 87 ).
+  CHECK lo_screen->show( ) = 'OK'.
 
-    " Delete file separator
-    cl_gui_frontend_services=>get_file_separator(
-     CHANGING
-       file_separator = lv_sep ).
-    cl_gui_cfw=>flush( EXCEPTIONS OTHERS = 0 ).
+  " Document structure
+  ls_root-title = `Title`.                                  "#EC NOTEXT
 
-    lv_len = strlen( p_r_path ) - 1.
-    IF p_r_path+lv_len(1) = lv_sep.
-      p_r_path = p_r_path(lv_len).
-    ENDIF.
+  " Delete file separator
+  cl_gui_frontend_services=>get_file_separator(
+   CHANGING
+     file_separator = lv_sep ).
+  cl_gui_cfw=>flush( EXCEPTIONS OTHERS = 0 ).
 
-    " Add first level or not
-    IF p_r_many <> abap_true.
-      APPEND INITIAL LINE TO lt_folders REFERENCE INTO ls_folder.
-      ls_folder->dir = p_r_path.
-    ENDIF.
-
-    fill_with_folders(
-     EXPORTING
-       iv_dir    = p_r_path
-       iv_sep    = lv_sep
-     CHANGING
-       ct_folder = lt_folders ).
-
-    " Create tree
-    SET HANDLER on_prepare_tree_06. " ACTIVATION abap_true.
-
-    GET REFERENCE OF lt_folders INTO lr_table.
-    ls_root-t = zcl_xtt_replace_block=>tree_create_relat(
-      it_table      = lr_table        " from 7.5 REF #(lt_folders)
-      iv_node_key   = 'DIR'
-      iv_relat_key  = 'PAR_DIR' ).
-
-    "  Will call later in MERGE
-    " SET HANDLER on_prepare_tree_06 ACTIVATION abap_false.
+  lv_len = strlen( p_r_path ) - 1.
+  IF p_r_path+lv_len(1) = lv_sep.
+    p_r_path = p_r_path(lv_len).
   ENDIF.
+
+  " Add first level or not
+  IF p_r_many <> abap_true.
+    APPEND INITIAL LINE TO lt_folders REFERENCE INTO ls_folder.
+    ls_folder->dir = p_r_path.
+  ENDIF.
+
+  fill_with_folders(
+   EXPORTING
+     iv_dir    = p_r_path
+     iv_sep    = lv_sep
+   CHANGING
+     ct_folder = lt_folders ).
+
+  " Create tree
+  SET HANDLER on_prepare_tree_06. " ACTIVATION abap_true.
+
+  " New way use declarations in a template
+  GET REFERENCE OF lt_folders INTO ls_root-t.
+
+  " Old way in code
+  ls_root-c = zcl_xtt_replace_block=>tree_create_relat(
+    it_table      = ls_root-t " REF #( lt_folders )
+    iv_node_key   = 'DIR'
+    iv_relat_key  = 'PAR_DIR' ).
 
   " Show data structure only
   IF p_stru = abap_true.
@@ -79,9 +93,7 @@ METHOD example_06.
     io_file = lo_file.
 
   " Paste data
-  IF p_temp <> abap_true.
-    ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
-  ENDIF.
+  ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
 ENDMETHOD.
 
 METHOD fill_with_folders.

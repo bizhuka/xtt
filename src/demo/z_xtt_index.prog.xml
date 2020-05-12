@@ -59,6 +59,12 @@
      <LENGTH>74</LENGTH>
     </item>
     <item>
+     <ID>I</ID>
+     <KEY>TIT</KEY>
+     <ENTRY>Title</ENTRY>
+     <LENGTH>15</LENGTH>
+    </item>
+    <item>
      <ID>R</ID>
      <ENTRY>Xml template toolkit examples</ENTRY>
      <LENGTH>29</LENGTH>
@@ -127,8 +133,8 @@
     <item>
      <ID>S</ID>
      <KEY>P_R_PATH</KEY>
-     <ENTRY>Hierarchy root</ENTRY>
-     <LENGTH>22</LENGTH>
+     <ENTRY>Hierarchy root-With few folder</ENTRY>
+     <LENGTH>38</LENGTH>
     </item>
     <item>
      <ID>S</ID>

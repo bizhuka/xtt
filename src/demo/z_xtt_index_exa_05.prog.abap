@@ -6,7 +6,9 @@ METHOD example_05.
     " Document structure
     BEGIN OF ts_root,
       title TYPE string,
-      t     TYPE  REF TO data, " better to use general type than zcl_xtt_replace_block=>ts_tree
+
+      " If not tree (just table) could be -> TYPE tt_rand_data
+      t     TYPE REF TO data, " better to use general type than zcl_xtt_replace_block=>ts_tree
     END OF ts_root.
 
   DATA:
@@ -15,33 +17,27 @@ METHOD example_05.
     lt_items TYPE tt_rand_data,
     ls_item  TYPE REF TO ts_rand_data,
     lt_rows  TYPE tt_tree_05,
-    ls_row   TYPE REF TO ts_tree_05,
-    lr_table TYPE REF TO data.
+    ls_row   TYPE REF TO ts_tree_05.
 
-  " No need to fill for empty template
-  IF p_temp <> abap_true.
-    ls_root-title = `Title`. "#EC NOTEXT
+  " Document structure
+  ls_root-title  = 'Title'(tit).
 
-    " @see get_random_table description
-    cl_main=>get_random_table(
-     IMPORTING
-       et_table = lt_items ).
-    LOOP AT lt_items REFERENCE INTO ls_item.
-      APPEND INITIAL LINE TO lt_rows REFERENCE INTO ls_row.
-      MOVE-CORRESPONDING ls_item->* TO ls_row->*.
-    ENDLOOP.
+  " @see get_random_table description
+  cl_main=>get_random_table(
+   IMPORTING
+     et_table = lt_items ).
+  LOOP AT lt_items REFERENCE INTO ls_item.
+    APPEND INITIAL LINE TO lt_rows REFERENCE INTO ls_row.
+    MOVE-CORRESPONDING ls_item->* TO ls_row->*.
+  ENDLOOP.
 
-    " In template `;func=`
-    " SET HANDLER on_prepare_tree_05. " ACTIVATION abap_true.
+  " New way use declarations in a template
+  GET REFERENCE OF lt_items INTO ls_root-t.
 
-    GET REFERENCE OF lt_rows INTO lr_table.
-    ls_root-t = zcl_xtt_replace_block=>tree_create(
-     it_table      = lr_table       " from 7.5 REF #(lt_rows)
-     iv_fields     = 'GROUP'   ).   " Name of the fields delimited by ;
-
-    "  Will call later in MERGE
-    " SET HANDLER on_prepare_tree_05 ACTIVATION abap_false.
-  ENDIF.
+  " Old way in code
+*    ls_root-t = zcl_xtt_replace_block=>tree_create(
+*     it_table      = REF #( lt_items )
+*     iv_fields     = 'GROUP'   ).   " Name of the fields delimited by ;
 
   " Show data structure only
   IF p_stru = abap_true.
@@ -59,9 +55,7 @@ METHOD example_05.
     io_file = lo_file.
 
   " Paste data
-  IF p_temp <> abap_true.
-    ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
-  ENDIF.
+  ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
 ENDMETHOD.
 
 METHOD on_prepare_tree_05.

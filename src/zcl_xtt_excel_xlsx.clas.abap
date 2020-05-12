@@ -467,20 +467,20 @@ METHOD column_write_xml.
 ENDMETHOD.
 
 
-METHOD CONSTRUCTOR.
+METHOD constructor.
   DATA:
-   l_x_value           TYPE xstring,
-   l_shared_strings    TYPE string,
-   lt_match            TYPE match_result_tab,
-   l_cnt               TYPE i,
-   l_ind               TYPE i,
-   ls_match_beg        TYPE REF TO match_result,
-   ls_match_end        TYPE REF TO match_result,
-   l_len               TYPE i,
-   l_off               TYPE i,
-   l_val               TYPE string,
-   lo_node             TYPE REF TO if_ixml_element,
-   lo_sheet            TYPE REF TO cl_ex_sheet.
+    l_x_value        TYPE xstring,
+    l_shared_strings TYPE string,
+    lt_match         TYPE match_result_tab,
+    l_cnt            TYPE i,
+    l_ind            TYPE i,
+    ls_match_beg     TYPE REF TO match_result,
+    ls_match_end     TYPE REF TO match_result,
+    l_len            TYPE i,
+    l_off            TYPE i,
+    l_val            TYPE string,
+    lo_node          TYPE REF TO if_ixml_element,
+    lo_sheet         TYPE REF TO cl_ex_sheet.
 
   super->constructor( io_file = io_file ).
 
@@ -496,7 +496,7 @@ METHOD CONSTRUCTOR.
   zcl_eui_conv=>xml_from_zip(
    EXPORTING
     io_zip     = mo_zip
-    iv_name    = 'xl/workbook.xml'      "#EC NOTEXT
+    iv_name    = 'xl/workbook.xml'                          "#EC NOTEXT
    IMPORTING
     eo_xmldoc  = mo_workbook ).
 
@@ -505,7 +505,7 @@ METHOD CONSTRUCTOR.
   zcl_eui_conv=>xml_from_zip(
    EXPORTING
     io_zip     = mo_zip
-    iv_name    = 'xl/sharedStrings.xml' "#EC NOTEXT
+    iv_name    = 'xl/sharedStrings.xml'                     "#EC NOTEXT
    IMPORTING
     ev_sdoc    = l_shared_strings ).
 
@@ -551,7 +551,7 @@ METHOD CONSTRUCTOR.
 
 ***************************************
   " Sheets
-  lo_node = mo_workbook->find_from_name( 'sheet' ). "#EC NOTEXT
+  lo_node = mo_workbook->find_from_name( 'sheet' ).         "#EC NOTEXT
   WHILE lo_node IS BOUND.
     " Prepare and add
     CREATE OBJECT lo_sheet
@@ -772,19 +772,21 @@ METHOD LIST_OBJECT_READ_XML.
   ENDMETHOD.                    "list_object_read_xml
 
 
-METHOD MERGE.
-  DATA:
-    lo_replace_block TYPE REF TO zcl_xtt_replace_block,
-    lo_sheet         TYPE REF TO cl_ex_sheet.
-
-  " Prepare for replacement
-  CREATE OBJECT lo_replace_block
-    EXPORTING
-      is_block      = is_block
-      iv_block_name = iv_block_name.
+METHOD merge.
+  DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
+  DATA lo_sheet         TYPE REF TO cl_ex_sheet.
 
   " Update each sheet
   LOOP AT mt_sheets INTO lo_sheet.
+    " Prepare for replacement
+    CREATE OBJECT lo_replace_block
+      EXPORTING
+        is_block      = is_block
+        iv_block_name = iv_block_name.
+
+    " Find trees in file
+    lo_replace_block->extra_create_tree( lo_sheet->mt_extra_tab_opt ).
+
     lo_sheet->merge(
      EXPORTING
       io_replace_block = lo_replace_block

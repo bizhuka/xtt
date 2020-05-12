@@ -154,73 +154,106 @@ CLASS cl_main IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD pbo.
-    DATA:
-      ls_screen_opt TYPE ts_screen_opt,
-      l_show        TYPE abap_bool.
+    DATA lo_screen     TYPE REF TO zcl_eui_screen.
+    DATA lo_error      TYPE REF TO zcx_eui_exception.
+    DATA ls_screen_opt TYPE ts_screen_opt.
+    DATA lt_customize  TYPE zcl_eui_screen=>tt_customize.
+    DATA ls_customize  TYPE REF TO zcl_eui_screen=>ts_customize.
+
+    " Only for selection screen
+    CHECK sy-dynnr = '1000'.
 
     " Show or hide controls
     READ TABLE mt_screen_opt INTO ls_screen_opt
      WITH TABLE KEY key = p_exa.
 
-    LOOP AT SCREEN.
-      IF ls_screen_opt IS INITIAL.
-        CHECK screen-group1 <> 'EXA' AND screen-group1 IS NOT INITIAL.
-        l_show = abap_false.
+    TRY.
+        CREATE OBJECT lo_screen
+          EXPORTING
+            iv_dynnr = sy-dynnr.
+      CATCH zcx_eui_exception INTO lo_error.
+        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+        RETURN.
+    ENDTRY.
+
+    " By default is visible
+    DEFINE _visible.
+      APPEND INITIAL LINE TO lt_customize REFERENCE INTO ls_customize.
+      ls_customize->input     = '1'.
+      ls_customize->invisible = '0' .
+
+      " screen-name or screen-group1
+      IF &1 CS '*'.
+        ls_customize->name    = &1.
       ELSE.
-        l_show = abap_true.
-
-        CASE screen-group1.
-          WHEN 'DWN'. " Additional parameters for `download` method
-            IF p_stru = abap_true OR p_dwnl <> abap_true.
-              l_show = abap_false.
-            ENDIF.
-
-          WHEN 'SND'. " Additional parameters for `send` method
-            IF p_stru = abap_true OR p_send <> abap_true.
-              l_show = abap_false.
-            ENDIF.
-
-          WHEN 'RES'. " Last index is the documentation
-*          IF p_exa = .
-*            l_show = p_temp = p_stru = abap_false.
-*          ENDIF.
-
-          WHEN 'MET'. " Dont'show data, just data structure
-            IF p_stru = abap_true.
-              l_show = abap_false.
-            ELSEIF screen-name CP '*P_SHOW*'.
-              l_show = abap_true.
-            ENDIF.
-
-          WHEN OTHERS.
-            IF screen-name CP '*P_R_CNT*'.
-              l_show = ls_screen_opt-show_row_count.
-            ELSEIF screen-name CP '*P_C_CNT*'.
-              l_show = ls_screen_opt-show_colum_count.
-            ELSEIF screen-name CP '*P_B_CNT*'.
-              l_show = ls_screen_opt-show_block_count.
-            ELSEIF screen-name CP '*P_ZIP*'.
-              l_show = ls_screen_opt-show_zip.
-            ELSE.
-              CONTINUE.
-            ENDIF.
-        ENDCASE.
+        ls_customize->group1 = &1.
       ENDIF.
+    END-OF-DEFINITION.
 
-      " Show or hide paramater
-      IF l_show = abap_true.
-        screen-invisible = '0'.
-        screen-input     = '1'.
-      ELSE.
-        screen-invisible = '1'.
-        screen-input     = '0'.
-      ENDIF.
-      MODIFY SCREEN.
-    ENDLOOP.
+    " Change current row
+    DEFINE _hide.
+      ls_customize->input     = '0'.
+      ls_customize->invisible = '1' .
+    END-OF-DEFINITION.
+
+    " Additional parameters for `download` method
+    _visible 'DWN'.
+    IF ls_screen_opt IS INITIAL OR p_stru = abap_true OR p_dwnl <> abap_true.
+      _hide.
+    ENDIF.
+
+    " Additional parameters for `send` method
+    _visible 'SND'.
+    IF ls_screen_opt IS INITIAL OR p_stru = abap_true OR p_send <> abap_true.
+      _hide.
+    ENDIF.
+
+    " Result block
+    _visible 'RES'.
+    IF ls_screen_opt IS INITIAL.
+      _hide.
+    ENDIF.
+
+    " Don't show data, just data structure
+    _visible 'MET'.
+    IF ls_screen_opt IS INITIAL OR p_stru = abap_true.
+      _hide.
+    ENDIF.
+
+    _visible '*P_R_CNT*'.
+    IF ls_screen_opt-show_row_count <> abap_true.
+      _hide.
+    ENDIF.
+
+    _visible '*P_C_CNT*'.
+    IF ls_screen_opt-show_colum_count <> abap_true.
+      _hide.
+    ENDIF.
+
+    _visible '*P_B_CNT*'.
+    IF ls_screen_opt-show_block_count <> abap_true.
+      _hide.
+    ENDIF.
+
+    _visible '*P_ZIP*'.
+    IF ls_screen_opt-show_zip <> abap_true.
+      _hide.
+    ENDIF.
+
+    " Show or hide paramaters
+    lo_screen->customize( it_ = lt_customize ).
+    lo_screen->pbo( ).
   ENDMETHOD.
 
   METHOD pai.
+    CHECK cv_cmd = 'ONLI'.
 
+    " Current example
+    READ TABLE mt_screen_opt TRANSPORTING NO FIELDS
+     WITH TABLE KEY key = p_exa.
+    CHECK sy-subrc <> 0.
+
+    MESSAGE 'Please select valid template' TYPE 'E'.
   ENDMETHOD.
 
   METHOD start_of_selection.
@@ -239,6 +272,40 @@ CLASS cl_main IMPLEMENTATION.
 
     IF sy-subrc <> 0.
       MESSAGE 'Please select example'(pse) TYPE 'S' DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
+
+    " Just show template
+    DATA lo_smw0      TYPE REF TO zif_xtt_file.
+    DATA lo_file      TYPE REF TO zcl_eui_file.
+    DATA lv_file_name TYPE string.
+    DATA lo_error     TYPE REF TO zcx_eui_exception.
+    DATA lv_content   TYPE xstring.
+
+    IF p_temp = abap_true.
+      " SMW0 reader
+      CREATE OBJECT lo_smw0 TYPE zcl_xtt_file_smw0
+        EXPORTING
+          iv_objid = ls_screen_opt->template.
+
+      " Get file content
+      lo_smw0->get_content(
+       IMPORTING
+         ev_as_xstring = lv_content ).
+      lv_file_name = lo_smw0->get_name( ).
+
+      " Initilize
+      CREATE OBJECT lo_file
+        EXPORTING
+          iv_xstring = lv_content.
+
+      TRY.
+          lo_file->download( iv_full_path = lv_file_name ).
+          lo_file->open( ).
+        CATCH zcx_eui_exception INTO lo_error.
+          MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+      ENDTRY.
+
       RETURN.
     ENDIF.
 

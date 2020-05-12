@@ -66,25 +66,24 @@ METHOD example_09.
   CREATE DATA lr_table TYPE HANDLE lo_table.
   ASSIGN lr_table->* TO <lt_table>.
 
-  " No need to fill for empty template
-  IF p_temp <> abap_true.
-    " Columns
-    ls_merge0-a = zcl_xtt_replace_block=>tree_create(
-     it_table      = lt_column
-     iv_fields     = ''   ).   " <-- No fields! Tree with level=0
+  " Document structure
 
-    " {R-T} in a temaplte. @see get_random_table description
-    cl_main=>get_random_table(
-     EXPORTING
-      iv_column_cnt = p_c_cnt
-     IMPORTING
-      et_table      = <lt_table> ).
+  " Columns
+  ls_merge0-a = zcl_xtt_replace_block=>tree_create(
+   it_table      = lt_column
+   iv_fields     = ''   ).   " <-- No fields! Tree with level=0
 
-    " Rows
-    ls_merge1-t = zcl_xtt_replace_block=>tree_create(
-     it_table      = lr_table
-     iv_fields     = ''   ).   " <-- No fields! Tree with level=0
-  ENDIF.
+  " {R-T} in a temaplte. @see get_random_table description
+  cl_main=>get_random_table(
+   EXPORTING
+    iv_column_cnt = p_c_cnt
+   IMPORTING
+    et_table      = <lt_table> ).
+
+  " Rows
+  ls_merge1-t = zcl_xtt_replace_block=>tree_create(
+   it_table      = lr_table
+   iv_fields     = ''   ).   " <-- No fields! Tree with level=0
 
   " Show data structure only
   IF p_stru = abap_true.
@@ -102,11 +101,9 @@ METHOD example_09.
     io_file = lo_file.
 
   " Paste data
-  IF p_temp <> abap_true.
-    " Columns
-    ro_xtt->merge( is_block = ls_merge0 iv_block_name = 'C' ).
+  " Columns
+  ro_xtt->merge( is_block = ls_merge0 iv_block_name = 'C' ).
 
-    " Rows
-    ro_xtt->merge( ls_merge1 ).
-  ENDIF.
+  " Rows
+  ro_xtt->merge( ls_merge1 ).
 ENDMETHOD.

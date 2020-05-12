@@ -39,7 +39,7 @@ SELECTION-SCREEN SKIP 1.
 
 * show method
 PARAMETERS:
- p_show  RADIOBUTTON GROUP meth MODIF ID met.
+  p_show  RADIOBUTTON GROUP meth MODIF ID met.
 SELECTION-SCREEN SKIP 1.
 
 * send method
@@ -51,7 +51,10 @@ PARAMETERS:
   p_text  TYPE text255             MODIF ID snd DEFAULT 'The body of the letter'. "#EC NOTEXT
 SELECTION-SCREEN END OF   BLOCK bl_method.
 
-SELECTION-SCREEN BEGIN OF SCREEN 1010.
+**********************************************************************
+" Show sub folders of
+**********************************************************************
+SELECTION-SCREEN BEGIN OF SCREEN 1010 AS SUBSCREEN.
 PARAMETERS:
   p_r_path TYPE stringval,
   p_r_many AS CHECKBOX. " DEFAULT 'X'.

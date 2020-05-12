@@ -1,5 +1,5 @@
 ### Calculation in ABAP
-There is a special event for [calculating subtotals](Example-%E2%84%9605-Tree-(group-by-fields)) of the parent level based on the children
+There is a special event for [calculating subtotals](Example-05-01-Tree-en.md) of the parent level based on the children
 
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/05_fm_code_1.png)
 

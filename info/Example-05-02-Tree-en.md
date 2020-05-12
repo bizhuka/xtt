@@ -1,4 +1,4 @@
-What if [in the previous example](Example-%E2%84%9605-Tree-(group-by-fields)) at the level **{R-T;level=1}** it would not be enough to divide the tree by:
+What if [in the previous example](Example-05-01-Tree-en.md) at the level **{R-T;level=1}** it would not be enough to divide the tree by:
 * **{R-T;level=1;top=X}** upper &
 * **{R-T;level=1;top=}** bottom<br/>
 blocks ?

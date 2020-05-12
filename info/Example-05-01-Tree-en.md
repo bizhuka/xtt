@@ -1,7 +1,7 @@
 If you have ordinary table with simple totals you should use abap internal tables.<br/>
 But if you also have to display subtotals and other hierarchical structures it's better to use `trees`.<br/>
 There are 2 methods to create trees. In this page I'll try to explain the first one `TREE_CREATE`.<br/>
-About the `TREE_CREATE_RELAT` you can read in the [follwing page](Example-%E2%84%9606-Tree-(group-by-field-relations)).
+About the `TREE_CREATE_RELAT` you can read in the [follwing page](Example-05-02-Tree-en.md).
 
 ### TREE_CREATE
 ```abap
@@ -53,8 +53,8 @@ and in the loop you can calculate whatever you need
 In the template if you have different rows formatting for each level you can specify them by `;level=` and `;top=` additions.
 If subitems go after parental item just add `;top=X` for the level, otherwise `;top=` or just omit it.
 
-![tree_01](img/tree_01.png)
+![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/tree_01.png)
 Also if you specify outline level in the template it will be replicated in the final report for the corresponding items.
 
 The result look like in ALV GRID
-![tree_02](img/tree_02.png)
+![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/tree_02.png)

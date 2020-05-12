@@ -16,7 +16,7 @@ Basic data types
 |`as_is`|Do not escape XML symbols (can contain special chars <>&'..)|
 
 The first 4 data types detected implicitly. But for the boolean and datetime you have to specify type explicitly.
-![data_types_01.png](img/data_types_01.png)
+![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/data_types_01.png)
 
 As you could see `;type=mask` addition can be used for material numbers to delete leading zeros and for the WBS elements use custom pattern for proper visualisation.
 
@@ -29,11 +29,11 @@ There are also defined several constants which detects what kind of data you pas
 * 'tree'
 
 As you can notice so far we passed only structures and tables to `merge` method.
-But also we can pass objets (they work exactly as structures) & and trees [(for hierarchical output)](Example-%E2%84%9605-Tree-(group-by-fields)).
+But also we can pass objets (they work exactly as structures) & and trees [(for hierarchical output)](Example-05-01-Tree-en.md).
 
 ***
 If you have in Excel
-* [List object](Example-%E2%84%9602-Basic-tables) & pivot tables based on them
+* [List object](Example-02-Basic-tables-en.md) & pivot tables based on them
 * Merged cells
 * Defined names
 * Formulas (with preceded $ sign)

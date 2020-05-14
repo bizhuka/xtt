@@ -159,7 +159,7 @@
 данный вид директив можно располагать в любом месте шаблона
 
 #### {;direction=column}
-[{;direction=column}](Example-08-direction-ru.md) работает только для в классе `ZCL_XTT_EXCEL_XLSX` и уточняет как нужно вывести таблицу.
+[{;direction=column}](Example-08-direction-ru.md) работает только в классе `ZCL_XTT_EXCEL_XLSX` и уточняет как нужно вывести таблицу.
 По умолчанию таблицы и деревья выводятся по строкам.
 
 ![](https://raw.githubusercontent.com/wiki/bizhuka/xtt/img/dir_column_01.png)
@@ -169,8 +169,8 @@
  
 #### {;group=}
 &nbsp;Позволяет сгруппировать табличные данные в иерархическую структуру на подобие **дерева**. <br/>
-&nbsp;Для преобразование таблицы в дерево можно воспользоваться и программными методами
-zcl_xtt_replace_block=>[tree_create](Example-05-01-Tree-ru.md) или zcl_xtt_replace_block=>[tree_create_relat](Example-06-Tree-ru.md). <br/>
+&nbsp;Для преобразование таблицы в дерево можно воспользоваться и двумя программными методами
+zcl_xtt_replace_block=>[tree_create](Example-05-01-Tree-ru.md) и zcl_xtt_replace_block=>[tree_create_relat](Example-06-Tree-ru.md). <br/>
 &nbsp;Но сделав подобное объявление группы в самом шаблоне, позволяет дать ясную картину того что таблица была трансформирована в дерево.<br/>
 
 * Вместо tree_create => {;group=_Поля таблицы через запятую_}.<br/>

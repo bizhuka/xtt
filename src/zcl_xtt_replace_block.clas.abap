@@ -775,7 +775,8 @@ METHOD get_as_string.
       ASSIGN is_field->dref->* TO <l_time>.
 
     WHEN OTHERS.
-      MESSAGE x002(zsy_xtt) WITH is_field->typ.
+      MESSAGE s002(zsy_xtt) WITH is_field->typ INTO sy-msgli.
+      zcx_xtt_exception=>raise_dump( iv_message = sy-msgli ).
   ENDCASE.
 
   " Never will happen in MS Excel template (MS Word and pdf only)
@@ -830,7 +831,11 @@ METHOD tree_create.
   create_tree rr_root. " 0.
 
   " More convenient than pass table
-  SPLIT iv_fields AT ';' INTO TABLE lt_fields.
+  IF iv_fields CS ','.
+    SPLIT iv_fields AT ',' INTO TABLE lt_fields.
+  ELSE.
+    SPLIT iv_fields AT ';' INTO TABLE lt_fields.
+  ENDIF.
 
   LOOP AT <lt_table> ASSIGNING <ls_item>.
     ls_curtree = rr_root.

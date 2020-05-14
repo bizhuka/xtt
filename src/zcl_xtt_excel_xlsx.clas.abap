@@ -793,6 +793,9 @@ METHOD merge.
      CHANGING
       ct_cells         = lo_sheet->mt_cells ).
   ENDLOOP.
+
+  " For chain calls
+  ro_xtt = me.
 ENDMETHOD.
 
 

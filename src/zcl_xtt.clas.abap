@@ -32,7 +32,9 @@ public section.
   abstract
     importing
       !IS_BLOCK type ANY
-      !IV_BLOCK_NAME type CSEQUENCE default `R` .
+      !IV_BLOCK_NAME type CSEQUENCE default `R`
+    returning
+      value(RO_XTT) type ref to ZCL_XTT .
   methods GET_RAW
   abstract
     returning

@@ -497,6 +497,9 @@ METHOD merge.
 
   " And just concatenate
   CONCATENATE lv_before mv_file_content lv_after INTO mv_file_content RESPECTING BLANKS.
+
+  " For chain calls
+  ro_xtt = me.
 ENDMETHOD.
 
 

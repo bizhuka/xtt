@@ -3,7 +3,7 @@
 XTT helps you to automate your reporting routine in SAP
 
 - Get existing report from your customers
-- Use preferable editor (MS Excel, Word or Adobe LiveCycle Designer) and replace some parts of it with markers inclosed in _**{curly brackets}**_
+- Use preferable editor (MS Excel, Word or Adobe LiveCycle Designer) and replace some parts of it with markers inclosed in [curly brackets](info/mustache-en.md)
 - Link all formulas, charts and pivot tables to this marksers
 - In abap call **`merge()`** method to pass all data including nested strucures, tables and trees
 - Use **`download( ) | send( ) | show( )`** method for appropreate action
@@ -42,6 +42,7 @@ lo_xtt->download( ).
 
 | English| Русский |
 |-------------|-------------|
+|[Mustachioed template engine](info/mustache-en.md)| [Усатый шаблонизатор](info/mustache-ru.md)|
 |[Installation guide](info/Installation-guide-en.md)| [Инструкция по установке](info/Installation-guide-ru.md)|
 |[Main features](info/Main-features-en.md)| [Ключевые особенности](info/Main-features-ru.md)  |
 | tr. Z_XTT_INDEX | тр. Z_XTT_INDEX |

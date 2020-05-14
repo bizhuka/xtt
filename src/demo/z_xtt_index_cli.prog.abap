@@ -159,6 +159,7 @@ CLASS cl_main IMPLEMENTATION.
     DATA ls_screen_opt TYPE ts_screen_opt.
     DATA lt_customize  TYPE zcl_eui_screen=>tt_customize.
     DATA ls_customize  TYPE REF TO zcl_eui_screen=>ts_customize.
+    DATA lv_hide       TYPE abap_bool.
 
     " Only for selection screen
     CHECK sy-dynnr = '1000'.
@@ -196,15 +197,20 @@ CLASS cl_main IMPLEMENTATION.
       ls_customize->invisible = '1' .
     END-OF-DEFINITION.
 
+    " Break-point for data browsing or just show template
+    IF p_stru = abap_true OR p_temp = abap_true.
+      lv_hide = abap_true.
+    ENDIF.
+
     " Additional parameters for `download` method
     _visible 'DWN'.
-    IF ls_screen_opt IS INITIAL OR p_stru = abap_true OR p_dwnl <> abap_true.
+    IF ls_screen_opt IS INITIAL OR lv_hide = abap_true OR p_dwnl <> abap_true.
       _hide.
     ENDIF.
 
     " Additional parameters for `send` method
     _visible 'SND'.
-    IF ls_screen_opt IS INITIAL OR p_stru = abap_true OR p_send <> abap_true.
+    IF ls_screen_opt IS INITIAL OR lv_hide = abap_true OR p_send <> abap_true.
       _hide.
     ENDIF.
 
@@ -216,7 +222,7 @@ CLASS cl_main IMPLEMENTATION.
 
     " Don't show data, just data structure
     _visible 'MET'.
-    IF ls_screen_opt IS INITIAL OR p_stru = abap_true.
+    IF ls_screen_opt IS INITIAL OR lv_hide = abap_true.
       _hide.
     ENDIF.
 

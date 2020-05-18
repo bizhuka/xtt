@@ -21,6 +21,9 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       l_prev_col      TYPE i.
     DATA ls_blank         TYPE ts_ex_cell.
 
+    " Set owner
+    me->mo_xlsx = io_xlsx.
+
     " Path to the sheet
     int_2_text iv_ind l_sheet_ind.
     CONCATENATE `xl/worksheets/sheet` l_sheet_ind `.xml` INTO mv_full_path. "#EC NOTEXT
@@ -131,7 +134,9 @@ CLASS cl_ex_sheet IMPLEMENTATION.
         " Reference to reference
         LOOP AT ls_area->a_cells REFERENCE INTO ls_cell.
           " Get existing cell Or insert new one
-          find_cell( ls_cell->* ).
+          find_cell(
+           ir_cell     = ls_cell->*
+           iv_def_name = ls_defined_name->d_name ).
         ENDLOOP.
       ENDLOOP.
     ENDLOOP.
@@ -208,6 +213,8 @@ CLASS cl_ex_sheet IMPLEMENTATION.
         INSERT ls_row INTO TABLE mt_rows.
       ENDIF.
     ENDIF.
+
+    rr_ex_cell->c_def_name = iv_def_name.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD fill_shared_strings.
@@ -243,7 +250,10 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       ls_defined_name TYPE REF TO ts_ex_defined_name,
       ls_area         TYPE REF TO ts_ex_area,
       lv_address      TYPE string,
-      lo_table        TYPE REF TO if_ixml_element.
+      lo_table        TYPE REF TO if_ixml_element,
+      lt_defined_name TYPE tt_ex_defined_name,
+      lv_tabix        TYPE sytabix,
+      lv_delete_name  TYPE abap_bool.
 
     " Blank sheet
     CHECK mt_cells IS NOT INITIAL.
@@ -263,6 +273,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       ENDIF.
 
       lr_cell_ref->end = ls_cell.
+      APPEND ls_cell TO lr_cell_ref->all.
     ENDLOOP.
 *****************
 
@@ -412,10 +423,26 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 ***************************************
 
     LOOP AT io_xlsx->mt_defined_names REFERENCE INTO ls_defined_name.
+      " Save postion
+      lv_tabix = sy-tabix.
+      CLEAR lv_delete_name.
+
       LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area WHERE a_sheet_name = mv_name.
-        replace_with_new( ls_area ).
+        replace_with_new(
+         EXPORTING
+           ir_area         = ls_area
+           is_defined_name = ls_defined_name->*
+         IMPORTING
+           ev_delete_name  = lv_delete_name
+         CHANGING
+           ct_defined_name = lt_defined_name ).
       ENDLOOP.
+
+      " Delete old range name
+      CHECK lv_delete_name = abap_true.
+      DELETE io_xlsx->mt_defined_names INDEX lv_tabix.
     ENDLOOP.
+    INSERT LINES OF lt_defined_name INTO TABLE io_xlsx->mt_defined_names.
 
     " List object
     LOOP AT mt_list_objects REFERENCE INTO ls_list_object.
@@ -444,9 +471,18 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 *--------------------------------------------------------------------*
   METHOD replace_with_new.
     DATA:
-      lr_cell     TYPE REF TO ts_ex_cell,
-      lr_cell_ref TYPE REF TO ts_cell_ref,
-      lv_tabix    TYPE sytabix.
+      lr_cell         TYPE REF TO ts_ex_cell,
+      lr_cell_ref     TYPE REF TO ts_cell_ref,
+      lv_tabix        TYPE sytabix,
+      lv_cell_cnt     TYPE i,
+      lv_area_cnt     TYPE i,
+      ls_defined_name LIKE is_defined_name,
+      ls_area         TYPE ts_ex_area,
+      ls_ex_cell      TYPE REF TO ts_ex_cell.
+
+    lv_cell_cnt = lines( ir_area->a_cells ).
+    lv_area_cnt = lines( is_defined_name-d_areas ).
+    CLEAR ev_delete_name.
 
     LOOP AT ir_area->a_cells REFERENCE INTO lr_cell.
       lv_tabix = sy-tabix.
@@ -456,6 +492,31 @@ CLASS cl_ex_sheet IMPLEMENTATION.
        WITH TABLE KEY r = lr_cell->c_row
                       c = lr_cell->c_col_ind.
       CHECK sy-subrc = 0.
+
+      " Add new names
+      IF    is_defined_name-d_name CP cl_ex_sheet=>mc_dyn_def_name
+        AND lv_cell_cnt = 1
+        AND lv_area_cnt = 1
+        AND ct_defined_name IS REQUESTED.
+
+        LOOP AT lr_cell_ref->all INTO ls_ex_cell.
+          " Define name
+          CLEAR ls_defined_name.
+          ls_defined_name-d_name = ls_ex_cell->c_def_name.
+
+          " Add cell
+          ls_area = ir_area->*.
+          CLEAR ls_area-a_cells.
+          INSERT ls_ex_cell->* INTO TABLE ls_area-a_cells.
+          INSERT ls_area INTO TABLE ls_defined_name-d_areas.
+
+          " Add new range name
+          INSERT ls_defined_name INTO TABLE ct_defined_name.
+        ENDLOOP.
+
+        ev_delete_name = abap_true.
+        RETURN.
+      ENDIF.
 
       CASE lv_tabix.
           " First occurrence
@@ -468,10 +529,9 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       ENDCASE.
     ENDLOOP.
 
-    " Add additional cell to the eand
-    IF lv_tabix = 1 AND lr_cell_ref IS NOT INITIAL.
-      APPEND lr_cell_ref->end->* TO ir_area->a_cells.
-    ENDIF.
+    " Add additional cell to the end
+    CHECK lv_tabix = 1 AND lr_cell_ref IS NOT INITIAL.
+    APPEND lr_cell_ref->end->* TO ir_area->a_cells.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD merge.
@@ -929,10 +989,19 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       ls_cell          TYPE REF TO ts_ex_cell,
       ls_row           TYPE REF TO ts_ex_row,
       ls_column        TYPE REF TO ts_ex_column,
-      lv_templ_lev_cnt TYPE i.
+      lv_templ_lev_cnt TYPE i,
+      ls_dyn_def_name  LIKE LINE OF ct_dyn_def_name,
+      lt_dyn_def_name  LIKE ct_dyn_def_name,
+      lv_new_formula   TYPE string,
+      lv_part          TYPE string.
     FIELD-SYMBOLS:
-      <ls_data>  TYPE any,
-      <lt_cells> TYPE tt_ex_cell.
+      <ls_data>         TYPE any,
+      <lt_cell>         TYPE tt_ex_cell,
+      <ls_cell>         TYPE ts_ex_cell,
+      <ls_def_name>     TYPE ts_ex_defined_name,
+      <ls_dyn_def_name> LIKE LINE OF ct_dyn_def_name.
+
+    " Main data
     ASSIGN ir_tree->data->* TO <ls_data>.
 
     " Create merge description
@@ -943,19 +1012,20 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
     " Check amount of level's templates
     lv_templ_lev_cnt = lines( mt_row_match ).
+
     DO 3 TIMES.
       CASE sy-index.
         WHEN 1.
-          ASSIGN lt_row_top TO <lt_cells>.
+          ASSIGN lt_row_top TO <lt_cell>.
           lv_top = abap_true.
         WHEN 2.
-          ASSIGN lt_row_bottom TO <lt_cells>.
+          ASSIGN lt_row_bottom TO <lt_cell>.
           lv_top = abap_false.
         WHEN 3.
           " 3-d try
           CHECK lt_row_top IS INITIAL AND lt_row_bottom IS INITIAL.
 
-          ASSIGN lt_row_top TO <lt_cells>.
+          ASSIGN lt_row_top TO <lt_cell>.
           lv_top = abap_undefined.
       ENDCASE.
 
@@ -969,11 +1039,11 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       CHECK lr_found_match IS NOT INITIAL.
 
       " Merge with data
-      <lt_cells>[] = lr_found_match->cells[].
+      <lt_cell>[] = lr_found_match->cells[].
 
-      " For new rows only
+      " For new rows only (+ for groups)
       IF lv_templ_lev_cnt = 1.
-        LOOP AT <lt_cells> REFERENCE INTO ls_cell.
+        LOOP AT <lt_cell> REFERENCE INTO ls_cell.
           " Rows
           DO 1 TIMES. " WHERE c_row_dx IS NOT INITIAL. ?
             " Have outline ot not
@@ -996,28 +1066,78 @@ CLASS lcl_tree_handler IMPLEMENTATION.
         ENDLOOP.
       ENDIF.
 
+      " Create new names
+      LOOP AT <lt_cell> ASSIGNING <ls_cell> WHERE
+         c_def_name CP cl_ex_sheet=>mc_dyn_def_name.
+
+        " Find in parent of parent
+        READ TABLE mo_owner->mo_xlsx->mt_defined_names ASSIGNING <ls_def_name>
+         WITH TABLE KEY d_name = <ls_cell>-c_def_name.
+        CHECK sy-subrc = 0.
+
+        " Add new group
+        READ TABLE ct_dyn_def_name ASSIGNING <ls_dyn_def_name>
+         WITH TABLE KEY name = <ls_cell>-c_def_name.
+        IF sy-subrc <> 0.
+          ls_dyn_def_name-name = <ls_cell>-c_def_name.
+          CONCATENATE `*(` ls_dyn_def_name-name `)*` INTO ls_dyn_def_name-mask.
+          INSERT ls_dyn_def_name INTO TABLE ct_dyn_def_name ASSIGNING <ls_dyn_def_name>.
+        ENDIF.
+
+        " Create new name
+        ADD 1 TO <ls_def_name>-d_count.
+        <ls_cell>-c_def_name = <ls_def_name>-d_count.
+        CONDENSE <ls_cell>-c_def_name.
+        CONCATENATE <ls_def_name>-d_name <ls_cell>-c_def_name INTO <ls_cell>-c_def_name.
+
+        " And add to result
+        INSERT <ls_cell>-c_def_name INTO TABLE <ls_dyn_def_name>-t_all_def.
+      ENDLOOP.
+
       mo_owner->merge(
        EXPORTING
         io_replace_block = lo_replace_block
        CHANGING
-        ct_cells         = <lt_cells> ).
+        ct_cells         = <lt_cell> ).
     ENDDO.
 
     " row before
     APPEND LINES OF lt_row_top TO ct_cells.
 
     " children rows
+    CLEAR lt_dyn_def_name .
     LOOP AT ir_tree->sub_nodes REFERENCE INTO lr_tree_attr.
       lr_tree ?= lr_tree_attr->attr.
+
       add_tree_data(
        EXPORTING
-        ir_tree  = lr_tree
+        ir_tree         = lr_tree
        CHANGING
-        ct_cells = ct_cells ).
+        ct_cells        = ct_cells
+        ct_dyn_def_name = lt_dyn_def_name ).
     ENDLOOP.
 
     " row after
     APPEND LINES OF lt_row_bottom TO ct_cells.
+
+    " TODO optimize for TOP & BOTTOM only
+    CHECK lt_dyn_def_name IS NOT INITIAL.
+
+    LOOP AT lt_dyn_def_name ASSIGNING <ls_dyn_def_name>.
+      CLEAR lv_new_formula.
+      LOOP AT <ls_dyn_def_name>-t_all_def INTO lv_part.
+        IF lv_new_formula IS INITIAL.
+          lv_new_formula = lv_part.
+          CONTINUE.
+        ENDIF.
+
+        CONCATENATE lv_new_formula `,` lv_part INTO lv_new_formula.
+      ENDLOOP.
+
+      LOOP AT ct_cells ASSIGNING <ls_cell> WHERE c_formula CP <ls_dyn_def_name>-mask.
+        REPLACE ALL OCCURRENCES OF <ls_dyn_def_name>-name IN <ls_cell>-c_formula WITH lv_new_formula.
+      ENDLOOP.
+    ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
 

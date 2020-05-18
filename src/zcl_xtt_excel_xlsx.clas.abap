@@ -21,7 +21,6 @@ private section.
   data:
     mt_sheets   TYPE STANDARD TABLE OF REF TO cl_ex_sheet .
   data MO_ZIP type ref to CL_ABAP_ZIP .
-  data MO_WORKBOOK type ref to IF_IXML_DOCUMENT .
   data MT_SHARED_STRINGS type STRINGTAB .
   data MT_DEFINED_NAMES type TT_EX_DEFINED_NAME .
 
@@ -480,7 +479,8 @@ METHOD constructor.
     l_off            TYPE i,
     l_val            TYPE string,
     lo_node          TYPE REF TO if_ixml_element,
-    lo_sheet         TYPE REF TO cl_ex_sheet.
+    lo_sheet         TYPE REF TO cl_ex_sheet,
+    lo_workbook      TYPE REF TO IF_IXML_DOCUMENT.
 
   super->constructor( io_file = io_file ).
 
@@ -498,7 +498,7 @@ METHOD constructor.
     io_zip     = mo_zip
     iv_name    = 'xl/workbook.xml'                          "#EC NOTEXT
    IMPORTING
-    eo_xmldoc  = mo_workbook ).
+    eo_xmldoc  = lo_workbook ).
 
 ***************************************
   " Shared strings. Mainly <t> tags
@@ -537,7 +537,7 @@ METHOD constructor.
 
 ***************************************
   " Defined names for moving the second cell of areas
-  lo_node ?= mo_workbook->find_from_name( 'definedName' ).
+  lo_node ?= lo_workbook->find_from_name( 'definedName' ).
   WHILE lo_node IS BOUND.
     " Create new defined name
     defined_name_read_xml(
@@ -551,7 +551,7 @@ METHOD constructor.
 
 ***************************************
   " Sheets
-  lo_node = mo_workbook->find_from_name( 'sheet' ).         "#EC NOTEXT
+  lo_node = lo_workbook->find_from_name( 'sheet' ).         "#EC NOTEXT
   WHILE lo_node IS BOUND.
     " Prepare and add
     CREATE OBJECT lo_sheet
@@ -570,13 +570,13 @@ ENDMETHOD.                    "constructor
 METHOD defined_name_read_xml.
   DATA:
     l_value         TYPE string,
-    ls_defined_name TYPE REF TO ts_ex_defined_name,
+    ls_defined_name TYPE ts_ex_defined_name,
     lt_value        TYPE stringtab.
 
   " Name & value
   " Regardless CHECK l_value IS NOT INITIAL AND l_value(1) <> '#'.
-  APPEND INITIAL LINE TO ct_defined_names REFERENCE INTO ls_defined_name.
-  ls_defined_name->d_name = io_node->get_attribute( 'name' ). "#EC NOTEXT
+*  APPEND INITIAL LINE TO ct_defined_names REFERENCE INTO ls_defined_name.
+  ls_defined_name-d_name = io_node->get_attribute( 'name' ). "#EC NOTEXT
   l_value  = io_node->get_value( ).
 
   " Several areas
@@ -586,8 +586,10 @@ METHOD defined_name_read_xml.
      EXPORTING
       iv_value = l_value
      CHANGING
-      ct_areas = ls_defined_name->d_areas ).
+      ct_areas = ls_defined_name-d_areas ).
   ENDLOOP.
+
+  INSERT ls_defined_name INTO TABLE ct_defined_names.
 ENDMETHOD.
 
 
@@ -603,7 +605,9 @@ METHOD get_raw.
     ls_area         TYPE REF TO ts_ex_area,
     l_ref           TYPE string,
     l_part          TYPE string,
-    lr_content      TYPE REF TO xstring.
+    lr_content      TYPE REF TO xstring,
+    lv_workbook     TYPE string,
+    lv_names        TYPE string.
 
 ***************************************
   " Fill shared strings
@@ -651,39 +655,53 @@ METHOD get_raw.
 
 ***************************************
   " Save cell movements
-  lo_node ?= mo_workbook->find_from_name( 'definedName' ).
-  WHILE lo_node IS BOUND.
-    " Do not create new tags
-    READ TABLE mt_defined_names REFERENCE INTO ls_defined_name INDEX sy-index.
+  DO 1 TIMES.
+    CHECK mt_defined_names IS NOT INITIAL.
 
-    " Modify existing
-    CLEAR l_ref.
-    LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area.
-      l_part = area_get_address( is_area = ls_area iv_no_bucks = abap_false ).
-      CHECK l_part IS NOT INITIAL.
+    zcl_eui_conv=>xml_from_zip(
+     EXPORTING
+      io_zip     = mo_zip
+      iv_name    = 'xl/workbook.xml'                        "#EC NOTEXT
+     IMPORTING
+      ev_sdoc    = lv_workbook ).
 
-      " Concatenate 2 cells
-      IF l_ref IS INITIAL.
-        l_ref = l_part.
-      ELSE.
-        CONCATENATE l_ref `,` l_part INTO l_ref.
-      ENDIF.
+    " New tag
+    lv_names = `<definedNames>`.
+    LOOP AT mt_defined_names REFERENCE INTO ls_defined_name.
+
+      " Modify existing
+      CLEAR l_ref.
+      LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area.
+        l_part = area_get_address( is_area = ls_area iv_no_bucks = abap_false ).
+        CHECK l_part IS NOT INITIAL.
+
+        " Concatenate 2 cells
+        IF l_ref IS INITIAL.
+          l_ref = l_part.
+        ELSE.
+          CONCATENATE l_ref `,` l_part INTO l_ref.
+        ENDIF.
+      ENDLOOP.
+
+      CONCATENATE lv_names `<definedName name="` ls_defined_name->d_name `">`
+      l_ref `</definedName>` INTO lv_names RESPECTING BLANKS.
     ENDLOOP.
 
-    IF l_ref IS NOT INITIAL.
-      lo_node->set_value( l_ref ).
-    ENDIF.
+    " Only 1 replace
+    CONCATENATE lv_names `</definedNames>` INTO lv_names.
+    REPLACE FIRST OCCURRENCE OF REGEX
+      `(<definedNames>).*(</definedNames>)` IN lv_workbook WITH
+      `_DEFINED_NAMES_`.
 
-    lo_node ?= lo_node->get_next( ).
-  ENDWHILE.
+    " Insert from second attempt
+    REPLACE FIRST OCCURRENCE OF `_DEFINED_NAMES_` IN lv_workbook WITH lv_names.
 
-  " Write XML to zip
-  IF mt_defined_names IS NOT INITIAL.
+    " Write XML to zip
     zcl_eui_conv=>xml_to_zip(
      io_zip    = mo_zip
      iv_name   = 'xl/workbook.xml'                          "#EC NOTEXT
-     io_xmldoc = mo_workbook ).
-  ENDIF.
+     iv_sdoc   = lv_workbook ).
+  ENDDO.
 
 ***************************************
   " Remove from ZIP

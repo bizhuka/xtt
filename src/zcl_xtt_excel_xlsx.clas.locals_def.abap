@@ -20,6 +20,9 @@ TYPES:
     c_style          TYPE string,
     c_formula        TYPE string,
 
+    " Range name
+    c_def_name       TYPE string,
+
     " If > 0 this cell is the beginning of a new row
     c_row_dx         TYPE i,
     c_row_outline    TYPE i,
@@ -79,8 +82,9 @@ TYPES:
   BEGIN OF ts_ex_defined_name,
     d_name  TYPE string,      " Name in the top left combo
     d_areas TYPE tt_ex_area,
+    d_count TYPE i,
   END OF ts_ex_defined_name,
-  tt_ex_defined_name TYPE STANDARD TABLE OF ts_ex_defined_name WITH DEFAULT KEY,
+  tt_ex_defined_name TYPE SORTED TABLE OF ts_ex_defined_name WITH UNIQUE KEY d_name,
 
   " Table or list object in VBA terms
   BEGIN OF ts_ex_list_object,
@@ -95,14 +99,26 @@ TYPES:
     c   TYPE i,
     beg TYPE REF TO ts_ex_cell,
     end TYPE REF TO ts_ex_cell,
-  END OF ts_cell_ref.
+    all TYPE STANDARD TABLE OF REF TO ts_ex_cell WITH DEFAULT KEY,
+  END OF ts_cell_ref,
+
+  BEGIN OF ts_dyn_def_name,
+    name      TYPE string,
+    mask      TYPE string,
+    t_all_def TYPE stringtab,
+  END OF ts_dyn_def_name,
+  tt_dyn_def_name TYPE SORTED TABLE OF ts_dyn_def_name WITH UNIQUE KEY name.
 
 **********************************************************************
 **********************************************************************
 
 CLASS cl_ex_sheet DEFINITION FINAL.
   PUBLIC SECTION.
+    CONSTANTS:
+      mc_dyn_def_name TYPE string VALUE '*_'.
+
     DATA:
+      mo_xlsx          TYPE REF TO zcl_xtt_excel_xlsx,
       mv_full_path     TYPE string,                  " Path in zip(.xlsx,.xlsm) archive
       mv_name          TYPE string,
       mo_dom           TYPE REF TO if_ixml_document, " As an object
@@ -127,11 +143,17 @@ CLASS cl_ex_sheet DEFINITION FINAL.
       find_cell
         IMPORTING
                   ir_cell           TYPE ts_ex_cell
+                  iv_def_name       TYPE csequence OPTIONAL
         RETURNING VALUE(rr_ex_cell) TYPE REF TO ts_ex_cell,
 
       replace_with_new
         IMPORTING
-          ir_area TYPE REF TO ts_ex_area,
+          ir_area         TYPE REF TO ts_ex_area
+          is_defined_name TYPE ts_ex_defined_name OPTIONAL
+        EXPORTING
+          ev_delete_name  TYPE abap_bool
+        CHANGING
+          ct_defined_name TYPE tt_ex_defined_name OPTIONAL,
 
       fill_shared_strings
         CHANGING
@@ -188,10 +210,12 @@ CLASS lcl_tree_handler DEFINITION FINAL.
 
       add_tree_data
         IMPORTING
-          ir_tree  TYPE REF TO zcl_xtt_replace_block=>ts_tree
+          ir_tree         TYPE REF TO zcl_xtt_replace_block=>ts_tree
         CHANGING
-          ct_cells TYPE tt_ex_cell.
+          ct_dyn_def_name TYPE tt_dyn_def_name OPTIONAL
+          ct_cells        TYPE tt_ex_cell.
 ENDCLASS.
 
 * Make close friends :)
 CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS cl_ex_sheet.
+CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS lcl_tree_handler.

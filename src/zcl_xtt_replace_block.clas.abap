@@ -291,6 +291,7 @@ ENDMETHOD.
 
 
 METHOD catch_prepare_tree.
+  DATA lv_message TYPE string.
   FIELD-SYMBOLS:
     <ls_func>      LIKE LINE OF mt_func,
     <ls_data>      TYPE any,
@@ -334,7 +335,8 @@ METHOD catch_prepare_tree.
         ENDIF.
 
       WHEN OTHERS.
-        zcx_xtt_exception=>raise_dump( iv_message = `Unknown function` ).  "#EC NOTEXT
+        CONCATENATE `Unknown function ` <ls_func>-name INTO lv_message. "#EC NOTEXT
+        zcx_xtt_exception=>raise_dump( iv_message = lv_message ).
     ENDCASE.
   ENDLOOP.
 ENDMETHOD.
@@ -1183,7 +1185,7 @@ METHOD tree_initialize.
 
   " Structure declaration
   APPEND `REPORT DYNAMIC_IF.` TO lt_code.
-  APPEND `TYPE-POOLS ABAP.` TO lt_code. "Required by ABAP 7.01
+  APPEND `TYPE-POOLS ABAP.` TO lt_code. " Required for ABAP 7.01
   APPEND `TYPES: BEGIN OF TS_ROW, ` TO lt_code.
 
   LOOP AT lo_struc->components REFERENCE INTO ls_comp.
@@ -1262,12 +1264,11 @@ METHOD tree_initialize.
 
   GENERATE SUBROUTINE POOL lt_code NAME ev_program
     MESSAGE lv_message
-    LINE lv_pos. "#EC CI_GENERATE. <--- in lt_code[]
+    LINE lv_pos.                    "#EC CI_GENERATE. <--- in lt_code[]
 
   " Ooops! wrong syntax in if_show of if_hide!
-  IF sy-subrc <> 0.
-    MESSAGE lv_message TYPE 'X'.
-  ENDIF.
+  CHECK sy-subrc <> 0.
+  zcx_xtt_exception=>raise_dump( iv_message = lv_message ).
 ENDMETHOD.
 
 

@@ -533,6 +533,7 @@ METHOD extra_add_tab_opt.
   ENDIF.
 
   " Set additional options
+  ls_extra_tab_opt-group = abap_undefined.
   LOOP AT lt_param INTO lv_field FROM 2.  "<-- First item is field name
     SPLIT lv_field AT '=' INTO lv_key lv_value.
     CASE lv_key.
@@ -561,8 +562,8 @@ METHOD extra_create_tree.
   FIELD-SYMBOLS <ls_field>         LIKE LINE OF mt_fields.
 
   " Find matching
-  LOOP AT it_extra_tab_opt ASSIGNING <ls_extra_tab_opt>  "#EC CI_SORTSEQ
-      WHERE direction IS INITIAL. " group could be empty
+  LOOP AT it_extra_tab_opt ASSIGNING <ls_extra_tab_opt> "#EC CI_SORTSEQ
+       WHERE group <> abap_undefined. " group could be empty
     " 1 field
     READ TABLE mt_fields ASSIGNING <ls_field>
      WITH TABLE KEY name = <ls_extra_tab_opt>-name.

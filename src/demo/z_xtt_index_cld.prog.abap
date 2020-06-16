@@ -82,6 +82,8 @@ CLASS cl_main DEFINITION FINAL.
         CHANGING
           cv_path  TYPE csequence,
 
+      "! Basic example
+      "! @parameter iv_class_name       | First source code text
       example_01                                            "#EC CALLED
         IMPORTING
                   iv_class_name TYPE csequence

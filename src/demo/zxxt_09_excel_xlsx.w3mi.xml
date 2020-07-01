@@ -3,7 +3,7 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <NAME>ZXXT_09_EXCEL_XLSX</NAME>
-   <TEXT>Dynamic table (tree)</TEXT>
+   <TEXT>Dynamic table and tree (xlsx)</TEXT>
    <PARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>

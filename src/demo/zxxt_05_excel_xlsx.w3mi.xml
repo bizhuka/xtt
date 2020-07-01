@@ -3,25 +3,25 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <NAME>ZXXT_05_EXCEL_XLSX</NAME>
-   <TEXT>Tree (group by fields) (xlsx)</TEXT>
+   <TEXT>Tree group by fields (xlsx)</TEXT>
    <PARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
      <NAME>filename</NAME>
-     <VALUE>ZXXT_05_EXCEL.XLSX</VALUE>
+     <VALUE>ZXXT_05_EXCEL.xlsx</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
      <NAME>mimetype</NAME>
-     <VALUE>Excel</VALUE>
+     <VALUE>msexcel/application</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_05_EXCEL_XLSX</OBJID>
      <NAME>fileextension</NAME>
-     <VALUE>.XLSX</VALUE>
+     <VALUE>.xlsx</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

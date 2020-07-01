@@ -122,6 +122,9 @@ CLASS cl_main IMPLEMENTATION.
     cl_gui_frontend_services=>get_desktop_directory(
      CHANGING
        desktop_directory = p_r_path ).
+
+    " For live demo in https://bizhuka.github.io/xtt/
+    jekyll_export_all( it_list = lt_list ).
   ENDMETHOD.
 
   METHOD check_break_point_id.
@@ -298,7 +301,11 @@ CLASS cl_main IMPLEMENTATION.
       lo_smw0->get_content(
        IMPORTING
          ev_as_xstring = lv_content ).
-      lv_file_name = lo_smw0->get_name( ).
+
+      lv_file_name = iv_file_name.
+      IF lv_file_name IS INITIAL.
+        lv_file_name = lo_smw0->get_name( ).
+      ENDIF.
 
       " Initilize
       CREATE OBJECT lo_file
@@ -307,12 +314,17 @@ CLASS cl_main IMPLEMENTATION.
 
       TRY.
           lo_file->download( iv_full_path = lv_file_name ).
-          lo_file->open( ).
+
+          " Open template
+          IF iv_file_name IS INITIAL.
+            lo_file->open( ).
+          ENDIF.
         CATCH zcx_eui_exception INTO lo_error.
           MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
       ENDTRY.
 
-      RETURN.
+      " Go on if export to jekyll
+      CHECK ms_cur_demo IS NOT INITIAL.
     ENDIF.
 
     " Get parameters for merge method
@@ -325,7 +337,8 @@ CLASS cl_main IMPLEMENTATION.
         ro_xtt        = lo_xtt.
 
     " Call respective method
-    CHECK lo_xtt IS NOT INITIAL.
+    CHECK p_repo = abap_true
+      AND lo_xtt IS NOT INITIAL.
 
     CASE 'X'.
       WHEN p_dwnl.
@@ -488,4 +501,95 @@ CLASS cl_main IMPLEMENTATION.
   INCLUDE z_xtt_index_exa_08.
   INCLUDE z_xtt_index_exa_09.
 
+  METHOD jekyll_export_all.
+*    CHECK sy-datum(4) = '9999'.
+
+    DATA ls_list  TYPE REF TO vrm_value.
+    DATA lv_num   TYPE num2.
+    DATA lv_prev  TYPE num2.
+    DATA lv_text  TYPE string.
+    DATA lv_ext   TYPE string.
+    DATA lt_demo  TYPE tt_demo.
+    DATA ls_file  TYPE ts_file.
+
+    " Export data & template & report
+    SPLIT `X-X-X- ` AT `-` INTO p_stru
+                                p_temp
+                                p_repo
+                                p_open.
+    " All demo
+    LOOP AT it_list REFERENCE INTO ls_list WHERE key NP '*-00'.
+      " Extract file info
+      SPLIT ls_list->text AT ` - ` INTO lv_text ls_file-kind.
+
+      " Name & extension
+      SPLIT lv_text AT ` (` INTO lv_text lv_ext.
+      REPLACE FIRST OCCURRENCE OF `)` IN lv_ext WITH ``.
+
+      " 2 name
+      CONCATENATE ls_list->key `_T.` lv_ext INTO ls_file-template.
+      CONCATENATE ls_list->key `_R.` lv_ext INTO ls_file-report.
+
+      " Original format
+      REPLACE FIRST OCCURRENCE OF `.pdf` IN ls_file-template WITH `.xdp`.
+
+      " New demo
+      lv_num = ls_list->key(2).
+      IF lv_num <> lv_prev.
+        lv_prev = lv_num.
+        APPEND INITIAL LINE TO lt_demo REFERENCE INTO ms_cur_demo.
+        ms_cur_demo->id    = lv_num.
+        ms_cur_demo->label = lv_text.
+      ENDIF.
+
+      " Add file
+      APPEND ls_file TO ms_cur_demo->files.
+
+      " Set current example
+      p_exa = ls_list->key.
+      p_path = ls_file-report.
+      start_of_selection( iv_file_name = ls_file-template ).
+    ENDLOOP.
+
+    " Export file
+    DATA lv_file   TYPE string.
+    DATA lo_file   TYPE REF TO zcl_eui_file.
+    DATA lo_error  TYPE REF TO zcx_eui_exception.
+
+    TRY.
+        lv_file = zcl_eui_conv=>to_json( im_data = lt_demo
+                                         iv_pure = abap_true ).
+
+        CREATE OBJECT lo_file.
+        lo_file->import_from_string( lv_file ).
+        lo_file->download( iv_save_dialog = abap_true
+                           iv_full_path   = `xtt_demo.json` ).
+      CATCH zcx_eui_exception INTO lo_error.
+        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+    ENDTRY.
+
+    " Restore
+    p_stru = p_temp = abap_false.
+  ENDMETHOD.
+
+  METHOD jekyll_add_json.
+    CHECK ms_cur_demo IS NOT INITIAL.
+    rv_go_on = abap_true.
+
+    " 1 time only
+    READ TABLE ms_cur_demo->merge TRANSPORTING NO FIELDS
+     WITH TABLE KEY key = iv_key.
+    CHECK sy-subrc <> 0.
+
+    DATA          ls_merge  TYPE ts_merge_param.
+    FIELD-SYMBOLS <l_value> TYPE any.
+    " № 1 - merge IV_BLOCK_NAME parameter
+    ls_merge-key = iv_key.
+
+    " № 2 - merge IS_BLOCK parameter
+    CREATE DATA ls_merge-val LIKE i_value.
+    ASSIGN ls_merge-val->* TO <l_value>.
+    <l_value> = i_value.
+    INSERT ls_merge INTO TABLE ms_cur_demo->merge.
+  ENDMETHOD.
 ENDCLASS.

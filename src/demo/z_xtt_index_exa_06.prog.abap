@@ -19,7 +19,7 @@ METHOD example_06.
     lo_error   TYPE REF TO zcx_eui_exception,
     lo_file    TYPE REF TO zif_xtt_file,
     ls_root    TYPE ts_root,
-    lt_folders TYPE tt_tree_06,
+    lt_folders TYPE REF TO tt_tree_06,
     ls_folder  TYPE REF TO ts_tree_06,
     lv_sep     TYPE char1,
     lv_len     TYPE i.
@@ -40,6 +40,7 @@ METHOD example_06.
 
   " Document structure
   ls_root-title = `Title`.                                  "#EC NOTEXT
+  CREATE DATA lt_folders.
 
   " Delete file separator
   cl_gui_frontend_services=>get_file_separator(
@@ -54,7 +55,7 @@ METHOD example_06.
 
   " Add first level or not
   IF p_r_many <> abap_true.
-    APPEND INITIAL LINE TO lt_folders REFERENCE INTO ls_folder.
+    APPEND INITIAL LINE TO lt_folders->* REFERENCE INTO ls_folder.
     ls_folder->dir = p_r_path.
   ENDIF.
 
@@ -63,13 +64,13 @@ METHOD example_06.
      iv_dir    = p_r_path
      iv_sep    = lv_sep
    CHANGING
-     ct_folder = lt_folders ).
+     ct_folder = lt_folders->* ).
 
   " Create tree
-  SET HANDLER on_prepare_tree_06. " ACTIVATION abap_true.
+  SET HANDLER on_prepare_tree_06 ACTIVATION abap_true.
 
   " New way use declarations in a template
-  GET REFERENCE OF lt_folders INTO ls_root-t.
+  ls_root-t = lt_folders.
 
   " Old way in code
   ls_root-c = zcl_xtt_replace_block=>tree_create_relat(
@@ -81,7 +82,9 @@ METHOD example_06.
   IF p_stru = abap_true.
     check_break_point_id( ).
     BREAK-POINT ID zxtt_break_point. " Double click here --> ls_root <--
-    RETURN.
+
+    " For internal use
+    CHECK jekyll_add_json( ls_root ) = abap_true.
   ENDIF.
 
   " Info about template & the main class itself
@@ -94,6 +97,9 @@ METHOD example_06.
 
   " Paste data
   ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
+
+  " Switch off
+  SET HANDLER on_prepare_tree_06 ACTIVATION abap_false.
 ENDMETHOD.
 
 METHOD fill_with_folders.

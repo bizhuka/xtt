@@ -59,7 +59,10 @@ METHOD example_03.
   IF p_stru = abap_true.
     check_break_point_id( ).
     BREAK-POINT ID zxtt_break_point. " Double click here --> lt_root , ls_doc <--
-    RETURN.
+
+    " For internal use
+    jekyll_add_json( iv_key = 'R'   i_value = lt_root ).
+    CHECK jekyll_add_json( iv_key = 'DOC' i_value = ls_doc ) = abap_true.
   ENDIF.
 
   " Info about template & the main class itself
@@ -72,5 +75,5 @@ METHOD example_03.
 
   " Paste data
   ro_xtt->merge( is_block = lt_root iv_block_name = 'R' ).
-  ro_xtt->merge( is_block = ls_doc iv_block_name = 'DOC' ).
+  ro_xtt->merge( is_block = ls_doc  iv_block_name = 'DOC' ).
 ENDMETHOD.

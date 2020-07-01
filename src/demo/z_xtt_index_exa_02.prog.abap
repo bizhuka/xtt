@@ -5,8 +5,7 @@ METHOD example_02.
   TYPES:
     " Document structure
     BEGIN OF ts_root,
-      footer   TYPE string,
-      header   TYPE string,
+      title    TYPE string,
       t        TYPE tt_rand_data, " internal flat table ( In template {R-T} )
       date     TYPE d,            " 8
       time     TYPE t,            " 6
@@ -23,8 +22,7 @@ METHOD example_02.
      et_table = ls_root-t ).
 
   " Document structure
-  ls_root-footer = 'Footer'.                                "#EC NOTEXT
-  ls_root-header = 'Header'.                                "#EC NOTEXT
+  ls_root-title = 'Title'(tit).
 
   " Date and time in header and footer
   ls_root-date   = sy-datum.
@@ -36,7 +34,9 @@ METHOD example_02.
   IF p_stru = abap_true.
     check_break_point_id( ).
     BREAK-POINT ID zxtt_break_point. " Double click here --> ls_root <--
-    RETURN.
+
+    " For internal use
+    CHECK jekyll_add_json( ls_root ) = abap_true.
   ENDIF.
 
   " Info about template & the main class itself

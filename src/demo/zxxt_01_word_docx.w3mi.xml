@@ -8,20 +8,20 @@
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_01_WORD_DOCX</OBJID>
-     <NAME>fileextension</NAME>
-     <VALUE>.DOCX</VALUE>
-    </WWWPARAMS>
-    <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZXXT_01_WORD_DOCX</OBJID>
      <NAME>filename</NAME>
-     <VALUE>ZXXT_01_WORD.DOCX</VALUE>
+     <VALUE>ZXXT_01_WORD.docx</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_01_WORD_DOCX</OBJID>
      <NAME>mimetype</NAME>
-     <VALUE>docx</VALUE>
+     <VALUE>msword/application</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_01_WORD_DOCX</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.docx</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

@@ -25,7 +25,9 @@ METHOD example_01.
   IF p_stru = abap_true.
     check_break_point_id( ).
     BREAK-POINT ID zxtt_break_point. " Double click here --> ls_root <--
-    RETURN.
+
+    " For internal use
+    CHECK jekyll_add_json( ls_root ) = abap_true.
   ENDIF.
 
   " Info about template & the main class itself

@@ -51,7 +51,27 @@ CLASS cl_main DEFINITION FINAL.
         " Empty field. Filled in on_prepare_tree_06
         level   TYPE i,
       END OF ts_tree_06,
-      tt_tree_06 TYPE STANDARD TABLE OF ts_tree_06 WITH DEFAULT KEY.
+      tt_tree_06 TYPE STANDARD TABLE OF ts_tree_06 WITH DEFAULT KEY,
+
+      " 1 demo
+      BEGIN OF ts_file,
+        kind     TYPE string,
+        template TYPE string,
+        report   TYPE string,
+      END OF ts_file,
+
+      BEGIN OF ts_merge_param,
+        key TYPE string,
+        val TYPE REF TO data,
+      END OF ts_merge_param,
+
+      BEGIN OF ts_demo,
+        id    TYPE num2,
+        label TYPE string,
+        files TYPE STANDARD TABLE OF ts_file WITH DEFAULT KEY,
+        merge TYPE HASHED TABLE OF ts_merge_param WITH UNIQUE KEY key,
+      END OF ts_demo,
+      tt_demo TYPE STANDARD TABLE OF ts_demo WITH DEFAULT KEY.
 
     METHODS:
       " INITIALIZATION
@@ -66,7 +86,9 @@ CLASS cl_main DEFINITION FINAL.
           cv_cmd TYPE syucomm,
 
       " START-OF-SELECTION
-      start_of_selection,
+      start_of_selection
+        IMPORTING
+          iv_file_name TYPE csequence OPTIONAL,
 
       check_break_point_id,
 
@@ -82,8 +104,7 @@ CLASS cl_main DEFINITION FINAL.
         CHANGING
           cv_path  TYPE csequence,
 
-      "! Basic example
-      "! @parameter iv_class_name       | First source code text
+      " Basic example
       example_01                                            "#EC CALLED
         IMPORTING
                   iv_class_name TYPE csequence
@@ -168,7 +189,17 @@ CLASS cl_main DEFINITION FINAL.
         IMPORTING
                   iv_class_name TYPE csequence
                   iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt.
+        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+
+      jekyll_export_all
+        IMPORTING
+          it_list TYPE vrm_values,
+
+      jekyll_add_json
+        IMPORTING
+                  iv_key          TYPE string DEFAULT 'R'
+                  i_value         TYPE any
+        RETURNING VALUE(rv_go_on) TYPE abap_bool.
 
     CLASS-METHODS:
       " Random data for tables
@@ -179,5 +210,6 @@ CLASS cl_main DEFINITION FINAL.
           et_table      TYPE STANDARD TABLE.
 
     DATA:
-       mt_screen_opt TYPE tt_screen_opt.
+      mt_screen_opt TYPE tt_screen_opt,
+      ms_cur_demo   TYPE REF TO ts_demo.
 ENDCLASS.

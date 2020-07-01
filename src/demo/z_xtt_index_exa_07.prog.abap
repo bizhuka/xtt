@@ -11,7 +11,7 @@ METHOD example_07.
     lv_ole_app TYPE ole2_object.
 
   " Show data structure only
-  IF p_stru = abap_true.
+  IF p_stru = abap_true AND ms_cur_demo IS INITIAL.
     MESSAGE 'No data at all'(nda) TYPE 'S' DISPLAY LIKE 'E'.
     RETURN.
   ENDIF.

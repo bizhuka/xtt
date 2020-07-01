@@ -14,7 +14,7 @@ METHOD example_05.
   DATA:
     lo_file  TYPE REF TO zif_xtt_file,
     ls_root  TYPE ts_root,
-    lt_items TYPE tt_rand_data,
+    lt_items TYPE REF TO tt_rand_data,
     ls_item  TYPE REF TO ts_rand_data,
     lt_rows  TYPE tt_tree_05,
     ls_row   TYPE REF TO ts_tree_05.
@@ -23,16 +23,17 @@ METHOD example_05.
   ls_root-title  = 'Title'(tit).
 
   " @see get_random_table description
+  CREATE DATA lt_items.
   cl_main=>get_random_table(
    IMPORTING
-     et_table = lt_items ).
-  LOOP AT lt_items REFERENCE INTO ls_item.
+     et_table = lt_items->* ).
+  LOOP AT lt_items->* REFERENCE INTO ls_item.
     APPEND INITIAL LINE TO lt_rows REFERENCE INTO ls_row.
     MOVE-CORRESPONDING ls_item->* TO ls_row->*.
   ENDLOOP.
 
   " New way use declarations in a template
-  GET REFERENCE OF lt_items INTO ls_root-t.
+  ls_root-t = lt_items.
 
   " Old way in code
 *    ls_root-t = zcl_xtt_replace_block=>tree_create(
@@ -43,7 +44,9 @@ METHOD example_05.
   IF p_stru = abap_true.
     check_break_point_id( ).
     BREAK-POINT ID zxtt_break_point. " Double click here --> ls_root <--
-    RETURN.
+
+    " For internal use
+    CHECK jekyll_add_json( ls_root ) = abap_true.
   ENDIF.
 
   " Info about template & the main class itself

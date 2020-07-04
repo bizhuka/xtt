@@ -45,11 +45,14 @@ CLASS cl_main DEFINITION FINAL.
 
       BEGIN OF ts_tree_06,
         " Folders hierarchy
-        dir     TYPE string,
-        par_dir TYPE string,
+        dir          TYPE string,
+        par_dir      TYPE string,
 
         " Empty field. Filled in on_prepare_tree_06
-        level   TYPE i,
+        level        TYPE i,
+
+        sum          TYPE bf_rbetr,
+        has_children TYPE abap_bool,
       END OF ts_tree_06,
       tt_tree_06 TYPE STANDARD TABLE OF ts_tree_06 WITH DEFAULT KEY,
 

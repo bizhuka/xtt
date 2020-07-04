@@ -35,8 +35,10 @@ TYPES:
     c_merge_row_dx   TYPE i,
     c_merge_col_dx   TYPE i,
   END OF ts_ex_cell,
-  " Only reference to cells !
-  tt_ex_cell TYPE STANDARD TABLE OF ts_ex_cell WITH DEFAULT KEY,
+  " Standard CELLS
+  tt_ex_cell     TYPE STANDARD TABLE OF ts_ex_cell WITH DEFAULT KEY,
+  " REFs to CELLS
+  tt_ex_cell_ref TYPE STANDARD TABLE OF REF TO ts_ex_cell WITH DEFAULT KEY,
 
   BEGIN OF ts_cell_match.
     INCLUDE TYPE zcl_xtt_replace_block=>ts_tree_group.
@@ -213,7 +215,14 @@ CLASS lcl_tree_handler DEFINITION FINAL.
           ir_tree         TYPE REF TO zcl_xtt_replace_block=>ts_tree
         CHANGING
           ct_dyn_def_name TYPE tt_dyn_def_name OPTIONAL
-          ct_cells        TYPE tt_ex_cell.
+          ct_cells        TYPE tt_ex_cell,
+
+      append_to
+        IMPORTING
+          it_cells     TYPE tt_ex_cell
+        CHANGING
+          ct_cells     TYPE tt_ex_cell
+          ct_cells_ref TYPE tt_ex_cell_ref.
 ENDCLASS.
 
 * Make close friends :)

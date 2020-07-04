@@ -260,6 +260,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 *****************
     " Find old -> new match
+    CLEAR mt_cell_ref[].
     LOOP AT mt_cells REFERENCE INTO ls_cell.
       READ TABLE mt_cell_ref REFERENCE INTO lr_cell_ref
        WITH TABLE KEY r = ls_cell->c_row
@@ -442,6 +443,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       CHECK lv_delete_name = abap_true.
       DELETE io_xlsx->mt_defined_names INDEX lv_tabix.
     ENDLOOP.
+    " Add new names
     INSERT LINES OF lt_defined_name INTO TABLE io_xlsx->mt_defined_names.
 
     " List object
@@ -993,11 +995,11 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       ls_dyn_def_name  LIKE LINE OF ct_dyn_def_name,
       lt_dyn_def_name  LIKE ct_dyn_def_name,
       lv_new_formula   TYPE string,
-      lv_part          TYPE string.
+      lv_part          TYPE string,
+      lr_cell          TYPE REF TO ts_ex_cell.
     FIELD-SYMBOLS:
       <ls_data>         TYPE any,
       <lt_cell>         TYPE tt_ex_cell,
-      <ls_cell>         TYPE ts_ex_cell,
       <ls_def_name>     TYPE ts_ex_defined_name,
       <ls_dyn_def_name> LIKE LINE OF ct_dyn_def_name.
 
@@ -1067,31 +1069,31 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       ENDIF.
 
       " Create new names
-      LOOP AT <lt_cell> ASSIGNING <ls_cell> WHERE
+      LOOP AT <lt_cell> REFERENCE INTO lr_cell WHERE
          c_def_name CP cl_ex_sheet=>mc_dyn_def_name.
 
         " Find in parent of parent
         READ TABLE mo_owner->mo_xlsx->mt_defined_names ASSIGNING <ls_def_name>
-         WITH TABLE KEY d_name = <ls_cell>-c_def_name.
+         WITH TABLE KEY d_name = lr_cell->c_def_name.
         CHECK sy-subrc = 0.
 
         " Add new group
         READ TABLE ct_dyn_def_name ASSIGNING <ls_dyn_def_name>
-         WITH TABLE KEY name = <ls_cell>-c_def_name.
+         WITH TABLE KEY name = lr_cell->c_def_name.
         IF sy-subrc <> 0.
-          ls_dyn_def_name-name = <ls_cell>-c_def_name.
+          ls_dyn_def_name-name = lr_cell->c_def_name.
           CONCATENATE `*(` ls_dyn_def_name-name `)*` INTO ls_dyn_def_name-mask.
           INSERT ls_dyn_def_name INTO TABLE ct_dyn_def_name ASSIGNING <ls_dyn_def_name>.
         ENDIF.
 
         " Create new name
         ADD 1 TO <ls_def_name>-d_count.
-        <ls_cell>-c_def_name = <ls_def_name>-d_count.
-        CONDENSE <ls_cell>-c_def_name.
-        CONCATENATE <ls_def_name>-d_name <ls_cell>-c_def_name INTO <ls_cell>-c_def_name.
+        lr_cell->c_def_name = <ls_def_name>-d_count.
+        CONDENSE lr_cell->c_def_name.
+        CONCATENATE <ls_def_name>-d_name lr_cell->c_def_name INTO lr_cell->c_def_name.
 
         " And add to result
-        INSERT <ls_cell>-c_def_name INTO TABLE <ls_dyn_def_name>-t_all_def.
+        INSERT lr_cell->c_def_name INTO TABLE <ls_dyn_def_name>-t_all_def.
       ENDLOOP.
 
       mo_owner->merge(
@@ -1102,7 +1104,10 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     ENDDO.
 
     " row before
-    APPEND LINES OF lt_row_top TO ct_cells.
+    DATA lt_cells_ref TYPE tt_ex_cell_ref.
+    append_to( EXPORTING it_cells     = lt_row_top
+               CHANGING  ct_cells     = ct_cells
+                         ct_cells_ref = lt_cells_ref ).
 
     " children rows
     CLEAR lt_dyn_def_name .
@@ -1118,9 +1123,11 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     ENDLOOP.
 
     " row after
-    APPEND LINES OF lt_row_bottom TO ct_cells.
+    append_to( EXPORTING it_cells     = lt_row_bottom
+               CHANGING  ct_cells     = ct_cells
+                         ct_cells_ref = lt_cells_ref ).
 
-    " TODO optimize for TOP & BOTTOM only
+    " Work with LT_CELLS_REF only
     CHECK lt_dyn_def_name IS NOT INITIAL.
 
     LOOP AT lt_dyn_def_name ASSIGNING <ls_dyn_def_name>.
@@ -1134,9 +1141,21 @@ CLASS lcl_tree_handler IMPLEMENTATION.
         CONCATENATE lv_new_formula `,` lv_part INTO lv_new_formula.
       ENDLOOP.
 
-      LOOP AT ct_cells ASSIGNING <ls_cell> WHERE c_formula CP <ls_dyn_def_name>-mask.
-        REPLACE ALL OCCURRENCES OF <ls_dyn_def_name>-name IN <ls_cell>-c_formula WITH lv_new_formula.
+      LOOP AT lt_cells_ref INTO lr_cell WHERE table_line->c_formula CP <ls_dyn_def_name>-mask.
+        REPLACE ALL OCCURRENCES OF <ls_dyn_def_name>-name IN lr_cell->c_formula WITH lv_new_formula.
       ENDLOOP.
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD append_to.
+    DATA lv_from TYPE i.
+    DATA lr_cell TYPE REF TO ts_ex_cell.
+
+    lv_from = lines( ct_cells ) + 1.
+    APPEND LINES OF it_cells TO ct_cells.
+
+    LOOP AT ct_cells REFERENCE INTO lr_cell FROM lv_from.
+      APPEND lr_cell TO ct_cells_ref.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.

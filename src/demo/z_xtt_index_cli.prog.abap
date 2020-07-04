@@ -502,7 +502,7 @@ CLASS cl_main IMPLEMENTATION.
   INCLUDE z_xtt_index_exa_09.
 
   METHOD jekyll_export_all.
-*    CHECK sy-datum(4) = '9999'.
+    CHECK sy-datum(4) = '9999'.
 
     DATA ls_list  TYPE REF TO vrm_value.
     DATA lv_num   TYPE num2.

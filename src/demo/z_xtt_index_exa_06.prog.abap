@@ -56,7 +56,8 @@ METHOD example_06.
   " Add first level or not
   IF p_r_many <> abap_true.
     APPEND INITIAL LINE TO lt_folders->* REFERENCE INTO ls_folder.
-    ls_folder->dir = p_r_path.
+    ls_folder->has_children = abap_true.
+    ls_folder->dir          = p_r_path.
   ENDIF.
 
   fill_with_folders(
@@ -65,6 +66,16 @@ METHOD example_06.
      iv_sep    = lv_sep
    CHANGING
      ct_folder = lt_folders->* ).
+
+  " Add sums to last elements with no children
+  DATA lo_rand_p TYPE REF TO cl_abap_random_packed.
+  lo_rand_p = cl_abap_random_packed=>create( min = 0 max = 1000000 ).
+  LOOP AT lt_folders->* REFERENCE INTO ls_folder.
+    REPLACE FIRST OCCURRENCE OF p_r_path: IN ls_folder->par_dir WITH 'R:',
+                                          IN ls_folder->dir     WITH 'R:'.
+    CHECK ls_folder->has_children <> abap_true.
+    ls_folder->sum     = lo_rand_p->get_next( ).
+  ENDLOOP.
 
   " Create tree
   SET HANDLER on_prepare_tree_06 ACTIVATION abap_true.
@@ -107,7 +118,8 @@ METHOD fill_with_folders.
     lt_folder TYPE STANDARD TABLE OF text1000,
     lv_folder TYPE REF TO text1000,
     ls_folder TYPE REF TO ts_tree_06,
-    lv_cnt    TYPE i.
+    lv_cnt    TYPE i,
+    lv_prev   TYPE i.
 
   cl_gui_frontend_services=>directory_list_files(
    EXPORTING
@@ -128,18 +140,22 @@ METHOD fill_with_folders.
     ls_folder->par_dir = iv_dir.
 
     " Next level
+    lv_prev = lines( ct_folder ).
     fill_with_folders(
      EXPORTING
        iv_dir    = ls_folder->dir
        iv_sep    = iv_sep
      CHANGING
        ct_folder = ct_folder ).
+
+    IF lines( ct_folder ) > lv_prev.
+      ls_folder->has_children = abap_true.
+    ENDIF.
   ENDLOOP.
 ENDMETHOD.
 
 METHOD on_prepare_tree_06.
-  FIELD-SYMBOLS:
-    <ls_data>     TYPE ts_tree_06.
+  FIELD-SYMBOLS <ls_data> TYPE ts_tree_06.
 
   " Cast to specefic data
   ASSIGN ir_data->* TO <ls_data>.

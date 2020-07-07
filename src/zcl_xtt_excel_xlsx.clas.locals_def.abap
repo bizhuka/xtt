@@ -6,8 +6,11 @@ TYPE-POOLS:
  abap.
 
 CLASS zcl_xtt_replace_block DEFINITION LOAD.
+CLASS lcl_ex_sheet DEFINITION DEFERRED.
 
 TYPES:
+  lcl_ex_sheet_tab TYPE STANDARD TABLE OF REF TO lcl_ex_sheet,
+
   " Cell of Excel
   BEGIN OF ts_ex_cell,
     c_row            TYPE i,
@@ -82,9 +85,10 @@ TYPES:
 
   " Range's name in VBA term
   BEGIN OF ts_ex_defined_name,
-    d_name  TYPE string,      " Name in the top left combo
-    d_areas TYPE tt_ex_area,
-    d_count TYPE i,
+    d_name      TYPE string,      " Name in the top left combo
+    d_local_sid TYPE string,
+    d_areas     TYPE tt_ex_area,
+    d_count     TYPE i,
   END OF ts_ex_defined_name,
   tt_ex_defined_name TYPE SORTED TABLE OF ts_ex_defined_name WITH UNIQUE KEY d_name,
 
@@ -103,6 +107,7 @@ TYPES:
     end TYPE REF TO ts_ex_cell,
     all TYPE STANDARD TABLE OF REF TO ts_ex_cell WITH DEFAULT KEY,
   END OF ts_cell_ref,
+  tt_cell_ref TYPE SORTED TABLE OF ts_cell_ref WITH UNIQUE KEY r c,
 
   BEGIN OF ts_dyn_def_name,
     name      TYPE string,
@@ -114,7 +119,7 @@ TYPES:
 **********************************************************************
 **********************************************************************
 
-CLASS cl_ex_sheet DEFINITION FINAL.
+CLASS lcl_ex_sheet DEFINITION FINAL.
   PUBLIC SECTION.
     CONSTANTS:
       mc_dyn_def_name TYPE string VALUE '*_'.
@@ -132,8 +137,7 @@ CLASS cl_ex_sheet DEFINITION FINAL.
 
       " Current cell. For event handler
       ms_cell          TYPE REF TO ts_ex_cell,
-      mt_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt,
-      mt_cell_ref      TYPE SORTED TABLE OF ts_cell_ref WITH UNIQUE KEY r c.
+      mt_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt.
 
     METHODS:
       constructor
@@ -151,6 +155,7 @@ CLASS cl_ex_sheet DEFINITION FINAL.
       replace_with_new
         IMPORTING
           ir_area         TYPE REF TO ts_ex_area
+          it_cell_ref     TYPE tt_cell_ref
           is_defined_name TYPE ts_ex_defined_name OPTIONAL
         EXPORTING
           ev_delete_name  TYPE abap_bool
@@ -171,7 +176,7 @@ CLASS cl_ex_sheet DEFINITION FINAL.
         CHANGING
           ct_cells         TYPE tt_ex_cell,
 
-      xml_repleace_node
+      xml_replace_node
         IMPORTING
                   iv_tag_name    TYPE string
                   iv_repl_text   TYPE string
@@ -191,21 +196,20 @@ CLASS cl_ex_sheet DEFINITION FINAL.
           ct_cells_end  TYPE tt_ex_cell
           ct_cells_mid  TYPE tt_ex_cell
           ct_cell_match TYPE tt_cell_match.
-ENDCLASS.                    "cl_ex_sheet DEFINITION
-
+ENDCLASS. "cl_ex_sheet DEFINITION
 
 CLASS lcl_tree_handler DEFINITION FINAL.
   PUBLIC SECTION.
     DATA:
       mt_row_match  TYPE tt_cell_match,
-      mo_owner      TYPE REF TO cl_ex_sheet,
+      mo_owner      TYPE REF TO lcl_ex_sheet,
       mv_block_name TYPE string,
       mv_check_prog TYPE string.
 
     METHODS:
       constructor
         IMPORTING
-          io_owner      TYPE REF TO cl_ex_sheet
+          io_owner      TYPE REF TO lcl_ex_sheet
           ir_tree       TYPE REF TO zcl_xtt_replace_block=>ts_tree
           iv_block_name TYPE string
           it_row_match  TYPE tt_cell_match,
@@ -225,6 +229,10 @@ CLASS lcl_tree_handler DEFINITION FINAL.
           ct_cells_ref TYPE tt_ex_cell_ref.
 ENDCLASS.
 
+CLASS lcl_drawing DEFINITION FINAL.
+ENDCLASS.
+
 * Make close friends :)
-CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS cl_ex_sheet.
+CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS lcl_ex_sheet.
 CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS lcl_tree_handler.
+CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS lcl_drawing.

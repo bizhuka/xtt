@@ -1,22 +1,17 @@
 **********************************************************************
 **********************************************************************
-CLASS cl_ex_sheet IMPLEMENTATION.
+CLASS lcl_ex_sheet IMPLEMENTATION.
 *--------------------------------------------------------------------*
   METHOD constructor.
     DATA:
       l_sheet_ind     TYPE string,
-      lo_row          TYPE REF TO if_ixml_element,
-      lo_col          TYPE REF TO if_ixml_element,
-      lo_cell         TYPE REF TO if_ixml_element,
       ls_cell         TYPE REF TO ts_ex_cell,
       lo_merge_cell   TYPE REF TO if_ixml_element,
-      lo_data_valid   TYPE REF TO if_ixml_element,
       l_val           TYPE string,
       ls_area         TYPE REF TO ts_ex_area,
       ls_cell_beg     TYPE REF TO ts_ex_cell,
       ls_cell_end     TYPE REF TO ts_ex_cell,
       ls_defined_name TYPE REF TO ts_ex_defined_name,
-      ls_list_object  TYPE REF TO ts_ex_list_object,
       l_prev_row      TYPE i,
       l_prev_col      TYPE i.
     DATA ls_blank         TYPE ts_ex_cell.
@@ -38,48 +33,15 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 ***************************************
     " Loop through excels rows
-    lo_row ?= mo_dom->find_from_name( 'row' ).              "#EC NOTEXT
-    WHILE lo_row IS BOUND.
-      " Add new row
-      zcl_xtt_excel_xlsx=>row_read_xml(
-       EXPORTING
-        io_node = lo_row
-       CHANGING
-        ct_rows = mt_rows ).
-
-      " Loop through excels cells
-      lo_cell = lo_row->find_from_name( 'c' ).              "#EC NOTEXT
-      WHILE lo_cell IS BOUND.
-        io_xlsx->cell_read_xml(
-         EXPORTING
-          io_node  = lo_cell
-         CHANGING
-          ct_cells = mt_cells ).
-
-        " Add by key
-        "INSERT ls_cell INTO TABLE lt_cells_hash.
-        lo_cell ?= lo_cell->get_next( ).
-      ENDWHILE.
-
-      lo_row ?= lo_row->get_next( ).
-    ENDWHILE.
+    io_xlsx->row_read_xml( io_sheet          = me
+                           it_shared_strings = io_xlsx->mt_shared_strings ).
 
     " No need already sorted
     "SORT mt_cells BY table_line->c_row table_line->c_col_ind.
+
 ***************************************
-
     " Loop through excels columns
-    lo_col ?= mo_dom->find_from_name( 'col' ).              "#EC NOTEXT
-    WHILE lo_col IS BOUND.
-      " Add new col
-      zcl_xtt_excel_xlsx=>column_read_xml(
-       EXPORTING
-        io_node = lo_col
-       CHANGING
-        ct_columns = mt_columns ).
-
-      lo_col ?= lo_col->get_next( ).
-    ENDWHILE.
+    io_xlsx->column_read_xml( me ).
 
 ***************************************
     lo_merge_cell ?= mo_dom->find_from_name( 'mergeCell' ). "#EC NOTEXT
@@ -105,26 +67,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       " Next
       lo_merge_cell ?= lo_merge_cell->get_next( ).
     ENDWHILE.
+
 ***************************************
-
-    lo_data_valid ?= mo_dom->find_from_name( 'dataValidation' ). "#EC NOTEXT
-    WHILE lo_data_valid IS BOUND.
-      APPEND INITIAL LINE TO mt_data_valid REFERENCE INTO ls_area.
-
-      " Create new area
-      l_val = lo_data_valid->get_attribute( 'sqref' ).      "#EC NOTEXT
-      zcl_xtt_excel_xlsx=>area_read_xml(
-         iv_value = l_val
-         is_area  = ls_area ).
-
-      LOOP AT ls_area->a_cells REFERENCE INTO ls_cell.
-        " Get existing cell Or insert new one
-        find_cell( ls_cell->* ).
-      ENDLOOP.
-
-      " Next
-      lo_data_valid ?= lo_data_valid->get_next( ).
-    ENDWHILE.
+    " Data validation read
+    io_xlsx->data_validation_read_xml( io_sheet    = me
+                                       io_workbook = mo_dom ).
 
 ***************************************
     " Defined name contains areas
@@ -144,18 +91,9 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 ***************************************
     " Find related list objects
     CONCATENATE `xl/worksheets/_rels/sheet` l_sheet_ind `.xml.rels` INTO l_val. "#EC NOTEXT
-    io_xlsx->list_object_read_xml(
-     EXPORTING
-      iv_path        = l_val
-     CHANGING
-      ct_list_objects = mt_list_objects ).
-
-    LOOP AT mt_list_objects REFERENCE INTO ls_list_object.
-      LOOP AT ls_list_object->area-a_cells REFERENCE INTO ls_cell.
-        " Get existing cell Or insert new one
-        find_cell( ls_cell->* ).
-      ENDLOOP.
-    ENDLOOP.
+    io_xlsx->list_object_read_xml( iv_path  = l_val
+                                   io_zip   = io_xlsx->mo_zip
+                                   io_sheet = me ).
 
 ***************************************
 
@@ -177,7 +115,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     ENDLOOP.
 
 ***************************************
-    " Write offest
+    " Write offset
     l_prev_row = 0.
     l_prev_col = 0.
     LOOP AT mt_cells REFERENCE INTO ls_cell.
@@ -239,9 +177,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       l_new_row_ind   TYPE i,
       l_new_col_ind   TYPE i,
       l_str           TYPE string,
-      lo_data_valid   TYPE REF TO if_ixml_element,
       lo_mc           TYPE REF TO if_ixml_element,
-      ls_list_object  TYPE REF TO ts_ex_list_object,
       lt_columns      LIKE mt_columns,
       ls_column       TYPE ts_ex_column,
       lv_columns_text TYPE string,
@@ -249,8 +185,6 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       ls_cell_ref     TYPE ts_cell_ref,
       ls_defined_name TYPE REF TO ts_ex_defined_name,
       ls_area         TYPE REF TO ts_ex_area,
-      lv_address      TYPE string,
-      lo_table        TYPE REF TO if_ixml_element,
       lt_defined_name TYPE tt_ex_defined_name,
       lv_tabix        TYPE sytabix,
       lv_delete_name  TYPE abap_bool.
@@ -260,9 +194,9 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
 *****************
     " Find old -> new match
-    CLEAR mt_cell_ref[].
+    DATA lt_cell_ref TYPE tt_cell_ref.
     LOOP AT mt_cells REFERENCE INTO ls_cell.
-      READ TABLE mt_cell_ref REFERENCE INTO lr_cell_ref
+      READ TABLE lt_cell_ref REFERENCE INTO lr_cell_ref
        WITH TABLE KEY r = ls_cell->c_row
                       c = ls_cell->c_col_ind.
 
@@ -270,7 +204,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
         ls_cell_ref-r   = ls_cell->c_row.
         ls_cell_ref-c   = ls_cell->c_col_ind.
         ls_cell_ref-beg = ls_cell.
-        INSERT ls_cell_ref INTO TABLE mt_cell_ref REFERENCE INTO lr_cell_ref.
+        INSERT ls_cell_ref INTO TABLE lt_cell_ref REFERENCE INTO lr_cell_ref.
       ENDIF.
 
       lr_cell_ref->end = ls_cell.
@@ -345,9 +279,10 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       " Append cell info
       io_xlsx->cell_write_xml(
        EXPORTING
-        is_cell         = ls_cell
-        iv_new_row      = l_new_row_ind
-        iv_new_col_ind  = l_new_col_ind
+        is_cell           = ls_cell
+        iv_new_row        = l_new_row_ind
+        iv_new_col_ind    = l_new_col_ind
+        it_shared_strings	= io_xlsx->mt_shared_strings
        CHANGING
         cv_sheet_data   = l_sheet_data
         cv_merge_cnt    = l_merge_cnt
@@ -355,23 +290,22 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     ENDLOOP.
 
     " New columns
-    lv_columns_text = zcl_xtt_excel_xlsx=>column_write_xml(
-     it_columns = lt_columns ).
+    lv_columns_text = mo_xlsx->column_write_xml( lt_columns ).
 
     " Closing tag
     CONCATENATE l_sheet_data `</row>` INTO l_sheet_data.
 
 ***************************************
     " Replace existing text
-    xml_repleace_node(
+    xml_replace_node(
      iv_tag_name  = 'sheetData'                             "#EC NOTEXT
      iv_repl_text = '_SHEET_DATA_' ).
 
-    xml_repleace_node(
+    xml_replace_node(
      iv_tag_name  = 'cols'                                  "#EC NOTEXT
      iv_repl_text = '_NEW_COLUMNS_' ).
 
-    lo_mc = xml_repleace_node(
+    lo_mc = xml_replace_node(
      iv_tag_name  = 'mergeCells'                            "#EC NOTEXT
      iv_repl_text = '_MERGE_CELLS_' ).
 
@@ -381,25 +315,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lo_mc->set_attribute( name = 'count' value = l_str ). "#EC NOTEXT
     ENDIF.
 
+***************************************
     " Data validation
-    IF mt_data_valid IS NOT INITIAL.
-      lo_data_valid ?= mo_dom->find_from_name( 'dataValidation' ). "#EC NOTEXT
-      LOOP AT mt_data_valid REFERENCE INTO ls_area.
-        CHECK lo_data_valid IS NOT INITIAL.
-
-        " Change
-        replace_with_new( ls_area ).
-
-        lv_address = zcl_xtt_excel_xlsx=>area_get_address(
-          is_area     = ls_area
-          iv_no_bucks = abap_true ).
-
-        lo_data_valid->set_attribute( name = 'sqref' value = lv_address ). "#EC NOTEXT
-
-        " Next
-        lo_data_valid ?= lo_data_valid->get_next( ).
-      ENDLOOP.
-    ENDIF.
+    mo_xlsx->data_validation_save_xml( io_workbook = mo_dom
+                                       io_sheet    = me
+                                       it_cell_ref = lt_cell_ref ).
 
     " Transform to string
     zcl_eui_conv=>xml_to_str(
@@ -432,6 +352,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
         replace_with_new(
          EXPORTING
            ir_area         = ls_area
+           it_cell_ref     = lt_cell_ref
            is_defined_name = ls_defined_name->*
          IMPORTING
            ev_delete_name  = lv_delete_name
@@ -446,29 +367,11 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     " Add new names
     INSERT LINES OF lt_defined_name INTO TABLE io_xlsx->mt_defined_names.
 
+**********************************************************************
     " List object
-    LOOP AT mt_list_objects REFERENCE INTO ls_list_object.
-      " Get address
-      GET REFERENCE OF ls_list_object->area INTO ls_area.
-
-      " Change cells
-      replace_with_new( ls_area ).
-
-      lv_address = zcl_xtt_excel_xlsx=>area_get_address(
-       is_area     = ls_area
-       iv_no_bucks = abap_true ).
-      CHECK lv_address IS NOT INITIAL.
-
-      " Change area
-      lo_table = ls_list_object->dom->get_root_element( ).
-      lo_table->set_attribute( name = 'ref' value = lv_address ). "#EC NOTEXT
-
-      " Replace in zip
-      zcl_eui_conv=>xml_to_zip(
-       io_zip     = io_xlsx->mo_zip
-       iv_name    = ls_list_object->arc_path
-       io_xmldoc  = ls_list_object->dom ).
-    ENDLOOP.
+    io_xlsx->list_object_save_xml( io_zip      = io_xlsx->mo_zip
+                                   io_sheet    = me
+                                   it_cell_ref = lt_cell_ref ).
   ENDMETHOD.                    "save
 *--------------------------------------------------------------------*
   METHOD replace_with_new.
@@ -490,13 +393,13 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       lv_tabix = sy-tabix.
 
       " OLD -> NEW
-      READ TABLE mt_cell_ref REFERENCE INTO lr_cell_ref
+      READ TABLE it_cell_ref REFERENCE INTO lr_cell_ref
        WITH TABLE KEY r = lr_cell->c_row
                       c = lr_cell->c_col_ind.
       CHECK sy-subrc = 0.
 
       " Add new names
-      IF    is_defined_name-d_name CP cl_ex_sheet=>mc_dyn_def_name
+      IF    is_defined_name-d_name CP lcl_ex_sheet=>mc_dyn_def_name
         AND lv_cell_cnt = 1
         AND lv_area_cnt = 1
         AND ct_defined_name IS REQUESTED.
@@ -604,7 +507,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
       ENDIF.
 
       " Find for replication
-      cl_ex_sheet=>split_2_content(
+      lcl_ex_sheet=>split_2_content(
        EXPORTING
         is_field      = lr_field
         iv_by_column  = lv_by_column
@@ -776,9 +679,8 @@ CLASS cl_ex_sheet IMPLEMENTATION.
      ms_cell->c_value+iv_pos_end INTO ms_cell->c_value RESPECTING BLANKS.
   ENDMETHOD.                    "match_found
 *--------------------------------------------------------------------*
-  METHOD xml_repleace_node.
-    DATA:
-      lo_elem       TYPE REF TO if_ixml_element.
+  METHOD xml_replace_node.
+    DATA lo_elem  TYPE REF TO if_ixml_element.
 
     ro_elem = mo_dom->find_from_name( iv_tag_name ).
     CHECK ro_elem IS BOUND.
@@ -795,7 +697,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
 
     " Replace with text
     ro_elem->set_value( iv_repl_text ).
-  ENDMETHOD.                    "xml_repleace_node
+  ENDMETHOD.                    "xml_replace_node
 *--------------------------------------------------------------------*
   METHOD split_2_content.
     TYPES:
@@ -958,7 +860,7 @@ CLASS cl_ex_sheet IMPLEMENTATION.
     DELETE ct_cells FROM lv_ind_beg.
   ENDMETHOD.                    "split_2_content
 *--------------------------------------------------------------------*
-ENDCLASS.                    "cl_ex_sheet IMPLEMENTATION
+ENDCLASS.                    "lcl_ex_sheet IMPLEMENTATION
 
 **********************************************************************
 **********************************************************************
@@ -1070,7 +972,7 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
       " Create new names
       LOOP AT <lt_cell> REFERENCE INTO lr_cell WHERE
-         c_def_name CP cl_ex_sheet=>mc_dyn_def_name.
+         c_def_name CP lcl_ex_sheet=>mc_dyn_def_name.
 
         " Find in parent of parent
         READ TABLE mo_owner->mo_xlsx->mt_defined_names ASSIGNING <ls_def_name>
@@ -1132,6 +1034,8 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
     LOOP AT lt_dyn_def_name ASSIGNING <ls_dyn_def_name>.
       CLEAR lv_new_formula.
+
+      " New formula separeted by space
       LOOP AT <ls_dyn_def_name>-t_all_def INTO lv_part.
         IF lv_new_formula IS INITIAL.
           lv_new_formula = lv_part.
@@ -1154,6 +1058,7 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     lv_from = lines( ct_cells ) + 1.
     APPEND LINES OF it_cells TO ct_cells.
 
+    " Refs to new cells
     LOOP AT ct_cells REFERENCE INTO lr_cell FROM lv_from.
       APPEND lr_cell TO ct_cells_ref.
     ENDLOOP.

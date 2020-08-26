@@ -1,4 +1,10 @@
 " Positive int only!. The fastest way. The same for chars and string
+DEFINE int_to_text.
+  DATA &1_txt TYPE string.
+   &1_txt = &1.
+  CONDENSE &1_txt.
+END-OF-DEFINITION.
+
 DEFINE int_2_text.
   &2 = &1.
   condense &2.

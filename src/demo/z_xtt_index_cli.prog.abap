@@ -93,6 +93,10 @@ CLASS cl_main IMPLEMENTATION.
         WHEN 09.
           ls_screen_opt-show_row_count   = abap_true.
           ls_screen_opt-show_colum_count = abap_true.
+
+        WHEN 10.
+          ls_screen_opt-show_row_count   = abap_true.
+          ls_screen_opt-show_size        = abap_true.
       ENDCASE.
 
       " Add with description
@@ -114,9 +118,6 @@ CLASS cl_main IMPLEMENTATION.
     FROM adr6
     INNER JOIN usr21 ON usr21~addrnumber = adr6~addrnumber AND usr21~persnumber = adr6~persnumber
     WHERE usr21~bname = sy-uname.                       "#EC CI_NOORDER
-
-    " First item
-    p_exa = '01-00'.
 
     " 1010
     cl_gui_frontend_services=>get_desktop_directory(
@@ -246,6 +247,11 @@ CLASS cl_main IMPLEMENTATION.
 
     _visible '*P_ZIP*'.
     IF ls_screen_opt-show_zip <> abap_true.
+      _hide.
+    ENDIF.
+
+    _visible '*P_SIZE*'.
+    IF ls_screen_opt-show_size <> abap_true.
       _hide.
     ENDIF.
 
@@ -500,6 +506,7 @@ CLASS cl_main IMPLEMENTATION.
   INCLUDE z_xtt_index_exa_07.
   INCLUDE z_xtt_index_exa_08.
   INCLUDE z_xtt_index_exa_09.
+  INCLUDE z_xtt_index_exa_10.
 
   METHOD jekyll_export_all.
     CHECK sy-datum(4) = '9999'.

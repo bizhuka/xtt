@@ -30,6 +30,7 @@ CLASS cl_main DEFINITION FINAL.
         show_colum_count TYPE abap_bool,
         show_block_count TYPE abap_bool,
         show_zip         TYPE abap_bool,
+        show_size        TYPE abap_bool,
         class_name       TYPE string,
         template         TYPE string,
       END OF ts_screen_opt,
@@ -189,6 +190,12 @@ CLASS cl_main DEFINITION FINAL.
         RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
 
       example_09                                            "#EC CALLED
+        IMPORTING
+                  iv_class_name TYPE csequence
+                  iv_template   TYPE csequence
+        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+
+      example_10                                            "#EC CALLED
         IMPORTING
                   iv_class_name TYPE csequence
                   iv_template   TYPE csequence

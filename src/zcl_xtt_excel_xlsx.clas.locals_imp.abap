@@ -4,7 +4,6 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 *--------------------------------------------------------------------*
   METHOD constructor.
     DATA:
-      l_sheet_ind     TYPE string,
       ls_cell         TYPE REF TO ts_ex_cell,
       lo_merge_cell   TYPE REF TO if_ixml_element,
       l_val           TYPE string,
@@ -20,8 +19,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     me->mo_xlsx = io_xlsx.
 
     " Path to the sheet
-    int_2_text iv_ind l_sheet_ind.
-    CONCATENATE `xl/worksheets/sheet` l_sheet_ind `.xml` INTO mv_full_path. "#EC NOTEXT
+    int_to_text iv_ind.
+    CONCATENATE `xl/worksheets/sheet` iv_ind_txt `.xml` INTO mv_full_path. "#EC NOTEXT
 
     " Content as an object
     zcl_eui_conv=>xml_from_zip(
@@ -90,9 +89,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 
 ***************************************
     " Find related list objects
-    CONCATENATE `xl/worksheets/_rels/sheet` l_sheet_ind `.xml.rels` INTO l_val. "#EC NOTEXT
-    io_xlsx->list_object_read_xml( iv_path  = l_val
-                                   io_zip   = io_xlsx->mo_zip
+    CONCATENATE `xl/worksheets/_rels/sheet` iv_ind_txt `.xml.rels` INTO mv_rel_path. "#EC NOTEXT
+    io_xlsx->list_object_read_xml( io_zip   = io_xlsx->mo_zip
                                    io_sheet = me ).
 
 ***************************************
@@ -133,11 +131,12 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     ENDLOOP.
 
 ***************************************
+    mr_drawing = zcl_xtt_excel_xlsx=>drawing_read_xml( io_sheet = me
+                                                       io_zip   = io_xlsx->mo_zip ).
   ENDMETHOD.                    "constructor
 *--------------------------------------------------------------------*
   METHOD find_cell.
-    DATA:
-      ls_row TYPE ts_ex_row.
+    DATA ls_row TYPE ts_ex_row.
 
     READ TABLE mt_cells BINARY SEARCH REFERENCE INTO rr_ex_cell WITH KEY " with table key
       c_row = ir_cell-c_row c_col_ind = ir_cell-c_col_ind.
@@ -276,6 +275,12 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       ENDDO.
 ***********
 
+      " Complex saving
+      zcl_xtt_excel_xlsx=>drawing_add( ir_me      = mr_drawing
+                                       ir_cell    = ls_cell
+                                       io_zip     = mo_xlsx->mo_zip
+                                       iv_new_row = l_new_row_ind
+                                       iv_new_col = l_new_col_ind ).
       " Append cell info
       io_xlsx->cell_write_xml(
        EXPORTING
@@ -311,8 +316,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 
     " Change count
     IF lo_mc IS NOT INITIAL AND l_merge_cnt > 0.
-      int_2_text l_merge_cnt l_str.
-      lo_mc->set_attribute( name = 'count' value = l_str ). "#EC NOTEXT
+      int_to_text l_merge_cnt.
+      lo_mc->set_attribute( name = 'count' value = l_merge_cnt_txt ). "#EC NOTEXT
     ENDIF.
 
 ***************************************
@@ -335,6 +340,11 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       REPLACE FIRST OCCURRENCE OF '_MERGE_CELLS_' IN l_str WITH l_merge_cells. "#EC NOTEXT
     ENDIF.
 
+    " Add ref to images
+    zcl_xtt_excel_xlsx=>drawing_save_xml( EXPORTING ir_me        = mr_drawing
+                                                    io_sheet     = me
+                                                    io_zip       = mo_xlsx->mo_zip
+                                          CHANGING  cv_sheet_xml = l_str ).
     " Replace XML file
     zcl_eui_conv=>xml_to_zip(
      io_zip  = io_xlsx->mo_zip
@@ -473,6 +483,14 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     " merge-2 Structures and objects
     LOOP AT io_replace_block->mt_fields REFERENCE INTO lr_field WHERE
      typ = zcl_xtt_replace_block=>mc_type_struct OR typ = zcl_xtt_replace_block=>mc_type_object. "#EC CI_SORTSEQ
+
+      " No data ?
+      IF lr_field->typ = zcl_xtt_replace_block=>mc_type_struct.
+        CHECK lr_field->dref IS NOT INITIAL.
+      ENDIF.
+      IF lr_field->typ = zcl_xtt_replace_block=>mc_type_object.
+        CHECK lr_field->oref IS NOT INITIAL.
+      ENDIF.
 
       " Based on nested structure
       CREATE OBJECT lo_new_replace_block
@@ -628,6 +646,12 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 
         WHEN zcl_xtt_replace_block=>mc_type_boolean.
           ms_cell->c_type = 'b'.
+
+        WHEN zcl_xtt_replace_block=>mc_type_comp_cell.
+          ms_cell->c_comp_cell ?= is_field->oref.
+          CLEAR ms_cell->c_value.
+          CLEAR ms_cell->c_type.
+          RETURN.
       ENDCASE.
 
       DO 1 TIMES.
@@ -1064,6 +1088,3 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 ENDCLASS.
-
-**********************************************************************
-**********************************************************************

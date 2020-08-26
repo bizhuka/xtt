@@ -92,7 +92,6 @@ private section.
       !IT_DEFINED_NAMES type TT_EX_DEFINED_NAME .
   class-methods LIST_OBJECT_READ_XML
     importing
-      !IV_PATH type STRING
       !IO_ZIP type ref to CL_ABAP_ZIP
       !IO_SHEET type ref to LCL_EX_SHEET .
   class-methods LIST_OBJECT_SAVE_XML
@@ -114,6 +113,41 @@ private section.
       !IV_TEXT type STRING
     returning
       value(RV_TEXT) type STRING .
+  class-methods DRAWING_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET
+      !IO_ZIP type ref to CL_ABAP_ZIP
+    returning
+      value(RR_ME) type ref to TS_DRAWING .
+  class-methods DRAWING_ADD
+    importing
+      !IR_ME type ref to TS_DRAWING
+      !IR_CELL type ref to TS_EX_CELL
+      !IO_ZIP type ref to CL_ABAP_ZIP
+      value(IV_NEW_ROW) type I
+      value(IV_NEW_COL) type I .
+  class-methods DRAWING_GET_IMAGE_TEMPLATE
+    importing
+      !IR_ME type ref to TS_DRAWING
+      !IR_CELL type ref to TS_EX_CELL
+      value(IV_NEW_ROW) type I
+      value(IV_NEW_COL) type I
+    returning
+      value(RV_COMP_VALUE) type STRING .
+  class-methods DRAWING_GET_IMAGE_BASIC
+    importing
+      !IR_CELL type ref to TS_EX_CELL
+      value(IV_NEW_ROW) type I
+      value(IV_NEW_COL) type I
+    returning
+      value(RV_COMP_VALUE) type STRING .
+  class-methods DRAWING_SAVE_XML
+    importing
+      !IR_ME type ref to TS_DRAWING
+      !IO_SHEET type ref to LCL_EX_SHEET
+      !IO_ZIP type ref to CL_ABAP_ZIP
+    changing
+      !CV_SHEET_XML type STRING .
 ENDCLASS.
 
 
@@ -322,7 +356,6 @@ ENDMETHOD.                    "cell_read_xml
 
 METHOD cell_write_xml.
   DATA:
-    lv_new_row   TYPE char10,
     lv_new_col   TYPE char3,
     lv_number    TYPE char10,
     lv_data      TYPE string,
@@ -342,7 +375,7 @@ METHOD cell_write_xml.
   END-OF-DEFINITION.
 
   " To text
-  int_2_text iv_new_row lv_new_row.
+  int_to_text iv_new_row.
   TRY.
       lv_new_col = zcl_eui_file_io=>int_2_column( iv_new_col_ind ).
     CATCH zcx_eui_exception INTO lo_error.
@@ -357,7 +390,7 @@ METHOD cell_write_xml.
       " Old row index -> New row index
       int_2_text is_cell->c_row lv_number.
 
-      replace_all_with_buck lv_number lv_new_row.
+      replace_all_with_buck lv_number iv_new_row_txt.
       IF sy-subrc <> 0.
         replace_all_with_buck is_cell->c_col lv_new_col.
       ENDIF.
@@ -384,7 +417,7 @@ METHOD cell_write_xml.
   is_cell->c_col_ind = iv_new_col_ind.
 
   " Address
-  CONCATENATE cv_sheet_data `<c r="` is_cell->c_col lv_new_row `"` INTO cv_sheet_data.
+  CONCATENATE cv_sheet_data `<c r="` is_cell->c_col iv_new_row_txt `"` INTO cv_sheet_data.
 
   " Style and type
   IF is_cell->c_style IS NOT INITIAL.
@@ -414,7 +447,7 @@ METHOD cell_write_xml.
     ENDTRY.
 
     CONCATENATE cv_merge_cells `<mergeCell ref="`
-      is_cell->c_col  lv_new_row `:`
+      is_cell->c_col  iv_new_row_txt `:`
       lv_merge_col    lv_number `"/> ` INTO cv_merge_cells.
   ENDIF.
 ENDMETHOD.
@@ -729,12 +762,377 @@ METHOD defined_name_save_xml.
 ENDMETHOD.
 
 
+METHOD drawing_add.
+  " No need
+  DATA lo_comp_cell LIKE ir_cell->c_comp_cell.
+  lo_comp_cell = ir_cell->c_comp_cell.
+  CHECK lo_comp_cell IS NOT INITIAL.
+
+  " Obligatory text
+  INSERT
+   `<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>`
+  INTO TABLE ir_me->dr_t_required.
+
+  DATA lv_file_name TYPE string.
+  DATA lv_mime_text TYPE string.
+  DATA lv_rewrite   TYPE abap_bool.
+
+  lo_comp_cell->save_in_archive(
+   EXPORTING io_zip         = io_zip
+             iv_prefix      = 'xl/media/'                   "#EC NOTEXT
+   IMPORTING ev_file_name   = lv_file_name
+             ev_mime_text   = lv_mime_text
+             ev_rewrite     = lv_rewrite ).
+
+  " Read mime type ?
+  INSERT lv_mime_text INTO TABLE ir_me->dr_t_required.
+
+  " where insert new data (faster than CALL TRANSFORMATION)
+  DATA lv_from     TYPE i.
+  DATA lv_from_rel TYPE i.
+
+  " Initialize
+  " №1 - Image
+  IF ir_me->dr_v_drawing IS INITIAL.
+    CONCATENATE
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
+      `<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">`
+      `</xdr:wsDr>` INTO ir_me->dr_v_drawing.
+  ENDIF.
+  lv_from = strlen( ir_me->dr_v_drawing ) - strlen( `</xdr:wsDr>`).
+
+  " №2 - Image Relation
+  IF ir_me->dr_v_drawing_rel IS INITIAL.
+    CONCATENATE
+      `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
+      `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+      `</Relationships>` INTO ir_me->dr_v_drawing_rel.
+  ENDIF.
+  lv_from_rel = strlen( ir_me->dr_v_drawing_rel ) - strlen( `</Relationships>` ).
+
+  " Is there an image template ?
+  DATA lv_value TYPE string.
+  lv_value = drawing_get_image_template( ir_me      = ir_me
+                                         ir_cell    = ir_cell
+                                         iv_new_row = iv_new_row
+                                         iv_new_col = iv_new_col ).
+  " Create from scratch
+  IF lv_value IS INITIAL.
+    lv_value = drawing_get_image_basic( ir_cell    = ir_cell
+                                        iv_new_row = iv_new_row
+                                        iv_new_col = iv_new_col ).
+  ENDIF.
+
+  " №1 - Add Image
+  CONCATENATE ir_me->dr_v_drawing(lv_from) lv_value `</xdr:wsDr>` INTO ir_me->dr_v_drawing.
+
+  " №2 - Add Image Relation
+  CHECK lv_rewrite <> abap_true.
+  CONCATENATE
+    `<Relationship Id="_rImgId`
+    lo_comp_cell->mv_index_txt
+    `" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/`
+    lv_file_name `"/>` INTO lv_value.
+  CONCATENATE ir_me->dr_v_drawing_rel(lv_from_rel) lv_value `</Relationships>` INTO ir_me->dr_v_drawing_rel.
+ENDMETHOD.
+
+
+METHOD drawing_get_image_basic.
+  " Get comp ref
+  DATA lo_comp_cell LIKE ir_cell->c_comp_cell.
+  lo_comp_cell = ir_cell->c_comp_cell.
+
+  " 1 cell
+  DATA lv_row_dx TYPE i VALUE 1.
+  DATA lv_col_dx TYPE i VALUE 1.
+
+  " Calc end row
+  ADD -1 TO iv_new_row.
+  lv_row_dx = iv_new_row + lv_row_dx.
+
+  " Calc end column
+  ADD -1 TO iv_new_col.
+  lv_col_dx = iv_new_col + lv_col_dx.
+
+  DATA lv_width_txt  TYPE string.
+  DATA lv_height_txt TYPE string.
+
+  " Create string
+  int_to_text iv_new_row.
+  int_to_text iv_new_col.
+  int_to_text lv_row_dx.
+  int_to_text lv_col_dx.
+  int_2_text lo_comp_cell->mv_width  lv_width_txt.
+  int_2_text lo_comp_cell->mv_height lv_height_txt.
+
+**********************************************************************
+  " twoCellAnchor if IMAGE matches the cell
+  DATA lv_tag   TYPE string.
+
+  IF lo_comp_cell->mv_width IS INITIAL AND lo_comp_cell->mv_height IS INITIAL.
+    lv_tag = `twoCellAnchor`.
+    CONCATENATE
+        `<xdr:to><xdr:col>` lv_col_dx_txt `</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>` lv_row_dx_txt `</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>`
+     INTO rv_comp_value.
+  ELSE.
+    " Specify Width & Height
+    lv_tag = `oneCellAnchor`.
+    CONCATENATE `<xdr:ext cx="` lv_width_txt `" cy="` lv_height_txt `"/>`
+     INTO rv_comp_value.
+  ENDIF.
+
+  " Image without any template
+  CONCATENATE
+    `<xdr:` lv_tag `>`
+    `<xdr:from><xdr:col>` iv_new_col_txt `</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>`  iv_new_row_txt `</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>`
+    rv_comp_value
+    `<xdr:pic>`
+    `<xdr:nvPicPr><xdr:cNvPr id="` lo_comp_cell->mv_index_txt `" name="Object_` lo_comp_cell->mv_index_txt `"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>`
+    `<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="_rImgId` lo_comp_cell->mv_index_txt `"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>`
+    `<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>`
+    `</xdr:pic>`
+    `<xdr:clientData/>`
+    `</xdr:` lv_tag `>` INTO rv_comp_value.
+ENDMETHOD.
+
+
+METHOD drawing_get_image_template.
+  DATA lr_img_template TYPE REF TO ts_img_template.
+  READ TABLE ir_me->dr_t_img_template REFERENCE INTO lr_img_template
+    WITH TABLE KEY row = ir_cell->c_row
+                   col = ir_cell->c_col_ind.
+  CHECK sy-subrc = 0.
+
+  " Copy entire tag
+  rv_comp_value = lr_img_template->tag.
+
+  " Get comp ref
+  DATA lo_comp_cell LIKE ir_cell->c_comp_cell.
+  lo_comp_cell = ir_cell->c_comp_cell.
+
+  " Change id
+  DATA lv_new_txt TYPE string.
+  DATA lv_row_1 TYPE i.
+  DATA lv_col_1 TYPE i.
+
+  " Name is optional field
+  CONCATENATE `NAME_ID_` lo_comp_cell->mv_index_txt INTO lv_new_txt.
+  REPLACE FIRST OCCURRENCE OF `{NAME_ID_0}` IN rv_comp_value WITH lv_new_txt.
+
+  " Ref to another files
+  CONCATENATE ` r:embed="_rImgId` lo_comp_cell->mv_index_txt `" old_id="` INTO lv_new_txt.
+  REPLACE FIRST OCCURRENCE OF ` r:embed="` IN rv_comp_value WITH lv_new_txt. "#EC NOTEXT
+
+  " Row
+  SUBTRACT 1 FROM iv_new_row.
+  int_to_text iv_new_row.
+  CONCATENATE `<xdr:row>` iv_new_row_txt `</xdr:row>` INTO lv_new_txt.
+  REPLACE FIRST OCCURRENCE OF `<xdr:row>ROW_0</xdr:row>` IN rv_comp_value WITH lv_new_txt.
+
+  " Column
+  SUBTRACT 1 FROM iv_new_col.
+  int_to_text iv_new_col.
+  CONCATENATE `<xdr:col>` iv_new_col_txt `</xdr:col>` INTO lv_new_txt.
+  REPLACE FIRST OCCURRENCE OF `<xdr:col>COL_0</xdr:col>` IN rv_comp_value WITH lv_new_txt.
+
+  " Row DX
+  lv_row_1 = iv_new_row + lr_img_template->row_dx.
+  int_to_text lv_row_1.
+  CONCATENATE `<xdr:row>` lv_row_1_txt `</xdr:row>` INTO lv_new_txt.
+  REPLACE FIRST OCCURRENCE OF `<xdr:row>ROW_1</xdr:row>` IN rv_comp_value WITH lv_new_txt.
+
+  " Column DX
+  lv_col_1 = iv_new_col + lr_img_template->col_dx.
+  int_to_text lv_col_1.
+  CONCATENATE `<xdr:col>` lv_col_1_txt `</xdr:col>` INTO lv_new_txt.
+  REPLACE FIRST OCCURRENCE OF `<xdr:col>COL_1</xdr:col>` IN rv_comp_value WITH lv_new_txt.
+ENDMETHOD.
+
+
+METHOD drawing_read_xml.
+  " Instead of constructor
+  CREATE DATA rr_me.
+
+  zcl_eui_conv=>xml_from_zip(
+   EXPORTING io_zip     = io_zip
+             iv_name    = 'xl/drawings/drawing1.xml'        "#EC NOTEXT
+   IMPORTING ev_sdoc    = rr_me->dr_v_drawing ).
+
+  zcl_eui_conv=>xml_from_zip(
+   EXPORTING io_zip     = io_zip
+             iv_name    = 'xl/drawings/_rels/drawing1.xml.rels' "#EC NOTEXT
+   IMPORTING ev_sdoc    = rr_me->dr_v_drawing_rel ).
+
+  " Get all tags
+  DATA lt_xml_match TYPE zcl_xtt_xml_base=>tt_xml_match.
+  DATA ls_img_template TYPE ts_img_template.
+  FIELD-SYMBOLS <ls_xml_match> LIKE LINE OF lt_xml_match.
+
+  " All images from the last
+  zcl_xtt_xml_base=>get_tag_matches( EXPORTING iv_context   = rr_me->dr_v_drawing
+                                               iv_tag       = `xdr:twoCellAnchor`
+                                     IMPORTING et_xml_match = lt_xml_match ).
+  LOOP AT lt_xml_match ASSIGNING <ls_xml_match>.
+    " Entire `xdr:twoCellAnchor`
+    ls_img_template-tag = <ls_xml_match>-tag.
+
+    " Get name & ref to cell with {R-T-IMG}
+    DATA lv_xtt_name TYPE string.
+    zcl_xtt_xml_base=>get_from_tag(
+      EXPORTING
+        iv_beg_part = `name="{`                             "#EC NOTEXT
+        iv_end_part = `}`
+        iv_new_name = `NAME_ID_`
+      IMPORTING
+        ev_value0   = lv_xtt_name
+      CHANGING
+        cv_xml      = ls_img_template-tag ).
+    " Or from title (Alternative text)
+    IF lv_xtt_name IS INITIAL.
+      zcl_xtt_xml_base=>get_from_tag(
+        EXPORTING
+          iv_beg_part = `title="{`                          "#EC NOTEXT
+          iv_end_part = `}`
+        IMPORTING
+          ev_value0   = lv_xtt_name
+        CHANGING
+          cv_xml      = ls_img_template-tag ).
+    ENDIF.
+
+    zcl_xtt_xml_base=>get_from_tag(
+      EXPORTING
+        iv_beg_part = `<xdr:row>`
+        iv_end_part = `</xdr:row>`
+        iv_new_name = `ROW_`
+      IMPORTING
+        ev_value0   = ls_img_template-row
+        ev_value1   = ls_img_template-row_dx
+      CHANGING
+        cv_xml      = ls_img_template-tag ).
+    ls_img_template-row_dx = ls_img_template-row_dx - ls_img_template-row.
+
+    zcl_xtt_xml_base=>get_from_tag(
+      EXPORTING
+        iv_beg_part = `<xdr:col>`
+        iv_end_part = `</xdr:col>`
+        iv_new_name = `COL_`
+      IMPORTING
+        ev_value0   = ls_img_template-col
+        ev_value1   = ls_img_template-col_dx
+      CHANGING
+        cv_xml      = ls_img_template-tag ).
+    ls_img_template-col_dx = ls_img_template-col_dx - ls_img_template-col.
+
+    " Is offset
+    ADD 1 TO: ls_img_template-row,
+              ls_img_template-col.
+    INSERT ls_img_template INTO TABLE rr_me->dr_t_img_template.
+
+    " New empty cell
+    DATA lr_cell TYPE REF TO ts_ex_cell.
+    CREATE DATA lr_cell.
+    lr_cell->c_row     = ls_img_template-row.
+    lr_cell->c_col_ind = ls_img_template-col.
+
+    " Find or create new one
+    lr_cell = io_sheet->find_cell( lr_cell->* ).
+    IF lv_xtt_name IS NOT INITIAL.
+      CONCATENATE `{` lv_xtt_name `}` INTO lr_cell->c_value.
+    ENDIF.
+
+    " Delete original image from a cell
+    CHECK lr_cell->c_value CP `{*}`.
+    CONCATENATE rr_me->dr_v_drawing(<ls_xml_match>-beg)
+                rr_me->dr_v_drawing+<ls_xml_match>-end INTO rr_me->dr_v_drawing.
+  ENDLOOP.
+ENDMETHOD.
+
+
+METHOD drawing_save_xml.
+  CHECK ir_me->dr_v_drawing IS NOT INITIAL
+    AND ir_me->dr_t_required IS NOT INITIAL.
+
+  zcl_eui_conv=>xml_to_zip(
+   io_zip     = io_zip
+   iv_name    = 'xl/drawings/drawing1.xml'                  "#EC NOTEXT
+   iv_sdoc    = ir_me->dr_v_drawing ).
+
+  zcl_eui_conv=>xml_to_zip(
+   io_zip     = io_zip
+   iv_name    = 'xl/drawings/_rels/drawing1.xml.rels'       "#EC NOTEXT
+   iv_sdoc    = ir_me->dr_v_drawing_rel ).
+
+  " Change files info
+  DATA lv_content_xml TYPE string.
+  zcl_eui_conv=>xml_from_zip(
+   EXPORTING io_zip     = io_zip
+             iv_name    = '[Content_Types].xml'             "#EC NOTEXT
+   IMPORTING ev_sdoc    = lv_content_xml ).
+
+  " Add 1 by one
+  DATA lv_req_text TYPE string.
+  DATA lv_len      TYPE i.
+  LOOP AT ir_me->dr_t_required INTO lv_req_text.
+    " Do not insert if already exist
+    CHECK lv_content_xml NS lv_req_text.
+
+    lv_len = strlen( lv_content_xml ) - strlen( `</Types>` ).
+    CONCATENATE lv_content_xml(lv_len) lv_req_text `</Types>` INTO lv_content_xml.
+  ENDLOOP.
+
+  " And add
+  zcl_eui_conv=>xml_to_zip(
+   io_zip     = io_zip
+   iv_name    = '[Content_Types].xml'                       "#EC NOTEXT
+   iv_sdoc    = lv_content_xml ).
+
+  " In sheet Read relations
+  zcl_eui_conv=>xml_from_zip(
+   EXPORTING
+    io_zip    = io_zip
+    iv_name   = io_sheet->mv_rel_path " <--- sheet index
+   IMPORTING
+    ev_sdoc   = lv_content_xml ).
+
+  " Has ref to file ?
+  CHECK lv_content_xml NS `Target="../drawings/drawing1.xml"/>`.
+
+  " New empty file
+  DATA lv_empty TYPE abap_bool.
+  IF lv_content_xml IS INITIAL.
+    lv_empty = abap_true.
+    lv_content_xml =
+    `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`.
+  ENDIF.
+
+  " Add ref
+  lv_len = strlen( lv_content_xml ) - strlen( `</Relationships>` ).
+  CONCATENATE
+   lv_content_xml(lv_len)
+   `<Relationship Id="_rDrawId" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/>`
+   `</Relationships>` INTO lv_content_xml.
+
+  " And add relation
+  zcl_eui_conv=>xml_to_zip(
+   io_zip     = io_zip
+   iv_name    = io_sheet->mv_rel_path
+   iv_sdoc    = lv_content_xml ).
+
+  " Add ref
+  IF lv_empty = abap_true.
+    REPLACE FIRST OCCURRENCE OF `</worksheet>` IN cv_sheet_xml WITH `<drawing r:id="_rDrawId"/></worksheet>`.
+  ELSE.
+    " TODO before any ID in 'sheet1.xml.rels'
+    REPLACE FIRST OCCURRENCE OF `<tableParts ` IN cv_sheet_xml WITH `<drawing r:id="_rDrawId"/><tableParts `.
+  ENDIF.
+ENDMETHOD.
+
+
 METHOD get_raw.
   DATA:
     lo_sheet   TYPE REF TO lcl_ex_sheet,
-    l_cnt      TYPE i,
+    lv_val     TYPE i,
     l_off      TYPE i,
-    l_val      TYPE string,
     l_str      TYPE string,
     lr_content TYPE REF TO xstring.
 
@@ -752,29 +1150,29 @@ METHOD get_raw.
   DELETE ADJACENT DUPLICATES FROM mt_shared_strings.
 
   " Number of lines
-  l_cnt  = lines( mt_shared_strings ).
-  int_2_text l_cnt l_val.
+  lv_val = lines( mt_shared_strings ).
+  int_to_text lv_val.
 
   " Header
   CONCATENATE `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
               `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="`
-                 l_val `" uniqueCount="` l_val `">` INTO l_val.
+                 lv_val_txt `" uniqueCount="` lv_val_txt `">` INTO lv_val_txt.
 
   " Body
   LOOP AT mt_shared_strings INTO l_str.
     l_off = strlen( l_str ) - 1.
     IF l_str(1) = '<' AND l_str+l_off(1) = '>'.
-      CONCATENATE l_val `<si>` l_str `</si>` INTO l_val.
+      CONCATENATE lv_val_txt `<si>` l_str `</si>` INTO lv_val_txt.
     ELSE.
-      CONCATENATE l_val `<si><t>` l_str `</t></si>` INTO l_val.
+      CONCATENATE lv_val_txt `<si><t>` l_str `</t></si>` INTO lv_val_txt.
     ENDIF.
   ENDLOOP.
-  CONCATENATE l_val `</sst>` INTO l_val.
+  CONCATENATE lv_val_txt `</sst>` INTO lv_val_txt.
 
   zcl_eui_conv=>xml_to_zip(
    io_zip   = mo_zip
    iv_name  = `xl/sharedStrings.xml`
-   iv_sdoc  = l_val ).
+   iv_sdoc  = lv_val_txt ).
 
 ***************************************
   " Save every sheet
@@ -828,7 +1226,7 @@ METHOD list_object_read_xml.
   zcl_eui_conv=>xml_from_zip(
    EXPORTING
     io_zip    = io_zip
-    iv_name   = iv_path
+    iv_name   = io_sheet->mv_rel_path
    IMPORTING
     eo_xmldoc = lo_rels ).
 
@@ -982,15 +1380,14 @@ ENDMETHOD.
 
 METHOD row_write_xml.
   DATA:
-    l_new_row  TYPE char10,
     lv_outline TYPE string.
 
   " To text
-  int_2_text iv_new_row l_new_row.
+  int_to_text iv_new_row.
 
   " Write attributes
   CONCATENATE cv_sheet_data `<row`
-   ` r="`            l_new_row            `"` INTO cv_sheet_data. "#EC NOTEXT
+   ` r="`            iv_new_row_txt            `"` INTO cv_sheet_data. "#EC NOTEXT
 
   " if im_row->customheight = 1 then height = im_row->ht
   IF is_row->ht IS NOT INITIAL AND is_row->customheight IS NOT INITIAL.

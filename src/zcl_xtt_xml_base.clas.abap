@@ -15,6 +15,22 @@ public section.
    END OF ts_text_match .
   types:
     tt_text_match TYPE SORTED TABLE OF ts_text_match WITH UNIQUE KEY level top if_where .
+  types:
+    BEGIN OF ts_replace,
+      from TYPE string,
+      to   TYPE string,
+    END OF ts_replace .
+  types:
+    tt_replace TYPE STANDARD TABLE OF ts_replace WITH DEFAULT KEY .
+  types:
+    BEGIN OF ts_xml_match,
+      tag TYPE STRING,
+      beg type i,
+      end type i,
+      cnt type i,
+    END OF ts_xml_match .
+  types:
+    tt_xml_match TYPE STANDARD TABLE OF ts_xml_match WITH DEFAULT KEY .
 
   methods CONSTRUCTOR
     importing
@@ -26,6 +42,26 @@ public section.
       !IV_OLE_EXT_FORMAT type I optional
       !IV_SKIP_TAGS type ABAP_BOOL optional
       !IV_TABLE_PAGE_BREAK type STRING optional .
+  class-methods GET_TAG_MATCHES
+    importing
+      !IV_CONTEXT type STRING
+      !IV_TAG type CSEQUENCE
+      !IV_TAG_ADD type CSEQUENCE optional
+    exporting
+      !ET_MATCH type MATCH_RESULT_TAB
+      !ET_XML_MATCH type TT_XML_MATCH .
+
+  class-methods get_from_tag
+        IMPORTING
+          iv_beg_part TYPE csequence
+          iv_end_part TYPE csequence
+          iv_new_name TYPE csequence OPTIONAL
+        EXPORTING
+          ev_value0   TYPE any
+          ev_value1   TYPE any
+          ev_value2   TYPE any
+        CHANGING
+          cv_xml      TYPE string.
 
   methods DOWNLOAD
     redefinition .
@@ -41,13 +77,8 @@ protected section.
   data MV_FILE_CONTENT type STRING .
   data MV_VALUE type STRING .
   data MV_PREFIX type STRING .
+  data MO_ZIP type ref to CL_ABAP_ZIP .
 
-  methods DO_MERGE
-    importing
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL default ABAP_FALSE
-      !IO_REPLACE_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
-    changing
-      !CV_CONTENT type STRING .
   methods SPLIT_BY_TAG
     importing
       !IV_TAG type CSEQUENCE
@@ -65,14 +96,20 @@ protected section.
     importing
       !IV_CONTEXT type CSEQUENCE
       !IV_TAG type CSEQUENCE
-      !IV_TAG_ADD type CSEQUENCE
-      !IV_BLOCK_NAME type CSEQUENCE
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL
+      !IV_TAG_ADD type CSEQUENCE optional
+      !IV_BLOCK_NAME type CSEQUENCE optional
+      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL optional
     exporting
       !ET_MATCH type MATCH_RESULT_TAB
       !EV_WITH_TAG type ABAP_BOOL
       !EV_FIRST_MATCH type I
       !EV_LAST_MATCH type I .
+  methods DO_MERGE
+    importing
+      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL default ABAP_FALSE
+      !IO_REPLACE_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
+    changing
+      !CV_CONTENT type STRING .
   methods ON_MATCH_FOUND
     for event MATCH_FOUND of ZCL_XTT_REPLACE_BLOCK
     importing
@@ -80,11 +117,16 @@ protected section.
       !IS_FIELD
       !IV_POS_BEG
       !IV_POS_END .
+  class-methods REPLACE_1ST_FROM
+    importing
+      !IT_REPLACE type TT_REPLACE
+      !IV_FROM type I
+    changing
+      !CV_XML type STRING .
 private section.
 
   data MV_PATH_IN_ARC type STRING .
   data MV_SKIP_TAGS type ABAP_BOOL .
-  data MO_ZIP type ref to CL_ABAP_ZIP .
   data MV_IS_TABLE type ABAP_BOOL .
   data MV_IF_TABLE_PAGE_BREAK type STRING .
 ENDCLASS.
@@ -191,7 +233,7 @@ ENDMETHOD.
 METHOD do_merge.
   DATA:
     lo_new_replace_block TYPE REF TO zcl_xtt_replace_block,
-    ls_field             TYPE REF TO zcl_xtt_replace_block=>ts_field,
+    lr_field             TYPE REF TO zcl_xtt_replace_block=>ts_field,
     lv_before            TYPE string,
     lv_after             TYPE string,
     lv_middle            TYPE string,
@@ -218,17 +260,25 @@ METHOD do_merge.
   SET HANDLER on_match_found FOR io_replace_block ACTIVATION abap_false.
 ***************************************
   " merge-2 Structures and objects
-  LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE
+  LOOP AT io_replace_block->mt_fields REFERENCE INTO lr_field WHERE
    typ = zcl_xtt_replace_block=>mc_type_struct OR typ = zcl_xtt_replace_block=>mc_type_object. "#EC CI_SORTSEQ
+
+    " No data ?
+    IF lr_field->typ = zcl_xtt_replace_block=>mc_type_struct.
+      CHECK lr_field->dref IS NOT INITIAL.
+    ENDIF.
+    IF lr_field->typ = zcl_xtt_replace_block=>mc_type_object.
+      CHECK lr_field->oref IS NOT INITIAL.
+    ENDIF.
 
     " Based on nested structure
     CREATE OBJECT lo_new_replace_block
       EXPORTING
-        is_field = ls_field.
+        is_field = lr_field.
 
     " Recursion if type is the same
-    CHECK ls_field->typ = zcl_xtt_replace_block=>mc_type_struct OR
-          ls_field->typ = zcl_xtt_replace_block=>mc_type_object.
+    CHECK lr_field->typ = zcl_xtt_replace_block=>mc_type_struct OR
+          lr_field->typ = zcl_xtt_replace_block=>mc_type_object.
     do_merge(
      EXPORTING
         io_replace_block = lo_new_replace_block
@@ -238,7 +288,7 @@ METHOD do_merge.
 
 ***************************************
   " merge-3 Array types
-  LOOP AT io_replace_block->mt_fields REFERENCE INTO ls_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
+  LOOP AT io_replace_block->mt_fields REFERENCE INTO lr_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
                                                                  OR typ = zcl_xtt_replace_block=>mc_type_tree. "#EC CI_SORTSEQ
     " if root is a table
     CLEAR:
@@ -248,7 +298,7 @@ METHOD do_merge.
 
     " Detect bounds
     IF iv_first_level_is_table <> abap_true.
-      CONCATENATE `\{` ls_field->name `\b[^}]*\}` "
+      CONCATENATE `\{` lr_field->name `\b[^}]*\}` "
         INTO lv_find_str.
 
       " Divide to 3 parts
@@ -256,8 +306,8 @@ METHOD do_merge.
        EXPORTING
         iv_tag        = mv_row_tag
         iv_tag_add    = lv_find_str
-        iv_block_name = ls_field->name
-        iv_field_type = ls_field->typ
+        iv_block_name = lr_field->name
+        iv_field_type = lr_field->typ
        IMPORTING
         et_text_match = lt_text_match
        CHANGING
@@ -273,16 +323,16 @@ METHOD do_merge.
       ENDIF.
     ENDIF.
 
-    CASE ls_field->typ.
+    CASE lr_field->typ.
 **********************************************************************
       WHEN zcl_xtt_replace_block=>mc_type_tree.
 
-        lr_tree ?= ls_field->dref.
+        lr_tree ?= lr_field->dref.
         CREATE OBJECT lo_tree_handler
           EXPORTING
             io_owner      = me
             ir_tree       = lr_tree
-            iv_block_name = ls_field->name
+            iv_block_name = lr_field->name
             it_text_match = lt_text_match.
 
         lo_tree_handler->add_tree_data(
@@ -301,12 +351,12 @@ METHOD do_merge.
 
         lv_middle = cv_content.
         " Replicate middle
-        ASSIGN ls_field->dref->* TO <lt_table>.
-        LOOP AT <lt_table> REFERENCE INTO ls_field->dref.
+        ASSIGN lr_field->dref->* TO <lt_table>.
+        LOOP AT <lt_table> REFERENCE INTO lr_field->dref.
           " Create merge description
           CREATE OBJECT lo_new_replace_block
             EXPORTING
-              is_field = ls_field.
+              is_field = lr_field.
 
           " Recursion
           lv_clone = lv_middle.
@@ -329,24 +379,15 @@ ENDMETHOD.
 
 
 METHOD find_bounds.
-  DATA:
-    lv_pattern TYPE string,
-*    lv_text    TYPE string,
-    lv_tabix   TYPE sytabix.
+  DATA lv_tabix   TYPE sytabix.
   FIELD-SYMBOLS:
     <ls_match>    LIKE LINE OF et_match,
     <ls_submatch> LIKE LINE OF <ls_match>-submatches.
 
-  " Divide text by body tag. Usualy 2 matches. <body> and </body>
-  CONCATENATE `(<` iv_tag `\b[^>]*>)|(<\/` iv_tag `>)` INTO lv_pattern.
-
-  " Also finf this part
-  IF iv_tag_add IS NOT INITIAL.
-    CONCATENATE lv_pattern `|(` iv_tag_add `)` INTO lv_pattern.
-  ENDIF.
-
-  FIND ALL OCCURRENCES OF REGEX lv_pattern IN iv_context RESULTS et_match RESPECTING CASE.
-
+  get_tag_matches( EXPORTING iv_context = iv_context
+                             iv_tag     = iv_tag
+                             iv_tag_add = iv_tag_add
+                   IMPORTING et_match   = et_match ).
   " Wrong template
   IF et_match IS INITIAL.
     MESSAGE x001(zsy_xtt).
@@ -387,6 +428,54 @@ METHOD find_bounds.
       ev_first_match = ev_first_match - 1.
       ev_last_match  = ev_last_match + 1.
   ENDCASE.
+ENDMETHOD.
+
+
+METHOD get_from_tag.
+  DATA lv_offset TYPE i.
+  DATA lv_index  TYPE num1.
+  DATA lv_cnt    TYPE i.
+  DATA lv_name   TYPE string.
+  FIELD-SYMBOLS <lv_value> TYPE any.
+
+  CLEAR ev_value0.
+  CLEAR ev_value1.
+  CLEAR ev_value2.
+
+  WHILE cv_xml+lv_offset CS iv_beg_part.
+    lv_offset = lv_offset + sy-fdpos + strlen( iv_beg_part ).
+
+    " Oops
+    IF cv_xml+lv_offset NS iv_end_part.
+      zcx_xtt_exception=>raise_dump( iv_message = `No ending tag` ).
+    ENDIF.
+    lv_cnt = sy-fdpos.
+
+    " Get value
+    DATA lv_value TYPE string.
+    lv_value  = cv_xml+lv_offset(lv_cnt).
+
+    IF iv_new_name IS NOT INITIAL.
+      CONCATENATE iv_new_name lv_index INTO lv_name.
+      REPLACE SECTION OFFSET lv_offset LENGTH lv_cnt OF cv_xml WITH lv_name.
+    ENDIF.
+
+    CONCATENATE 'EV_VALUE' lv_index INTO lv_name.
+    ASSIGN (lv_name) TO <lv_value>.
+    IF sy-subrc <> 0.
+      zcx_xtt_exception=>raise_dump( iv_message = `Error in logic` ).
+    ENDIF.
+
+    <lv_value> = lv_value.
+    lv_offset  = lv_offset + lv_cnt.
+
+    " Go on ?
+    lv_index   = lv_index  + 1.
+    CASE lv_index.
+      WHEN 1. IF ev_value1 IS NOT REQUESTED. RETURN. ENDIF.
+      WHEN 2. IF ev_value2 IS NOT REQUESTED. RETURN. ENDIF.
+    ENDCASE.
+  ENDWHILE.
 ENDMETHOD.
 
 
@@ -437,6 +526,55 @@ METHOD get_raw.
   RAISE EVENT prepare_raw
    EXPORTING
      ir_content = lr_content.
+ENDMETHOD.
+
+
+METHOD get_tag_matches.
+  CLEAR et_match.
+  CLEAR et_xml_match.
+
+  " Divide text by body tag. Usualy 2 matches. <body> and </body>
+  DATA lv_pattern TYPE string.
+  CONCATENATE `(<` iv_tag `\b[^>]*>)|(<\/` iv_tag `>)` INTO lv_pattern.
+
+  " Also find this part
+  IF iv_tag_add IS NOT INITIAL.
+    CONCATENATE lv_pattern `|(` iv_tag_add `)` INTO lv_pattern.
+  ENDIF.
+
+  FIND ALL OCCURRENCES OF REGEX lv_pattern IN iv_context RESULTS et_match RESPECTING CASE.
+
+**********************************************************************
+  " Return ready XML
+  CHECK et_xml_match IS REQUESTED
+    AND et_match IS NOT REQUESTED.
+
+  DATA ls_xml_match LIKE LINE OF et_xml_match.
+  FIELD-SYMBOLS <ls_match_beg> LIKE LINE OF et_match.
+  FIELD-SYMBOLS <ls_match_end> LIKE LINE OF et_match.
+
+  " Safe delete from the end
+  DATA lv_index TYPE i.
+  lv_index = lines( et_match ).
+
+  WHILE lv_index > 0.
+    READ TABLE et_match ASSIGNING <ls_match_end> INDEX lv_index.
+    lv_index = lv_index - 1.
+
+    READ TABLE et_match ASSIGNING <ls_match_beg> INDEX lv_index.
+    lv_index = lv_index - 1.
+
+    " Get tag from match
+    ls_xml_match-beg = <ls_match_beg>-offset.
+    ls_xml_match-end = <ls_match_end>-offset + <ls_match_end>-length.
+    ls_xml_match-cnt = ls_xml_match-end - ls_xml_match-beg.
+
+    " And whole string
+    ls_xml_match-tag = iv_context+ls_xml_match-beg(ls_xml_match-cnt).
+
+    " Ready line
+    APPEND ls_xml_match TO et_xml_match.
+  ENDWHILE.
 ENDMETHOD.
 
 
@@ -528,6 +666,23 @@ METHOD on_match_found.
   CLEAR:
    mv_prefix,
    mv_value.
+ENDMETHOD.
+
+
+METHOD replace_1st_from.
+  DATA lv_offset TYPE i.
+  DATA lv_len    TYPE i.
+  FIELD-SYMBOLS <ls_replace> LIKE LINE OF it_replace.
+
+  LOOP AT it_replace ASSIGNING <ls_replace>.
+    FIND FIRST OCCURRENCE OF <ls_replace>-from IN SECTION OFFSET iv_from OF cv_xml
+                                                    MATCH OFFSET lv_offset.
+    CHECK sy-subrc = 0.
+
+    " Replcae with value
+    lv_len = strlen( <ls_replace>-from ).
+    REPLACE SECTION OFFSET lv_offset LENGTH lv_len OF cv_xml WITH <ls_replace>-to.
+  ENDLOOP.
 ENDMETHOD.
 
 

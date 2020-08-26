@@ -5,7 +5,9 @@
 SELECTION-SCREEN BEGIN OF BLOCK bl_example WITH FRAME TITLE TEXT-exa.
 PARAMETERS:
   " What example to launch
-  p_exa   TYPE char5 AS LISTBOX DEFAULT 1 VISIBLE LENGTH 80 OBLIGATORY MODIF ID exa USER-COMMAND update_scr,
+  p_exa   TYPE char5 AS LISTBOX VISIBLE LENGTH 80 OBLIGATORY MODIF ID exa USER-COMMAND update_scr
+   DEFAULT '10-01'
+  ,
 
   " Row count
   p_r_cnt TYPE int4 DEFAULT 15 MODIF ID oth,
@@ -17,7 +19,9 @@ PARAMETERS:
   p_b_cnt TYPE int4 DEFAULT 3  MODIF ID oth,
 
   " Compress to zip file
-  p_zip   AS CHECKBOX MODIF ID oth.
+  p_zip   AS CHECKBOX MODIF ID oth,
+
+  p_size  AS CHECKBOX DEFAULT 'X'.
 SELECTION-SCREEN END OF   BLOCK bl_example.
 
 " Template or data stucture or report itself

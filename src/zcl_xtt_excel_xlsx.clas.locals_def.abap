@@ -6,7 +6,7 @@ TYPE-POOLS:
  abap.
 
 CLASS zcl_xtt_replace_block DEFINITION LOAD.
-CLASS lcl_ex_sheet DEFINITION DEFERRED.
+CLASS lcl_ex_sheet          DEFINITION DEFERRED.
 
 TYPES:
   lcl_ex_sheet_tab TYPE STANDARD TABLE OF REF TO lcl_ex_sheet,
@@ -37,6 +37,9 @@ TYPES:
     " Merged data
     c_merge_row_dx   TYPE i,
     c_merge_col_dx   TYPE i,
+
+    " Image, Shape, ...
+    c_comp_cell      TYPE REF TO zcl_xtt_comp_cell,
   END OF ts_ex_cell,
   " Standard CELLS
   tt_ex_cell     TYPE STANDARD TABLE OF ts_ex_cell WITH DEFAULT KEY,
@@ -45,8 +48,8 @@ TYPES:
 
   BEGIN OF ts_cell_match.
     INCLUDE TYPE zcl_xtt_replace_block=>ts_tree_group.
-TYPES:
-  cells TYPE tt_ex_cell,
+  TYPES:
+    cells TYPE tt_ex_cell,
   END OF ts_cell_match,
   tt_cell_match TYPE SORTED TABLE OF ts_cell_match WITH UNIQUE KEY level top if_where,
 
@@ -114,7 +117,27 @@ TYPES:
     mask      TYPE string,
     t_all_def TYPE stringtab,
   END OF ts_dyn_def_name,
-  tt_dyn_def_name TYPE SORTED TABLE OF ts_dyn_def_name WITH UNIQUE KEY name.
+  tt_dyn_def_name TYPE SORTED TABLE OF ts_dyn_def_name WITH UNIQUE KEY name,
+
+  " Drawn templates
+  BEGIN OF ts_img_template,
+    row    TYPE i,
+    row_dx TYPE i,
+    col    TYPE i,
+    col_dx TYPE i,
+    tag    TYPE string,
+  END OF ts_img_template,
+  tt_img_template TYPE SORTED TABLE OF ts_img_template WITH UNIQUE KEY row col,
+
+  " Drawing (Instead of lcl class)
+  BEGIN OF ts_drawing,
+    dr_v_drawing      TYPE string, " Images in cell 'xl/drawings/drawing1.xml'
+    dr_v_drawing_rel  TYPE string, " Ref to files 'xl/drawings/_rels/drawing1.xml.rels'
+    dr_t_required     TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line, " Insert to '[Content_Types].xml'
+
+    " Images templates
+    dr_t_img_template TYPE tt_img_template,
+  END OF ts_drawing.
 
 **********************************************************************
 **********************************************************************
@@ -128,6 +151,7 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       mo_xlsx          TYPE REF TO zcl_xtt_excel_xlsx,
       mv_full_path     TYPE string,                  " Path in zip(.xlsx,.xlsm) archive
       mv_name          TYPE string,
+      mv_rel_path      TYPE string,
       mo_dom           TYPE REF TO if_ixml_document, " As an object
       mt_cells         TYPE tt_ex_cell,
       mt_rows          TYPE tt_ex_row,
@@ -137,7 +161,10 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
 
       " Current cell. For event handler
       ms_cell          TYPE REF TO ts_ex_cell,
-      mt_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt.
+      mt_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt,
+
+      " Images & shapes?
+      mr_drawing       TYPE REF TO ts_drawing.
 
     METHODS:
       constructor
@@ -229,10 +256,9 @@ CLASS lcl_tree_handler DEFINITION FINAL.
           ct_cells_ref TYPE tt_ex_cell_ref.
 ENDCLASS.
 
-CLASS lcl_drawing DEFINITION FINAL.
-ENDCLASS.
+**********************************************************************
+**********************************************************************
 
 * Make close friends :)
 CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS lcl_ex_sheet.
 CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS lcl_tree_handler.
-CLASS zcl_xtt_excel_xlsx DEFINITION LOCAL FRIENDS lcl_drawing.

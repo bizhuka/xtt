@@ -85,6 +85,7 @@ public section.
   constants MC_TYPE_STRING type STRING value 'string' ##NO_TEXT.
   constants MC_TYPE_MASK type STRING value 'mask' ##NO_TEXT.
   constants MC_TYPE_AS_IS type STRING value 'as_is' ##NO_TEXT.
+  constants MC_TYPE_COMP_CELL type STRING value 'comp_cell' ##NO_TEXT.
   data MT_FIELDS type TT_FIELD .
 
   events MATCH_FOUND
@@ -218,7 +219,23 @@ METHOD add_2_fields.
       " Special case for objects
     WHEN cl_abap_typedescr=>typekind_intf OR cl_abap_typedescr=>typekind_class OR cl_abap_typedescr=>typekind_oref.
       ls_field-oref = <lv_value>.
-      ls_field-typ = zcl_xtt_replace_block=>mc_type_object.
+      ls_field-typ  = zcl_xtt_replace_block=>mc_type_object.
+
+      " Special cases
+      DO 1 TIMES.
+        CHECK l_typekind = cl_abap_typedescr=>typekind_oref
+          AND ls_field-oref IS NOT INITIAL.
+
+        DATA lo_type TYPE REF TO cl_abap_typedescr.
+        lo_type ?= cl_abap_classdescr=>describe_by_object_ref( ls_field-oref ).
+
+        CASE lo_type->absolute_name.
+          WHEN '\CLASS=ZCL_XTT_COMP_CELL'. " Or instanse of. Use castinf '?=' ?
+            ls_field-typ = zcl_xtt_replace_block=>mc_type_comp_cell.
+        ENDCASE.
+      ENDDO.
+
+      " Add new field
       INSERT ls_field INTO TABLE mt_fields.
       RETURN. " <-- That's all
 
@@ -451,8 +468,6 @@ METHOD constructor.
       l_absolute_name = lo_sdesc->absolute_name.
 
 **********************************************************************
-**********************************************************************
-
       " TREE (Dynamic objects)
       IF l_absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK\TYPE=TS_TREE'.
         is_field->typ = zcl_xtt_replace_block=>mc_type_tree.
@@ -464,7 +479,7 @@ METHOD constructor.
            ir_value    = lr_data ).
         RETURN.
       ENDIF.
-**********************************************************************
+
 **********************************************************************
       " Add every field
       LOOP AT lo_sdesc->components ASSIGNING <ls_comp>.
@@ -497,6 +512,7 @@ METHOD constructor.
       ENDLOOP.
 
     WHEN OTHERS.
+
       " CL_ABAP_TABLEDESCR, CL_ABAP_ELEMDESCR
       GET REFERENCE OF <fs_block> INTO lr_data.
       me->add_2_fields(
@@ -632,6 +648,7 @@ METHOD find_match.
     l_find_pos = l_find_pos - 1.
 
     " End of tech name
+    CHECK strlen( cv_content ) > <ls_find_res>-offset.
     FIND FIRST OCCURRENCE OF zcl_xtt_replace_block=>mc_char_block_end IN SECTION OFFSET <ls_find_res>-offset OF cv_content MATCH OFFSET l_off.
     CHECK sy-subrc = 0.
 
@@ -776,6 +793,10 @@ METHOD get_as_string.
       " Time
     WHEN zcl_xtt_replace_block=>mc_type_time.
       ASSIGN is_field->dref->* TO <l_time>.
+
+    WHEN zcl_xtt_replace_block=>mc_type_comp_cell.
+      rv_result = is_field->name.
+      RETURN.
 
     WHEN OTHERS.
       MESSAGE s002(zsy_xtt) WITH is_field->typ INTO sy-msgli.

@@ -150,6 +150,12 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_SIZE</KEY>
+     <ENTRY>Set image size</ENTRY>
+     <LENGTH>22</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_STRU</KEY>
      <ENTRY>Data structure</ENTRY>
      <LENGTH>22</LENGTH>

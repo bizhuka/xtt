@@ -3,7 +3,7 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <NAME>ZXXT_10_EXCEL_XLSX</NAME>
-   <TEXT>Test images</TEXT>
+   <TEXT>Test images (xlsx)</TEXT>
    <PARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>

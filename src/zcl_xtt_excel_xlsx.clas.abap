@@ -411,6 +411,12 @@ METHOD cell_write_xml.
     ENDIF.
   ENDIF.
 
+  " No need is empty
+  CHECK lv_data IS NOT INITIAL
+     OR is_cell->c_style IS NOT INITIAL
+     OR is_cell->c_type  IS NOT INITIAL
+     OR is_cell->c_merge_row_dx IS NOT INITIAL.
+
   " Change current row
   is_cell->c_row     = iv_new_row.
   is_cell->c_col     = lv_new_col.
@@ -1036,6 +1042,8 @@ METHOD drawing_read_xml.
 
     " Find or create new one
     lr_cell = io_sheet->find_cell( lr_cell->* ).
+
+    " Set name
     IF lv_xtt_name IS NOT INITIAL.
       CONCATENATE `{` lv_xtt_name `}` INTO lr_cell->c_value.
     ENDIF.

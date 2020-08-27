@@ -3,7 +3,7 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <NAME>ZXXT_10_WORD_DOCX</NAME>
-   <TEXT>Test images</TEXT>
+   <TEXT>Test images (docx)</TEXT>
    <PARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>

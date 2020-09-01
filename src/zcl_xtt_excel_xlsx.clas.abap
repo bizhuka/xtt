@@ -10,6 +10,16 @@ public section.
   methods CONSTRUCTOR
     importing
       !IO_FILE type ref to ZIF_XTT_FILE .
+  class-methods FORMULA_SHIFT
+    importing
+      !IV_REFERENCE_FORMULA type CLIKE
+      !IV_SHIFT_COLS type I optional
+      !IV_SHIFT_ROWS type I optional
+    returning
+      value(RV_RESULTING_FORMULA) type STRING
+    raising
+      ZCX_XTT_EXCEPTION .
+
   methods GET_RAW
     redefinition .
   methods MERGE
@@ -44,10 +54,9 @@ private section.
       value(RV_IS_STRING) type ABAP_BOOL .
   class-methods CELL_READ_XML
     importing
+      !IO_SHEET type ref to LCL_EX_SHEET
       !IO_NODE type ref to IF_IXML_ELEMENT
-      !IT_SHARED_STRINGS type STRINGTAB
-    changing
-      !CT_CELLS type TT_EX_CELL .
+      !IT_SHARED_STRINGS type STRINGTAB .
   class-methods CELL_WRITE_XML
     importing
       !IS_CELL type ref to TS_EX_CELL
@@ -301,14 +310,14 @@ ENDMETHOD.                    "cell_is_string
 
 
 METHOD cell_read_xml.
-  DATA:
-    ls_cell TYPE REF TO ts_ex_cell,
-    lo_elem TYPE REF TO if_ixml_element,
-    l_val   TYPE string,
-    l_ind   TYPE i.
+  DATA: ls_cell TYPE REF TO ts_ex_cell,
+        lo_elem TYPE REF TO if_ixml_element,
+        l_val   TYPE string,
+        l_ind   TYPE i.
+  DATA  lo_xtt_error TYPE REF TO zcx_xtt_exception.
 
   " Insert new one
-  APPEND INITIAL LINE TO ct_cells REFERENCE INTO ls_cell.
+  APPEND INITIAL LINE TO io_sheet->mt_cells REFERENCE INTO ls_cell.
 
   " Transform coordinates
   l_val = io_node->get_attribute( 'r' ).
@@ -319,13 +328,48 @@ METHOD cell_read_xml.
   ls_cell->c_type  = io_node->get_attribute( 't' ).
   ls_cell->c_style = io_node->get_attribute( 's' ).
 
-  " Just formula
+  " General formula
   lo_elem = io_node->find_from_name( name = 'f' ).
   IF lo_elem IS BOUND.
-    " TODO raw xml       shared formula!
+    " Unescape fm
     l_val = lo_elem->get_value( ).
     l_val = cl_http_utility=>escape_html( l_val ).
 
+    " Shared formula
+    DO 1 TIMES.
+      DATA ls_shared_fm TYPE ts_shared_fm.
+      ls_shared_fm-sf_index = lo_elem->get_attribute( 'si' ).
+      CHECK ls_shared_fm-sf_index IS NOT INITIAL.
+
+      " Save 1-st cell with formula
+      IF l_val IS NOT INITIAL.
+        ls_shared_fm-sf_cell = ls_cell.
+        INSERT ls_shared_fm INTO TABLE io_sheet->mt_shared_fm.
+        CONTINUE.
+      ENDIF.
+
+      " Read 1-st shared formula
+      READ TABLE io_sheet->mt_shared_fm INTO ls_shared_fm
+       WITH TABLE KEY sf_index = ls_shared_fm-sf_index.
+      CHECK sy-subrc = 0.
+
+      " Calc offsets
+      DATA lv_r_dx TYPE i.
+      DATA lv_c_dx TYPE i.
+      lv_r_dx = ls_cell->c_row     - ls_shared_fm-sf_cell->c_row.
+      lv_c_dx = ls_cell->c_col_ind - ls_shared_fm-sf_cell->c_col_ind.
+
+      TRY.
+          l_val = formula_shift(
+            iv_reference_formula = ls_shared_fm-sf_cell->c_formula
+            iv_shift_rows        = lv_r_dx
+            iv_shift_cols        = lv_c_dx ).
+        CATCH zcx_xtt_exception INTO lo_xtt_error.
+          zcx_eui_exception=>raise_dump( io_error = lo_xtt_error ).
+      ENDTRY.
+    ENDDO.
+
+    " Set fm
     ls_cell->c_formula = l_val.
     RETURN.
   ENDIF.
@@ -363,13 +407,15 @@ METHOD cell_write_xml.
     lv_merge_col TYPE char3,
     lv_from      TYPE string,
     lv_to        TYPE string,
-    lo_error     TYPE REF TO zcx_eui_exception.
+    lo_eui_error TYPE REF TO zcx_eui_exception,
+    lo_xtt_error TYPE REF TO zcx_xtt_exception.
 
-  " Update formula
+  " Update formula. Only for backward compatibility?
   DEFINE replace_all_with_buck.
     CONCATENATE:
      `$` &1 INTO lv_from,
      `$` &2 INTO lv_to.
+*     ``  &1 INTO lv_to.
 
     REPLACE ALL OCCURRENCES OF lv_from IN is_cell->c_formula WITH lv_to.
   END-OF-DEFINITION.
@@ -378,23 +424,38 @@ METHOD cell_write_xml.
   int_to_text iv_new_row.
   TRY.
       lv_new_col = zcl_eui_file_io=>int_2_column( iv_new_col_ind ).
-    CATCH zcx_eui_exception INTO lo_error.
-      zcx_eui_exception=>raise_dump( io_error = lo_error ).
+    CATCH zcx_eui_exception INTO lo_eui_error.
+      zcx_eui_exception=>raise_dump( io_error = lo_eui_error ).
   ENDTRY.
 
   " Formula
   IF is_cell->c_formula IS NOT INITIAL.
-    " Replace to new row index
+    " Replace to new row index. Only for backward compatibility
     FIND FIRST OCCURRENCE OF '$' IN is_cell->c_formula.
     IF sy-subrc = 0.
       " Old row index -> New row index
       int_2_text is_cell->c_row lv_number.
 
-      replace_all_with_buck lv_number iv_new_row_txt.
+      " Row
+      replace_all_with_buck lv_number        iv_new_row_txt.
+      " Or Column with $
       IF sy-subrc <> 0.
         replace_all_with_buck is_cell->c_col lv_new_col.
       ENDIF.
     ENDIF.
+
+*    DATA lv_r_dx TYPE i. lv_r_dx = iv_new_row     - is_cell->c_row.
+*    DATA lv_c_dx TYPE i. lv_c_dx = iv_new_col_ind - is_cell->c_col_ind.
+* TODO test
+*    TRY.
+*        is_cell->c_formula = formula_shift(
+*          iv_reference_formula = is_cell->c_formula
+*          iv_shift_rows        = lv_r_dx
+*          iv_shift_cols        = lv_c_dx  ).
+*      CATCH zcx_xtt_exception INTO lo_xtt_error.
+*        zcx_eui_exception=>raise_dump( io_error = lo_xtt_error ).
+*    ENDTRY.
+
     " Write formula
     CONCATENATE `<f>` is_cell->c_formula `</f>` INTO lv_data.
   ELSEIF is_cell->c_value IS NOT INITIAL.
@@ -448,8 +509,8 @@ METHOD cell_write_xml.
     lv_index = is_cell->c_col_ind + is_cell->c_merge_col_dx.
     TRY.
         lv_merge_col = zcl_eui_file_io=>int_2_column( lv_index  ).
-      CATCH zcx_eui_exception INTO lo_error.
-        zcx_eui_exception=>raise_dump( io_error = lo_error ).
+      CATCH zcx_eui_exception INTO lo_eui_error.
+        zcx_eui_exception=>raise_dump( io_error = lo_eui_error ).
     ENDTRY.
 
     CONCATENATE cv_merge_cells `<mergeCell ref="`
@@ -1136,6 +1197,343 @@ METHOD drawing_save_xml.
 ENDMETHOD.
 
 
+METHOD formula_shift.
+  CONSTANTS: lcv_operators            TYPE string VALUE '+-/*^%=<>&, !',
+             lcv_letters              TYPE string VALUE 'ABCDEFGHIJKLMNOPQRSTUVWXYZ$',
+             lcv_digits               TYPE string VALUE '0123456789',
+             lcv_cell_reference_error TYPE string VALUE '#REF!'.
+
+  DATA: lv_tcnt          TYPE i,         " Counter variable
+        lv_tlen          TYPE i,         " Temp variable length
+        lv_cnt           TYPE i,         " Counter variable
+        lv_cnt2          TYPE i,         " Counter variable
+        lv_offset1       TYPE i,         " Character offset
+        lv_numchars      TYPE i,         " Number of characters counter
+        lv_tchar(1)      TYPE c,         " Temp character
+        lv_tchar2(1)     TYPE c,         " Temp character
+        lv_cur_form      TYPE string,    "(2000)      " Formula for current cell
+        lv_ref_cell_addr TYPE string,    " Reference cell address
+        lv_tcol1         TYPE string,    " Temp column letter
+        lv_tcol2         TYPE string,    " Temp column letter
+        lv_tcoln         TYPE i,         " Temp column number
+        lv_trow1         TYPE string,    " Temp row number
+        lv_trow2         TYPE string,    " Temp row number
+        lv_flen          TYPE i,         " Length of reference formula
+        lv_tlen2         TYPE i,         " Temp variable length
+        lv_substr1       TYPE string,    " Substring variable
+        lv_abscol        TYPE string,    " Absolute column symbol
+        lv_absrow        TYPE string,    " Absolute row symbol
+
+        lv_errormessage  TYPE string.
+
+  FIELD-SYMBOLS: <find_my_include> TYPE any.
+
+*--------------------------------------------------------------------*
+* When copying a cell in EXCEL to another cell any inherent formulas
+* are copied as well.  Cell-references in the formula are being adjusted
+* by the distance of the new cell to the original one
+*--------------------------------------------------------------------*
+* §1 Parse reference formula character by character
+* §2 Identify Cell-references
+* §3 Shift cell-reference
+* §4 Build resulting formula
+*--------------------------------------------------------------------*
+
+*--------------------------------------------------------------------*
+* No distance --> Reference = resulting cell/formula
+*--------------------------------------------------------------------*
+  IF    iv_shift_cols = 0
+    AND iv_shift_rows = 0.
+    rv_resulting_formula = iv_reference_formula.
+    EXIT. " done
+  ENDIF.
+
+
+  lv_flen     = strlen( iv_reference_formula ).
+  lv_numchars = 1.
+
+*--------------------------------------------------------------------*
+* §1 Parse reference formula character by character
+*--------------------------------------------------------------------*
+  DO lv_flen TIMES.
+
+    CLEAR: lv_tchar,
+           lv_substr1,
+           lv_ref_cell_addr.
+    lv_cnt2 = lv_cnt + 1.
+    IF lv_cnt2 > lv_flen.
+      EXIT. " Done
+    ENDIF.
+
+*--------------------------------------------------------------------*
+* Here we have the current character in the formula
+*--------------------------------------------------------------------*
+    lv_tchar = iv_reference_formula+lv_cnt(1).
+
+*--------------------------------------------------------------------*
+* Operators or opening parenthesis will separate possible cellreferences
+*--------------------------------------------------------------------*
+    IF    (    lv_tchar CA lcv_operators
+            OR lv_tchar CA '(' )
+      AND lv_cnt2 = 1.
+      lv_substr1  = iv_reference_formula+lv_offset1(1).
+      CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+      lv_cnt      = lv_cnt + 1.
+      lv_offset1  = lv_cnt.
+      lv_numchars = 1.
+      CONTINUE.       " --> next character in formula can be analyzed
+    ENDIF.
+
+*--------------------------------------------------------------------*
+* Quoted literal text holds no cell reference --> advance to end of text
+*--------------------------------------------------------------------*
+    IF lv_tchar EQ '"'.
+      lv_cnt      = lv_cnt + 1.
+      lv_numchars = lv_numchars + 1.
+      lv_tchar     = iv_reference_formula+lv_cnt(1).
+      WHILE lv_tchar NE '"'.
+
+        lv_cnt      = lv_cnt + 1.
+        lv_numchars = lv_numchars + 1.
+        lv_tchar    = iv_reference_formula+lv_cnt(1).
+
+      ENDWHILE.
+      lv_cnt2    = lv_cnt + 1.
+      lv_substr1 = iv_reference_formula+lv_offset1(lv_numchars).
+      CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+      lv_cnt     = lv_cnt + 1.
+      IF lv_cnt = lv_flen.
+        EXIT.
+      ENDIF.
+      lv_offset1  = lv_cnt.
+      lv_numchars = 1.
+      lv_tchar    = iv_reference_formula+lv_cnt(1).
+      lv_cnt2     = lv_cnt + 1.
+      CONTINUE.       " --> next character in formula can be analyzed
+    ENDIF.
+
+
+*--------------------------------------------------------------------*
+* Operators or parenthesis or last character in formula will separate possible cellreferences
+*--------------------------------------------------------------------*
+    IF   lv_tchar CA lcv_operators
+      OR lv_tchar CA '():'
+      OR lv_cnt2  =  lv_flen.
+      IF lv_cnt > 0.
+        lv_substr1 = iv_reference_formula+lv_offset1(lv_numchars).
+*--------------------------------------------------------------------*
+* Check for text concatenation and functions
+*--------------------------------------------------------------------*
+        IF ( lv_tchar CA lcv_operators AND lv_tchar EQ lv_substr1 ) OR lv_tchar EQ '('.
+          CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+          lv_cnt = lv_cnt + 1.
+          lv_offset1 = lv_cnt.
+          lv_cnt2 = lv_cnt + 1.
+          lv_numchars = 1.
+          CONTINUE.       " --> next character in formula can be analyzed
+        ENDIF.
+
+        lv_tlen = lv_cnt2 - lv_offset1.
+*--------------------------------------------------------------------*
+* Exclude mathematical operators and closing parentheses
+*--------------------------------------------------------------------*
+        IF   lv_tchar CA lcv_operators
+          OR lv_tchar CA ':)'.
+          IF    lv_cnt2     = lv_flen
+            AND lv_numchars = 1.
+            CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+            lv_cnt      = lv_cnt + 1.
+            lv_offset1  = lv_cnt.
+            lv_cnt2     = lv_cnt + 1.
+            lv_numchars = 1.
+            CONTINUE.       " --> next character in formula can be analyzed
+          ELSE.
+            lv_tlen = lv_tlen - 1.
+          ENDIF.
+        ENDIF.
+*--------------------------------------------------------------------*
+* Capture reference cell address
+*--------------------------------------------------------------------*
+        TRY.
+            MOVE: iv_reference_formula+lv_offset1(lv_tlen) TO lv_ref_cell_addr. "Ref cell address
+          CATCH cx_root.
+            zcx_xtt_exception=>raise_sys_error( iv_message =
+              'Internal error in Class ZCL_XTT_EXCEL_XLSX Method FORMULA_SHIFT Spot 1 ' ).  " Change to messageclass if possible
+        ENDTRY.
+
+*--------------------------------------------------------------------*
+* Split cell address into characters and numbers
+*--------------------------------------------------------------------*
+        CLEAR: lv_tlen,
+               lv_tcnt,
+               lv_tcol1,
+               lv_trow1.
+        lv_tlen = strlen( lv_ref_cell_addr ).
+        IF lv_tlen <> 0.
+          CLEAR: lv_tcnt.
+          DO lv_tlen TIMES.
+            CLEAR: lv_tchar2.
+            lv_tchar2 = lv_ref_cell_addr+lv_tcnt(1).
+            IF lv_tchar2 CA lcv_letters.
+              CONCATENATE lv_tcol1 lv_tchar2 INTO lv_tcol1.
+            ELSEIF lv_tchar2 CA lcv_digits.
+              CONCATENATE lv_trow1 lv_tchar2 INTO lv_trow1.
+            ENDIF.
+            lv_tcnt = lv_tcnt + 1.
+          ENDDO.
+        ENDIF.
+*--------------------------------------------------------------------*
+* Check for invalid cell address
+*--------------------------------------------------------------------*
+        IF lv_tcol1 IS INITIAL OR lv_trow1 IS INITIAL.
+          CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+*          IF lv_tchar = space.
+*            CONCATENATE lv_cur_form lv_tchar INTO lv_cur_form RESPECTING BLANKS.
+*          ENDIF.
+          lv_cnt = lv_cnt + 1.
+          lv_offset1 = lv_cnt.
+          lv_cnt2 = lv_cnt + 1.
+          lv_numchars = 1.
+          CONTINUE.
+        ENDIF.
+*--------------------------------------------------------------------*
+* Check for range names
+*--------------------------------------------------------------------*
+        CLEAR: lv_tlen.
+        lv_tlen = strlen( lv_tcol1 ).
+        IF lv_tlen GT 3.
+          CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+          lv_cnt = lv_cnt + 1.
+          lv_offset1 = lv_cnt.
+          lv_cnt2 = lv_cnt + 1.
+          lv_numchars = 1.
+          CONTINUE.
+        ENDIF.
+*--------------------------------------------------------------------*
+* Check for valid row
+*--------------------------------------------------------------------*
+        IF lv_trow1 GT 1048576.
+          CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+          lv_cnt = lv_cnt + 1.
+          lv_offset1 = lv_cnt.
+          lv_cnt2 = lv_cnt + 1.
+          lv_numchars = 1.
+          CONTINUE.
+        ENDIF.
+*--------------------------------------------------------------------*
+* Check for absolute column or row reference
+*--------------------------------------------------------------------*
+        CLEAR: lv_tcol2,
+               lv_trow2,
+               lv_abscol,
+               lv_absrow.
+        lv_tlen2 = strlen( lv_tcol1 ) - 1.
+        IF lv_tcol1 IS NOT INITIAL.
+          lv_abscol = lv_tcol1(1).
+        ENDIF.
+        IF lv_tlen2 GE 0.
+          lv_absrow = lv_tcol1+lv_tlen2(1).
+        ENDIF.
+        IF lv_abscol EQ '$' AND lv_absrow EQ '$'.
+          lv_tlen2 = lv_tlen2 - 1.
+          IF lv_tlen2 > 0.
+            lv_tcol1 = lv_tcol1+1(lv_tlen2).
+          ENDIF.
+          lv_tlen2 = lv_tlen2 + 1.
+        ELSEIF lv_abscol EQ '$'.
+          lv_tcol1 = lv_tcol1+1(lv_tlen2).
+        ELSEIF lv_absrow EQ '$'.
+          lv_tcol1 = lv_tcol1(lv_tlen2).
+        ENDIF.
+*--------------------------------------------------------------------*
+* Check for valid column
+*--------------------------------------------------------------------*
+        TRY.
+            lv_tcoln = zcl_eui_file_io=>column_2_int( lv_tcol1 ) + iv_shift_cols.
+          CATCH zcx_eui_exception.
+            CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+            lv_cnt = lv_cnt + 1.
+            lv_offset1 = lv_cnt.
+            lv_cnt2 = lv_cnt + 1.
+            lv_numchars = 1.
+            CONTINUE.
+        ENDTRY.
+*--------------------------------------------------------------------*
+* Check whether there is a referencing problem
+*--------------------------------------------------------------------*
+        lv_trow2 = lv_trow1 + iv_shift_rows.
+        CONDENSE lv_trow2.
+        IF   ( lv_tcoln < 1 AND lv_abscol <> '$' )   " Maybe we should add here max-column and max row-tests as well.
+          OR ( lv_trow2 < 1 AND lv_absrow <> '$' ).  " Check how EXCEL behaves in this case
+*--------------------------------------------------------------------*
+* Referencing problem encountered --> set error
+*--------------------------------------------------------------------*
+          CONCATENATE lv_cur_form lcv_cell_reference_error INTO lv_cur_form.
+        ELSE.
+*--------------------------------------------------------------------*
+* No referencing problems --> adjust row and column
+*--------------------------------------------------------------------*
+
+*--------------------------------------------------------------------*
+* Adjust column
+*--------------------------------------------------------------------*
+          IF lv_abscol EQ '$'.
+            CONCATENATE lv_cur_form lv_abscol lv_tcol1 INTO lv_cur_form.
+          ELSEIF iv_shift_cols EQ 0.
+            CONCATENATE lv_cur_form lv_tcol1 INTO lv_cur_form.
+          ELSE.
+            TRY.
+                lv_tcol2 = zcl_eui_file_io=>int_2_column( lv_tcoln ).
+                CONCATENATE lv_cur_form lv_tcol2 INTO lv_cur_form.
+              CATCH zcx_eui_exception.
+                CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
+                lv_cnt = lv_cnt + 1.
+                lv_offset1 = lv_cnt.
+                lv_cnt2 = lv_cnt + 1.
+                lv_numchars = 1.
+                CONTINUE.
+            ENDTRY.
+          ENDIF.
+*--------------------------------------------------------------------*
+* Adjust row
+*--------------------------------------------------------------------*
+          IF lv_absrow EQ '$'.
+            CONCATENATE lv_cur_form lv_absrow lv_trow1 INTO lv_cur_form.
+          ELSEIF iv_shift_rows = 0.
+            CONCATENATE lv_cur_form lv_trow1 INTO lv_cur_form.
+*        elseif lv_trow2 < 1.
+*          CONCATENATE lv_cur_form lc_cell_reference_error INTO lv_cur_form.
+          ELSE.
+            CONCATENATE lv_cur_form lv_trow2 INTO lv_cur_form.
+          ENDIF.
+        ENDIF.
+
+        lv_numchars = 0.
+        IF   lv_tchar CA lcv_operators
+          OR lv_tchar CA ':)'.
+          CONCATENATE lv_cur_form lv_tchar INTO lv_cur_form.
+        ENDIF.
+        lv_offset1 = lv_cnt2.
+      ENDIF.
+    ENDIF.
+    lv_numchars = lv_numchars + 1.
+    lv_cnt   = lv_cnt   + 1.
+    lv_cnt2  = lv_cnt   + 1.
+
+  ENDDO.
+
+
+
+*--------------------------------------------------------------------*
+* Return resulting formula
+*--------------------------------------------------------------------*
+  IF lv_cur_form IS NOT INITIAL.
+    MOVE lv_cur_form TO rv_resulting_formula.
+  ENDIF.
+
+ENDMETHOD.
+
+
 METHOD get_raw.
   DATA:
     lo_sheet   TYPE REF TO lcl_ex_sheet,
@@ -1357,10 +1755,10 @@ METHOD row_read_xml.
   " Add new rows
   WHILE lo_row IS BOUND.
     CLEAR ls_row.
-    ls_row-r             = lo_row->get_attribute( 'r' ).            "#EC NOTEXT
+    ls_row-r             = lo_row->get_attribute( 'r' ).    "#EC NOTEXT
     ls_row-customheight  = lo_row->get_attribute( 'customHeight' ). "#EC NOTEXT
-    ls_row-ht            = lo_row->get_attribute( 'ht' ).           "#EC NOTEXT
-    ls_row-hidden        = lo_row->get_attribute( 'hidden' ).       "#EC NOTEXT
+    ls_row-ht            = lo_row->get_attribute( 'ht' ).   "#EC NOTEXT
+    ls_row-hidden        = lo_row->get_attribute( 'hidden' ). "#EC NOTEXT
     ls_row-outlinelevel  = lo_row->get_attribute( 'outlineLevel' ). "#EC NOTEXT
 
     " And add by key
@@ -1369,18 +1767,14 @@ METHOD row_read_xml.
     " Loop through excels cells
     lo_cell = lo_row->find_from_name( 'c' ).                "#EC NOTEXT
     WHILE lo_cell IS BOUND.
-      cell_read_xml(
-       EXPORTING
-        io_node           = lo_cell
-        it_shared_strings	= it_shared_strings
-       CHANGING
-        ct_cells          = io_sheet->mt_cells ).
-
-      " Add by key
-      "INSERT ls_cell INTO TABLE lt_cells_hash.
+      cell_read_xml( io_sheet           = io_sheet
+                     io_node            = lo_cell
+                     it_shared_strings  = it_shared_strings ).
+      " Next cell
       lo_cell ?= lo_cell->get_next( ).
     ENDWHILE.
 
+    " Next row
     lo_row ?= lo_row->get_next( ).
   ENDWHILE.
 ENDMETHOD.

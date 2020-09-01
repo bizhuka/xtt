@@ -137,7 +137,13 @@ TYPES:
 
     " Images templates
     dr_t_img_template TYPE tt_img_template,
-  END OF ts_drawing.
+  END OF ts_drawing,
+
+  BEGIN OF ts_shared_fm,
+    sf_index TYPE string,
+    sf_cell  TYPE REF TO ts_ex_cell,
+  END OF ts_shared_fm,
+  tt_shared_fm TYPE SORTED TABLE OF ts_shared_fm WITH UNIQUE KEY sf_index. " sf_row sf_col.
 
 **********************************************************************
 **********************************************************************
@@ -164,7 +170,10 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       mt_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt,
 
       " Images & shapes?
-      mr_drawing       TYPE REF TO ts_drawing.
+      mr_drawing       TYPE REF TO ts_drawing,
+
+      " Shared formula
+      mt_shared_fm     TYPE tt_shared_fm.
 
     METHODS:
       constructor

@@ -48,6 +48,12 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>PST</KEY>
+     <ENTRY>Please select valid template</ENTRY>
+     <LENGTH>56</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>RES</KEY>
      <ENTRY>Result</ENTRY>
      <LENGTH>16</LENGTH>
@@ -57,6 +63,12 @@
      <KEY>TBR</KEY>
      <ENTRY>Activate ZXTT_BREAK_POINT in tr. SAAB</ENTRY>
      <LENGTH>74</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>TIC</KEY>
+     <ENTRY>Test icons</ENTRY>
+     <LENGTH>20</LENGTH>
     </item>
     <item>
      <ID>I</ID>
@@ -200,51 +212,69 @@
      <TEXTPOOL>
       <item>
        <ID>I</ID>
+       <KEY>EXA</KEY>
+       <ENTRY>Пример</ENTRY>
+       <LENGTH>17</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>F4F</KEY>
+       <ENTRY>Полный путь</ENTRY>
+       <LENGTH>25</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>F4P</KEY>
+       <ENTRY>Выберите корневую дерикторию</ENTRY>
+       <LENGTH>42</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>MET</KEY>
+       <ENTRY>Метод</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>NDA</KEY>
+       <ENTRY>Данных не найдено</ENTRY>
+       <LENGTH>24</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>PSE</KEY>
        <ENTRY>Пожалуйста выберите пример</ENTRY>
        <LENGTH>42</LENGTH>
       </item>
       <item>
        <ID>I</ID>
-       <KEY>SFP</KEY>
-       <ENTRY>Укажите путь до файла</ENTRY>
-       <LENGTH>25</LENGTH>
+       <KEY>PST</KEY>
+       <ENTRY>Пожалуйста выберите пример</ENTRY>
+       <LENGTH>56</LENGTH>
       </item>
       <item>
        <ID>I</ID>
-       <KEY>T02</KEY>
-       <ENTRY>Пример простой таблицы</ENTRY>
-       <LENGTH>29</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>T04</KEY>
-       <ENTRY>Типы данных</ENTRY>
-       <LENGTH>20</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>T05</KEY>
-       <ENTRY>Дерево (группировка по полям)</ENTRY>
-       <LENGTH>62</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>T06</KEY>
-       <ENTRY>Дерево (группы по отношению полей)</ENTRY>
-       <LENGTH>62</LENGTH>
-      </item>
-      <item>
-       <ID>I</ID>
-       <KEY>T07</KEY>
-       <ENTRY>Вызов макроса (не рекомендуется)</ENTRY>
-       <LENGTH>62</LENGTH>
+       <KEY>RES</KEY>
+       <ENTRY>Результат</ENTRY>
+       <LENGTH>16</LENGTH>
       </item>
       <item>
        <ID>I</ID>
        <KEY>TBR</KEY>
        <ENTRY>Активируйте ZXTT_BREAK_POINT в тр. SAAB</ENTRY>
        <LENGTH>74</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>TIC</KEY>
+       <ENTRY>Тест иконок</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>TIT</KEY>
+       <ENTRY>Заголовок</ENTRY>
+       <LENGTH>15</LENGTH>
       </item>
       <item>
        <ID>R</ID>
@@ -255,6 +285,12 @@
        <ID>S</ID>
        <KEY>P_B_CNT</KEY>
        <ENTRY>Кол-во блоков (В каждом N стр)</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_C_CNT</KEY>
+       <ENTRY>Количество столбцов</ENTRY>
        <LENGTH>38</LENGTH>
       </item>
       <item>
@@ -315,6 +351,12 @@
        <ID>S</ID>
        <KEY>P_SHOW</KEY>
        <ENTRY>Показать</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_SIZE</KEY>
+       <ENTRY>Установить размер картинки</ENTRY>
        <LENGTH>38</LENGTH>
       </item>
       <item>

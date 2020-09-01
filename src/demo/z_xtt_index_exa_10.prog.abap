@@ -17,7 +17,7 @@ METHOD example_10.
 
   " General info
   DATA ls_root TYPE ts_root.
-  ls_root-title = 'Test icons'.
+  ls_root-title = 'Test icons'(tic).
 
   " Get icon IDs
   SELECT id name INTO CORRESPONDING FIELDS OF TABLE ls_root-t
@@ -70,7 +70,7 @@ METHOD example_10.
 
     " Create new instance
     <ls_icon>-img = zcl_xtt_comp_cell=>create_image( iv_image  = lv_image
-                                                     iv_ext    = '.gif'
+                                                     iv_ext    = '.gif' "#EC NOTEXT
                                                      iv_width  = lv_width
                                                      iv_height = lv_height ).
   ENDLOOP.

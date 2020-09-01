@@ -268,7 +268,7 @@ CLASS cl_main IMPLEMENTATION.
      WITH TABLE KEY key = p_exa.
     CHECK sy-subrc <> 0.
 
-    MESSAGE 'Please select valid template' TYPE 'E'.
+    MESSAGE 'Please select valid template'(pst) TYPE 'E'.
   ENDMETHOD.
 
   METHOD start_of_selection.
@@ -538,7 +538,7 @@ CLASS cl_main IMPLEMENTATION.
       CONCATENATE ls_list->key `_R.` lv_ext INTO ls_file-report.
 
       " Original format
-      REPLACE FIRST OCCURRENCE OF `.pdf` IN ls_file-template WITH `.xdp`.
+      REPLACE FIRST OCCURRENCE OF `.pdf` IN ls_file-template WITH `.xdp`. "#EC NOTEXT
 
       " New demo
       lv_num = ls_list->key(2).
@@ -570,7 +570,7 @@ CLASS cl_main IMPLEMENTATION.
         CREATE OBJECT lo_file.
         lo_file->import_from_string( lv_file ).
         lo_file->download( iv_save_dialog = abap_true
-                           iv_full_path   = `xtt_demo.json` ).
+                           iv_full_path   = `xtt_demo.json` ). "#EC NOTEXT
       CATCH zcx_eui_exception INTO lo_error.
         MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
     ENDTRY.

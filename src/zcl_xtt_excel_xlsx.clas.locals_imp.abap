@@ -57,8 +57,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       READ TABLE ls_area->a_cells REFERENCE INTO ls_cell_end INDEX 2.
 
       " Get ref to existing or ls_cell_beg cell
-      ls_cell = find_cell( ls_cell_beg->* ).
-
+      find_cell( EXPORTING ir_cell    = ls_cell_beg->*
+                 IMPORTING er_ex_cell = ls_cell ).
       " Fill dx
       ls_cell->c_merge_row_dx = ls_cell_end->c_row     - ls_cell_beg->c_row.
       ls_cell->c_merge_col_dx = ls_cell_end->c_col_ind - ls_cell_beg->c_col_ind.
@@ -138,10 +138,14 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
   METHOD find_cell.
     DATA ls_row TYPE ts_ex_row.
 
-    READ TABLE mt_cells BINARY SEARCH REFERENCE INTO rr_ex_cell WITH KEY " with table key
+    CLEAR er_ex_cell.
+*    CLEAR ev_new_tabix.
+
+    READ TABLE mt_cells BINARY SEARCH REFERENCE INTO er_ex_cell WITH KEY " with table key
       c_row = ir_cell-c_row c_col_ind = ir_cell-c_col_ind.
-    IF sy-subrc <> 0.
-      INSERT ir_cell INTO mt_cells INDEX sy-tabix REFERENCE INTO rr_ex_cell.
+    IF sy-subrc <> 0 AND iv_add = abap_true.
+*      ev_new_tabix = sy-tabix.
+      INSERT ir_cell INTO mt_cells INDEX sy-tabix REFERENCE INTO er_ex_cell.
 
       READ TABLE mt_rows TRANSPORTING NO FIELDS
        WITH TABLE KEY r = ir_cell-c_row.
@@ -151,7 +155,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
-    rr_ex_cell->c_def_name = iv_def_name.
+    CHECK er_ex_cell IS NOT INITIAL.
+    er_ex_cell->c_def_name = iv_def_name.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD fill_shared_strings.

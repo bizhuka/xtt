@@ -414,8 +414,10 @@ METHOD cell_write_xml.
   DEFINE replace_all_with_buck.
     CONCATENATE:
      `$` &1 INTO lv_from,
-     `$` &2 INTO lv_to.
-*     ``  &1 INTO lv_to.
+*     `$` &2 INTO lv_to.
+     ``  &1 INTO lv_to.
+
+     &2 = &2.
 
     REPLACE ALL OCCURRENCES OF lv_from IN is_cell->c_formula WITH lv_to.
   END-OF-DEFINITION.
@@ -438,23 +440,27 @@ METHOD cell_write_xml.
 
       " Row
       replace_all_with_buck lv_number        iv_new_row_txt.
-      " Or Column with $
-      IF sy-subrc <> 0.
-        replace_all_with_buck is_cell->c_col lv_new_col.
-      ENDIF.
+*      " Or Column with $
+*      IF sy-subrc <> 0.
+*        replace_all_with_buck is_cell->c_col lv_new_col.
+*      ENDIF.
     ENDIF.
 
-*    DATA lv_r_dx TYPE i. lv_r_dx = iv_new_row     - is_cell->c_row.
-*    DATA lv_c_dx TYPE i. lv_c_dx = iv_new_col_ind - is_cell->c_col_ind.
-* TODO test
-*    TRY.
-*        is_cell->c_formula = formula_shift(
-*          iv_reference_formula = is_cell->c_formula
-*          iv_shift_rows        = lv_r_dx
-*          iv_shift_cols        = lv_c_dx  ).
-*      CATCH zcx_xtt_exception INTO lo_xtt_error.
-*        zcx_eui_exception=>raise_dump( io_error = lo_xtt_error ).
-*    ENDTRY.
+    DATA lv_r_dx TYPE i.
+    lv_r_dx = iv_new_row     - is_cell->c_row.
+    DATA lv_c_dx TYPE i.
+    lv_c_dx = iv_new_col_ind - is_cell->c_col_ind.
+    " TODO test
+*    DATA(lv_prev) = is_cell->c_formula.
+    TRY.
+        is_cell->c_formula = formula_shift(
+          iv_reference_formula = is_cell->c_formula
+          iv_shift_rows        = lv_r_dx
+          iv_shift_cols        = lv_c_dx ).
+      CATCH zcx_xtt_exception INTO lo_xtt_error.
+        zcx_eui_exception=>raise_dump( io_error = lo_xtt_error ).
+    ENDTRY.
+*    WRITE:/ lv_r_dx, lv_c_dx, lv_prev, is_cell->c_formula COLOR 2.
 
     " Write formula
     CONCATENATE `<f>` is_cell->c_formula `</f>` INTO lv_data.
@@ -1039,6 +1045,7 @@ METHOD drawing_read_xml.
   zcl_xtt_xml_base=>get_tag_matches( EXPORTING iv_context   = rr_me->dr_v_drawing
                                                iv_tag       = `xdr:twoCellAnchor`
                                      IMPORTING et_xml_match = lt_xml_match ).
+
   LOOP AT lt_xml_match ASSIGNING <ls_xml_match>.
     " Entire `xdr:twoCellAnchor`
     ls_img_template-tag = <ls_xml_match>-tag.
@@ -1102,7 +1109,18 @@ METHOD drawing_read_xml.
     lr_cell->c_col_ind = ls_img_template-col.
 
     " Find or create new one
-    lr_cell = io_sheet->find_cell( lr_cell->* ).
+    DATA lv_add TYPE abap_bool.
+    CLEAR lv_add.
+    if lv_xtt_name IS NOT INITIAL.
+      lv_add = abap_true.
+    endif.
+
+    io_sheet->find_cell( EXPORTING ir_cell      = lr_cell->*
+                                   iv_add       = lv_add
+                         IMPORTING er_ex_cell   = lr_cell
+*                                   ev_new_tabix = lv_new_tabix
+                                   ).
+    CHECK lr_cell IS NOT INITIAL.
 
     " Set name
     IF lv_xtt_name IS NOT INITIAL.
@@ -1110,10 +1128,18 @@ METHOD drawing_read_xml.
     ENDIF.
 
     " Delete original image from a cell
-    CHECK lr_cell->c_value CP `{*}`.
-    CONCATENATE rr_me->dr_v_drawing(<ls_xml_match>-beg)
-                rr_me->dr_v_drawing+<ls_xml_match>-end INTO rr_me->dr_v_drawing.
+    IF lr_cell->c_value CP `{*}`.
+      CONCATENATE rr_me->dr_v_drawing(<ls_xml_match>-beg)
+                  rr_me->dr_v_drawing+<ls_xml_match>-end INTO rr_me->dr_v_drawing.
+*      lv_has_template = abap_true.
+*    ELSEIF lv_new_tabix IS NOT INITIAL.
+*      DELETE io_sheet->mt_cells INDEX lv_new_tabix.
+    ENDIF.
   ENDLOOP.
+
+*  CHECK lv_has_template <> abap_true.
+*  CLEAR rr_me->dr_v_drawing.
+*  CLEAR rr_me->dr_v_drawing_rel.
 ENDMETHOD.
 
 
@@ -1198,35 +1224,34 @@ ENDMETHOD.
 
 
 METHOD formula_shift.
-  CONSTANTS: lcv_operators            TYPE string VALUE '+-/*^%=<>&, !',
-             lcv_letters              TYPE string VALUE 'ABCDEFGHIJKLMNOPQRSTUVWXYZ$',
-             lcv_digits               TYPE string VALUE '0123456789',
-             lcv_cell_reference_error TYPE string VALUE '#REF!'.
 
-  DATA: lv_tcnt          TYPE i,         " Counter variable
-        lv_tlen          TYPE i,         " Temp variable length
-        lv_cnt           TYPE i,         " Counter variable
-        lv_cnt2          TYPE i,         " Counter variable
-        lv_offset1       TYPE i,         " Character offset
-        lv_numchars      TYPE i,         " Number of characters counter
-        lv_tchar(1)      TYPE c,         " Temp character
-        lv_tchar2(1)     TYPE c,         " Temp character
-        lv_cur_form      TYPE string,    "(2000)      " Formula for current cell
-        lv_ref_cell_addr TYPE string,    " Reference cell address
-        lv_tcol1         TYPE string,    " Temp column letter
-        lv_tcol2         TYPE string,    " Temp column letter
-        lv_tcoln         TYPE i,         " Temp column number
-        lv_trow1         TYPE string,    " Temp row number
-        lv_trow2         TYPE string,    " Temp row number
-        lv_flen          TYPE i,         " Length of reference formula
-        lv_tlen2         TYPE i,         " Temp variable length
-        lv_substr1       TYPE string,    " Substring variable
-        lv_abscol        TYPE string,    " Absolute column symbol
-        lv_absrow        TYPE string,    " Absolute row symbol
+  CONSTANTS:  lcv_operators                   TYPE string VALUE '+-/*^%=<>&, !',
+              lcv_letters                     TYPE string VALUE 'ABCDEFGHIJKLMNOPQRSTUVWXYZ$',
+              lcv_digits                      TYPE string VALUE '0123456789',
+              lcv_cell_reference_error        TYPE string VALUE '#REF!'.
 
-        lv_errormessage  TYPE string.
+  DATA:       lv_tcnt                         TYPE i,         " Counter variable
+              lv_tlen                         TYPE i,         " Temp variable length
+              lv_cnt                          TYPE i,         " Counter variable
+              lv_cnt2                         TYPE i,         " Counter variable
+              lv_offset1                      TYPE i,         " Character offset
+              lv_numchars                     TYPE i,         " Number of characters counter
+              lv_tchar(1)                     TYPE c,         " Temp character
+              lv_tchar2(1)                    TYPE c,         " Temp character
+              lv_cur_form                     TYPE string, " (2000)c, " Formula for current cell
+              lv_ref_cell_addr                TYPE string,    " Reference cell address
+              lv_tcol1                        TYPE string,    " Temp column letter
+              lv_tcol2                        TYPE string,    " Temp column letter
+              lv_tcoln                        TYPE i,         " Temp column number
+              lv_trow1                        TYPE string,    " Temp row number
+              lv_trow2                        TYPE string,    " Temp row number
+              lv_flen                         TYPE i,         " Length of reference formula
+              lv_tlen2                        TYPE i,         " Temp variable length
+              lv_substr1                      TYPE string,    " Substring variable
+              lv_abscol                       TYPE string,    " Absolute column symbol
+              lv_absrow                       TYPE string,    " Absolute row symbol
 
-  FIELD-SYMBOLS: <find_my_include> TYPE any.
+              lv_errormessage                 TYPE string.
 
 *--------------------------------------------------------------------*
 * When copying a cell in EXCEL to another cell any inherent formulas
@@ -1347,7 +1372,7 @@ METHOD formula_shift.
             lv_cnt2     = lv_cnt + 1.
             lv_numchars = 1.
             CONTINUE.       " --> next character in formula can be analyzed
-          ELSE.
+          ELSEIF lv_tchar <> space.
             lv_tlen = lv_tlen - 1.
           ENDIF.
         ENDIF.
@@ -1382,14 +1407,29 @@ METHOD formula_shift.
             lv_tcnt = lv_tcnt + 1.
           ENDDO.
         ENDIF.
+
+        " Is valid column & row ?
+        DO 1 TIMES.
+          CHECK lv_tcol1 IS NOT INITIAL AND lv_trow1 IS NOT INITIAL.
+          DATA lv_compare_1 TYPE string.
+          DATA lv_compare_2 TYPE string.
+
+          " COLUMN + ROW
+          CONCATENATE lv_tcol1 lv_trow1 INTO lv_compare_1.
+
+          " Original condensed string
+          lv_compare_2 = lv_ref_cell_addr.
+          CONDENSE lv_compare_2.
+
+          CHECK lv_compare_1 <> lv_compare_2.
+          CLEAR: lv_trow1, lv_tchar2.
+        ENDDO.
+
 *--------------------------------------------------------------------*
 * Check for invalid cell address
 *--------------------------------------------------------------------*
         IF lv_tcol1 IS INITIAL OR lv_trow1 IS INITIAL.
           CONCATENATE lv_cur_form lv_substr1 INTO lv_cur_form.
-*          IF lv_tchar = space.
-*            CONCATENATE lv_cur_form lv_tchar INTO lv_cur_form RESPECTING BLANKS.
-*          ENDIF.
           lv_cnt = lv_cnt + 1.
           lv_offset1 = lv_cnt.
           lv_cnt2 = lv_cnt + 1.
@@ -1462,6 +1502,7 @@ METHOD formula_shift.
 * Check whether there is a referencing problem
 *--------------------------------------------------------------------*
         lv_trow2 = lv_trow1 + iv_shift_rows.
+        " Now could contain spaces
         CONDENSE lv_trow2.
         IF   ( lv_tcoln < 1 AND lv_abscol <> '$' )   " Maybe we should add here max-column and max row-tests as well.
           OR ( lv_trow2 < 1 AND lv_absrow <> '$' ).  " Check how EXCEL behaves in this case
@@ -1511,7 +1552,7 @@ METHOD formula_shift.
         lv_numchars = 0.
         IF   lv_tchar CA lcv_operators
           OR lv_tchar CA ':)'.
-          CONCATENATE lv_cur_form lv_tchar INTO lv_cur_form.
+          CONCATENATE lv_cur_form lv_tchar INTO lv_cur_form RESPECTING BLANKS.
         ENDIF.
         lv_offset1 = lv_cnt2.
       ENDIF.

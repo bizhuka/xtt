@@ -48,8 +48,8 @@ TYPES:
 
   BEGIN OF ts_cell_match.
     INCLUDE TYPE zcl_xtt_replace_block=>ts_tree_group.
-  TYPES:
-    cells TYPE tt_ex_cell,
+TYPES:
+  cells TYPE tt_ex_cell,
   END OF ts_cell_match,
   tt_cell_match TYPE SORTED TABLE OF ts_cell_match WITH UNIQUE KEY level top if_where,
 
@@ -184,9 +184,13 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
 
       find_cell
         IMPORTING
-                  ir_cell           TYPE ts_ex_cell
-                  iv_def_name       TYPE csequence OPTIONAL
-        RETURNING VALUE(rr_ex_cell) TYPE REF TO ts_ex_cell,
+          ir_cell      TYPE ts_ex_cell
+          iv_def_name  TYPE csequence OPTIONAL
+          iv_add       TYPE abap_bool DEFAULT abap_true
+        EXPORTING
+          er_ex_cell   TYPE REF TO ts_ex_cell
+*          ev_new_tabix TYPE i
+        ,
 
       replace_with_new
         IMPORTING

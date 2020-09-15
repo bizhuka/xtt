@@ -324,38 +324,64 @@ METHOD catch_prepare_tree.
    ir_data->*        TO <ls_data>,
    ir_sub_data->*    TO <lt_sub_data>.
 
-  LOOP AT mt_func ASSIGNING <ls_func> WHERE level = ir_tree->level.
-    ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_data> TO <lv_field>.
-    CHECK sy-subrc = 0.
+  DO 2 TIMES.
+    " If no match was found & all formulas in 0 level then 2 times
+    CASE sy-index.
+      WHEN 1.
+        DATA lv_level TYPE i.
+        DATA lv_all_0 TYPE abap_bool VALUE abap_true.
+        DATA lv_found TYPE abap_bool VALUE abap_false.
+        lv_level = ir_tree->level.
 
-    CASE <ls_func>-name.
-      WHEN 'COUNT'.
-        <lv_field> = lines( <lt_sub_data> ).
-
-      WHEN 'FIRST'. " 'LAST'.
-        LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
-          ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_sub_data> TO <lv_sub_field>.
-          <lv_field> = <lv_sub_field>.
-          EXIT.
-        ENDLOOP.
-
-      WHEN 'SUM' OR 'AVG'.
-        " Calculate sum
-        <lv_field> = 0.
-        LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
-          ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_sub_data> TO <lv_sub_field>.
-          <lv_field> = <lv_field> + <lv_sub_field>.
-        ENDLOOP.
-
-        IF <ls_func>-name = 'AVG'.
-          <lv_field> = <lv_field> / lines( <lt_sub_data> ).
-        ENDIF.
-
-      WHEN OTHERS.
-        CONCATENATE `Unknown function ` <ls_func>-name INTO lv_message. "#EC NOTEXT
-        zcx_xtt_exception=>raise_dump( iv_message = lv_message ).
+      WHEN 2.
+        CHECK lv_all_0 = abap_true AND lv_found <> abap_true.
+        lv_level = 0.
     ENDCASE.
-  ENDLOOP.
+
+    LOOP AT mt_func ASSIGNING <ls_func>.
+      " Is all formulas for level = 0 ?
+      IF <ls_func>-level <> 0.
+        lv_all_0 = abap_false.
+      ENDIF.
+
+      " Only for certain levele
+      CHECK <ls_func>-level = lv_level.
+
+      " Yes match found
+      lv_found = abap_true.
+
+      ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_data> TO <lv_field>.
+      CHECK sy-subrc = 0.
+
+      CASE <ls_func>-name.
+        WHEN 'COUNT'.
+          <lv_field> = lines( <lt_sub_data> ).
+
+        WHEN 'FIRST'. " 'LAST'.
+          LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
+            ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_sub_data> TO <lv_sub_field>.
+            <lv_field> = <lv_sub_field>.
+            EXIT.
+          ENDLOOP.
+
+        WHEN 'SUM' OR 'AVG'.
+          " Calculate sum
+          <lv_field> = 0.
+          LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
+            ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_sub_data> TO <lv_sub_field>.
+            <lv_field> = <lv_field> + <lv_sub_field>.
+          ENDLOOP.
+
+          IF <ls_func>-name = 'AVG'.
+            <lv_field> = <lv_field> / lines( <lt_sub_data> ).
+          ENDIF.
+
+        WHEN OTHERS.
+          CONCATENATE `Unknown function ` <ls_func>-name INTO lv_message. "#EC NOTEXT
+          zcx_xtt_exception=>raise_dump( iv_message = lv_message ).
+      ENDCASE.
+    ENDLOOP.
+  ENDDO.
 ENDMETHOD.
 
 

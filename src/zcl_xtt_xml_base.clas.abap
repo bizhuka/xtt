@@ -388,10 +388,13 @@ METHOD find_bounds.
                              iv_tag     = iv_tag
                              iv_tag_add = iv_tag_add
                    IMPORTING et_match   = et_match ).
-  " Wrong template
-  IF et_match IS INITIAL.
-    MESSAGE x001(zsy_xtt).
-  ENDIF.
+*  " Wrong template
+*  IF et_match IS INITIAL.
+*    MESSAGE x001(zsy_xtt).
+*  ENDIF.
+
+  " TODO silent mode
+  CHECK et_match[] IS NOT INITIAL.
 
   CASE iv_tag.
     WHEN mv_body_tag.

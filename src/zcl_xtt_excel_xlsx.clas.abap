@@ -1111,15 +1111,12 @@ METHOD drawing_read_xml.
     " Find or create new one
     DATA lv_add TYPE abap_bool.
     CLEAR lv_add.
-    if lv_xtt_name IS NOT INITIAL.
+    IF lv_xtt_name IS NOT INITIAL.
       lv_add = abap_true.
-    endif.
+    ENDIF.
 
-    io_sheet->find_cell( EXPORTING ir_cell      = lr_cell->*
-                                   iv_add       = lv_add
-                         IMPORTING er_ex_cell   = lr_cell
-*                                   ev_new_tabix = lv_new_tabix
-                                   ).
+    lr_cell = io_sheet->find_cell( ir_cell = lr_cell->*
+                                   iv_add  = lv_add ).
     CHECK lr_cell IS NOT INITIAL.
 
     " Set name

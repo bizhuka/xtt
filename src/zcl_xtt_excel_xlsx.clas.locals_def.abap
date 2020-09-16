@@ -184,13 +184,10 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
 
       find_cell
         IMPORTING
-          ir_cell      TYPE ts_ex_cell
-          iv_def_name  TYPE csequence OPTIONAL
-          iv_add       TYPE abap_bool DEFAULT abap_true
-        EXPORTING
-          er_ex_cell   TYPE REF TO ts_ex_cell
-*          ev_new_tabix TYPE i
-        ,
+                  ir_cell           TYPE ts_ex_cell
+                  iv_def_name       TYPE csequence OPTIONAL
+                  iv_add            TYPE abap_bool DEFAULT abap_true
+        RETURNING VALUE(rr_ex_cell) TYPE REF TO ts_ex_cell,
 
       replace_with_new
         IMPORTING
@@ -236,6 +233,7 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
           ct_cells_end  TYPE tt_ex_cell
           ct_cells_mid  TYPE tt_ex_cell
           ct_cell_match TYPE tt_cell_match.
+
 ENDCLASS. "cl_ex_sheet DEFINITION
 
 CLASS lcl_tree_handler DEFINITION FINAL.

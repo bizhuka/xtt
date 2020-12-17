@@ -18,7 +18,6 @@ METHOD example_09.
     END OF ts_column,
     tt_column TYPE STANDARD TABLE OF ts_column WITH DEFAULT KEY.
 
-  DATA lo_file   TYPE REF TO zif_xtt_file.
   DATA ls_merge0 TYPE ts_merge0.
   DATA ls_merge1 TYPE ts_merge1.
   DATA lt_column TYPE REF TO tt_column.
@@ -74,7 +73,7 @@ METHOD example_09.
    iv_fields     = ''   ).   " <-- No fields! Tree with level=0
 
   " {R-T} in a temaplte. @see get_random_table description
-  cl_main=>get_random_table(
+  get_random_table(
    EXPORTING
     iv_column_cnt = p_c_cnt
    IMPORTING
@@ -87,26 +86,19 @@ METHOD example_09.
 
   " Show data structure only
   IF p_stru = abap_true.
-    check_break_point_id( ).
-    BREAK-POINT ID zxtt_break_point. " Double click here --> ls_root <--
+    BREAK-POINT ID zxtt_break_point. " Double click here --> ls_merge0, ls_merge1 <--
 
     " For internal use
-    jekyll_add_json( iv_key = 'C' i_value = ls_merge0 ).
-    CHECK jekyll_add_json( iv_key = 'R' i_value = ls_merge1 ) = abap_true.
+    CHECK mo_injection IS NOT INITIAL.
+    mo_injection->send_merge( i_name = 'C' i_value = ls_merge0 ).
+    mo_injection->send_merge( i_name = 'R' i_value = ls_merge1 ).
   ENDIF.
-
-  " Info about template & the main class itself
-  CREATE OBJECT:
-   lo_file TYPE zcl_xtt_file_smw0 EXPORTING
-     iv_objid = iv_template,
-
-   ro_xtt TYPE (iv_class_name) EXPORTING
-    io_file = lo_file.
 
   " Paste data
   " Columns
-  ro_xtt->merge( is_block = ls_merge0 iv_block_name = 'C' ).
+  io_xtt->merge( is_block      = ls_merge0
+                 iv_block_name = 'C' ).
 
   " Rows
-  ro_xtt->merge( ls_merge1 ).
+  io_xtt->merge( ls_merge1 ).
 ENDMETHOD.

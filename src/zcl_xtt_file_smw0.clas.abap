@@ -79,7 +79,8 @@ METHOD zif_xtt_file~get_content.
     EXCEPTIONS
       OTHERS = 1.
   IF sy-subrc <> 0.
-    zcx_xtt_exception=>raise_dump( iv_message = 'Could not load file'(001) ).
+    MESSAGE e007(zsy_xtt) WITH ms_key-objid INTO sy-msgli.
+    zcx_eui_no_check=>raise_sys_error( ).
   ENDIF.
 
   " Text or binary
@@ -97,13 +98,14 @@ METHOD zif_xtt_file~get_content.
     ev_as_xstring = zcl_eui_conv=>binary_to_xstring(
      it_table  = <lt_table>
      iv_length = lv_file_size ).
-    RETURN.
   ENDIF.
 
   " Result as a string. if ev_as_STRING Is Requested
-  ev_as_string = zcl_eui_conv=>binary_to_string(
-   it_table  = <lt_table>
-   iv_length = lv_file_size ).
+  IF ev_as_string IS REQUESTED.
+    ev_as_string = zcl_eui_conv=>binary_to_string(
+     it_table  = <lt_table>
+     iv_length = lv_file_size ).
+  ENDIF.
 ENDMETHOD.
 
 

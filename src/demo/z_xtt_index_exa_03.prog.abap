@@ -17,7 +17,6 @@ METHOD example_03.
     END OF ts_doc.
 
   DATA:
-    lo_file TYPE REF TO zif_xtt_file,
     lt_root TYPE STANDARD TABLE OF ts_root,
     ls_root TYPE REF TO ts_root,
     lv_num  TYPE char4,
@@ -35,7 +34,7 @@ METHOD example_03.
     CONCATENATE `Bottom ` lv_num INTO ls_root->bottom.      "#EC NOTEXT
 
     " @see get_random_table description
-    cl_main=>get_random_table(
+    get_random_table(
      IMPORTING
        et_table = ls_root->t ).
 
@@ -57,23 +56,15 @@ METHOD example_03.
 
   " Show data structure only
   IF p_stru = abap_true.
-    check_break_point_id( ).
     BREAK-POINT ID zxtt_break_point. " Double click here --> lt_root , ls_doc <--
 
     " For internal use
-    jekyll_add_json( iv_key = 'R'   i_value = lt_root ).
-    CHECK jekyll_add_json( iv_key = 'DOC' i_value = ls_doc ) = abap_true.
+    CHECK mo_injection IS NOT INITIAL.
+    mo_injection->send_merge( i_name = 'R'   i_value = lt_root ).
+    mo_injection->send_merge( i_name = 'DOC' i_value = ls_doc ).
   ENDIF.
 
-  " Info about template & the main class itself
-  CREATE OBJECT:
-   lo_file TYPE zcl_xtt_file_smw0 EXPORTING
-     iv_objid = iv_template,
-
-   ro_xtt TYPE (iv_class_name) EXPORTING
-    io_file = lo_file.
-
   " Paste data
-  ro_xtt->merge( is_block = lt_root iv_block_name = 'R' ).
-  ro_xtt->merge( is_block = ls_doc  iv_block_name = 'DOC' ).
+  io_xtt->merge( is_block = lt_root iv_block_name = 'R' ).
+  io_xtt->merge( is_block = ls_doc  iv_block_name = 'DOC' ).
 ENDMETHOD.

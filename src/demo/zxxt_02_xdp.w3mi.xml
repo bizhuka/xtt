@@ -8,20 +8,20 @@
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_02_XDP</OBJID>
-     <NAME>fileextension</NAME>
-     <VALUE>.xdp</VALUE>
-    </WWWPARAMS>
-    <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZXXT_02_XDP</OBJID>
      <NAME>filename</NAME>
-     <VALUE>ZXXT_02.xdp</VALUE>
+     <VALUE>ZXXT_02.XDP</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_02_XDP</OBJID>
      <NAME>mimetype</NAME>
-     <VALUE>pdf</VALUE>
+     <VALUE>Adobe</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_02_XDP</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.XDP</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

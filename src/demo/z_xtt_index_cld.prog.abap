@@ -5,7 +5,20 @@ TYPE-POOLS:
  abap,
  vrm.
 
-CLASS cl_main DEFINITION FINAL.
+INTERFACE lif_injection.
+  METHODS:
+    send_merge
+      IMPORTING
+        i_name  TYPE csequence DEFAULT 'R'
+        i_value TYPE any,
+
+    prepare
+      IMPORTING
+        iv_class_name TYPE csequence
+        io_xtt        TYPE REF TO zcl_xtt.
+ENDINTERFACE.
+
+CLASS lcl_main DEFINITION FINAL.
   PUBLIC SECTION.
     TYPES:
       BEGIN OF ts_no_sum,
@@ -17,9 +30,9 @@ CLASS cl_main DEFINITION FINAL.
       " Random table data
       BEGIN OF ts_rand_data.
         INCLUDE TYPE ts_no_sum.
-    TYPES:
-      sum1 TYPE bf_rbetr, " P with sign
-      sum2 TYPE bf_rbetr, " P with sign
+      TYPES:
+        sum1 TYPE bf_rbetr, " P with sign
+        sum2 TYPE bf_rbetr, " P with sign
       END OF ts_rand_data,
       tt_rand_data TYPE STANDARD TABLE OF ts_rand_data WITH DEFAULT KEY,
 
@@ -39,8 +52,8 @@ CLASS cl_main DEFINITION FINAL.
       " Tree structure
       BEGIN OF ts_tree_05.
         INCLUDE TYPE ts_rand_data. " random data
-    TYPES:
-      ch_count TYPE i, " New field for trees
+      TYPES:
+        ch_count TYPE i, " New field for trees
       END OF ts_tree_05,
       tt_tree_05 TYPE STANDARD TABLE OF ts_tree_05 WITH DEFAULT KEY,
 
@@ -55,46 +68,38 @@ CLASS cl_main DEFINITION FINAL.
         sum          TYPE bf_rbetr,
         has_children TYPE abap_bool,
       END OF ts_tree_06,
-      tt_tree_06 TYPE STANDARD TABLE OF ts_tree_06 WITH DEFAULT KEY,
-
-      " 1 demo
-      BEGIN OF ts_file,
-        kind     TYPE string,
-        template TYPE string,
-        report   TYPE string,
-      END OF ts_file,
-
-      BEGIN OF ts_merge_param,
-        key TYPE string,
-        val TYPE REF TO data,
-      END OF ts_merge_param,
-
-      BEGIN OF ts_demo,
-        id    TYPE num2,
-        label TYPE string,
-        files TYPE STANDARD TABLE OF ts_file WITH DEFAULT KEY,
-        merge TYPE HASHED TABLE OF ts_merge_param WITH UNIQUE KEY key,
-      END OF ts_demo,
-      tt_demo TYPE STANDARD TABLE OF ts_demo WITH DEFAULT KEY.
+      tt_tree_06 TYPE STANDARD TABLE OF ts_tree_06 WITH DEFAULT KEY.
 
     METHODS:
-      " INITIALIZATION
-      constructor,
+      constructor
+       IMPORTING
+         io_injection  TYPE REF TO lif_injection OPTIONAL,
 
-      " AT SELECTION-SCREEN OUTPUT
       pbo,
 
-      " AT SELECTION-SCREEN
       pai
         IMPORTING
           cv_cmd TYPE syucomm,
 
-      " START-OF-SELECTION
       start_of_selection
         IMPORTING
           iv_file_name TYPE csequence OPTIONAL,
 
-      check_break_point_id,
+      call_example
+        IMPORTING
+         is_screen_opt TYPE REF TO ts_screen_opt
+        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+
+      send_email
+       IMPORTING
+         io_xtt TYPE REF TO zcl_xtt EXPORTING ev_break TYPE abap_bool,
+
+      export_template
+        IMPORTING
+         iv_file_name  TYPE csequence
+         is_screen_opt TYPE REF TO ts_screen_opt,
+
+      is_break_point_active,
 
       f4_full_path
         IMPORTING
@@ -108,36 +113,42 @@ CLASS cl_main DEFINITION FINAL.
         CHANGING
           cv_path  TYPE csequence,
 
+      " Random data for tables
+      get_random_table
+        IMPORTING
+          iv_column_cnt TYPE numc2 DEFAULT 2
+        EXPORTING
+          et_table      TYPE STANDARD TABLE,
+
       " Basic example
       example_01                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING ev_break TYPE abap_bool,
 
       example_02                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
 
       example_03                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
 
       example_04                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
 
       example_05                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
 
       on_prepare_tree_05 FOR EVENT prepare_tree OF zcl_xtt_replace_block
         IMPORTING
@@ -147,9 +158,9 @@ CLASS cl_main DEFINITION FINAL.
 
       example_06                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
 
       on_prepare_tree_06 FOR EVENT prepare_tree OF zcl_xtt_replace_block
         IMPORTING
@@ -165,13 +176,14 @@ CLASS cl_main DEFINITION FINAL.
 
       example_07                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
 
       on_prepare_raw_07 FOR EVENT prepare_raw OF zcl_xtt
         IMPORTING
             sender
+            iv_path
             ir_content, " Type Ref To XSTRING
 
       on_pbo_07 FOR EVENT pbo_event OF zif_eui_manager      "#EC CALLED
@@ -185,41 +197,48 @@ CLASS cl_main DEFINITION FINAL.
 
       example_08                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
 
       example_09                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
 
       example_10                                            "#EC CALLED
         IMPORTING
-                  iv_class_name TYPE csequence
-                  iv_template   TYPE csequence
-        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
-
-      jekyll_export_all
-        IMPORTING
-          it_list TYPE vrm_values,
-
-      jekyll_add_json
-        IMPORTING
-                  iv_key          TYPE string DEFAULT 'R'
-                  i_value         TYPE any
-        RETURNING VALUE(rv_go_on) TYPE abap_bool.
-
-    CLASS-METHODS:
-      " Random data for tables
-      get_random_table
-        IMPORTING
-          iv_column_cnt TYPE numc2 DEFAULT 2
+          io_xtt TYPE REF TO zcl_xtt
+          iv_raw TYPE abap_bool OPTIONAL
         EXPORTING
-          et_table      TYPE STANDARD TABLE.
+          ev_break TYPE abap_bool,
 
-    DATA:
-      mt_screen_opt TYPE tt_screen_opt,
-      ms_cur_demo   TYPE REF TO ts_demo.
+      example_11                                            "#EC CALLED
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
+
+      example_12                                            "#EC CALLED
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
+
+      example_13                                            "#EC CALLED
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool,
+
+      example_14                                            "#EC CALLED
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt
+        EXPORTING
+          ev_break TYPE abap_bool.
+
+    DATA mt_screen_opt TYPE tt_screen_opt.
+    DATA mo_injection  TYPE REF TO lif_injection.
+    DATA mv_seed       TYPE i.
 ENDCLASS.

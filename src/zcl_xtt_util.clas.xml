@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Old utilities</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>CREATE_ROOT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Create dynamic root for merge( )</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>HIDE_EXCEL_WARNING</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Don&apos;t recomend to use! You can change file ext in SMWO</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
+     <CMPNAME>IS_COMMON_GUI</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Normal mode (OR batch OR Web-gui)</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

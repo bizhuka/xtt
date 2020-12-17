@@ -15,10 +15,7 @@ METHOD example_04.
       c        TYPE STANDARD TABLE OF t005t WITH DEFAULT KEY,
       w        TYPE STANDARD TABLE OF t005t WITH DEFAULT KEY, " Only for Xml Spreadsheet 2003 (*.xml)
     END OF ts_root.
-
-  DATA:
-    lo_file TYPE REF TO zif_xtt_file,
-    ls_root TYPE ts_root.
+  DATA ls_root TYPE ts_root.
 
   " Document structure
   ls_root-date   = sy-datum.
@@ -30,12 +27,12 @@ METHOD example_04.
   CONCATENATE sy-datum sy-uzeit INTO ls_root-datetime.
 
   " Assign Internal to Language-Dependent Unit
-  SELECT msehi msehl INTO CORRESPONDING FIELDS OF TABLE ls_root-u "EC #TOO_MANY_ITAB_FIELDS
+  SELECT msehi msehl INTO CORRESPONDING FIELDS OF TABLE ls_root-u ##too_many_itab_fields
   FROM t006a
   WHERE spras = sy-langu.
 
   " Country Names
-  SELECT land1 landx INTO CORRESPONDING FIELDS OF TABLE ls_root-c "EC #TOO_MANY_ITAB_FIELDS
+  SELECT land1 landx INTO CORRESPONDING FIELDS OF TABLE ls_root-c ##too_many_itab_fields
   FROM t005t
   WHERE spras = sy-langu.
 
@@ -44,21 +41,14 @@ METHOD example_04.
 
   " Show data structure only
   IF p_stru = abap_true.
-    check_break_point_id( ).
     BREAK-POINT ID zxtt_break_point. " Double click here --> ls_root <--
 
     " For internal use
-    CHECK jekyll_add_json( ls_root ) = abap_true.
+    CHECK mo_injection IS NOT INITIAL.
+    mo_injection->send_merge( ls_root ).
   ENDIF.
 
-  " Info about template & the main class itself
-  CREATE OBJECT:
-   lo_file TYPE zcl_xtt_file_smw0 EXPORTING
-     iv_objid = iv_template,
-
-   ro_xtt TYPE (iv_class_name) EXPORTING
-    io_file = lo_file.
-
   " Paste data
-  ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
+  io_xtt->merge( is_block      = ls_root
+                 iv_block_name = 'R' ).
 ENDMETHOD.

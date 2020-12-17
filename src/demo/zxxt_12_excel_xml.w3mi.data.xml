@@ -1,0 +1,254 @@
+<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Author>Moldabayev, Birzhan</Author>
+  <LastAuthor>Moldabayev, Birzhan</LastAuthor>
+  <Created>2020-10-30T12:06:38Z</Created>
+  <LastSaved>2020-11-29T12:20:50Z</LastSaved>
+  <Company>Karachaganak Petroleum Operating B.V.</Company>
+  <Version>16.00</Version>
+ </DocumentProperties>
+ <OfficeDocumentSettings xmlns="urn:schemas-microsoft-com:office:office">
+  <AllowPNG/>
+ </OfficeDocumentSettings>
+ <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
+  <WindowHeight>7620</WindowHeight>
+  <WindowWidth>20490</WindowWidth>
+  <WindowTopX>0</WindowTopX>
+  <WindowTopY>0</WindowTopY>
+  <ProtectStructure>False</ProtectStructure>
+  <ProtectWindows>False</ProtectWindows>
+ </ExcelWorkbook>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Bottom"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" x:Family="Swiss" ss:Size="11" ss:Color="#000000"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="s16" ss:Name="Normal 2">
+   <Alignment ss:Vertical="Bottom"/>
+   <Borders/>
+   <Font ss:FontName="Calibri" x:CharSet="204" x:Family="Swiss" ss:Size="11"
+    ss:Color="#000000"/>
+   <Interior/>
+   <NumberFormat/>
+   <Protection/>
+  </Style>
+  <Style ss:ID="s18" ss:Parent="s16">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="2"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="2"/>
+    <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="s19" ss:Parent="s16">
+   <Alignment ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="s20" ss:Parent="s16">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+  </Style>
+  <Style ss:ID="s21" ss:Parent="s16">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <NumberFormat ss:Format="Short Date"/>
+  </Style>
+  <Style ss:ID="s22" ss:Parent="s16">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:WrapText="1"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
+    <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1"/>
+   </Borders>
+   <NumberFormat ss:Format="Standard"/>
+  </Style>
+  <Style ss:ID="s23" ss:Parent="s16">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Bottom"/>
+  </Style>
+  <Style ss:ID="s24" ss:Parent="s16">
+   <NumberFormat ss:Format="Short Date"/>
+  </Style>
+  <Style ss:ID="s25" ss:Parent="s16">
+   <NumberFormat ss:Format="[$-F400]h:mm:ss\ AM/PM"/>
+  </Style>
+  <Style ss:ID="s26" ss:Parent="s16">
+   <NumberFormat ss:Format="General Date"/>
+  </Style>
+ </Styles>
+ <Names>
+  <NamedRange ss:Name="E_" ss:RefersTo="=#REF!"/>
+  <NamedRange ss:Name="F_" ss:RefersTo="=#REF!"/>
+  <NamedRange ss:Name="RANGE_SUM1" ss:RefersTo="=#REF!"/>
+ </Names>
+ <Worksheet ss:Name="Class attributes(1)">
+  <Names>
+   <NamedRange ss:Name="Print_Titles" ss:RefersTo="='Class attributes(1)'!R3:R4"/>
+  </Names>
+  <Table ss:ExpandedColumnCount="5" ss:ExpandedRowCount="5" x:FullColumns="1"
+   x:FullRows="1" ss:StyleID="s16" ss:DefaultRowHeight="15">
+   <Column ss:StyleID="s16" ss:AutoFitWidth="0" ss:Width="211.5"/>
+   <Column ss:StyleID="s16" ss:AutoFitWidth="0" ss:Width="186"/>
+   <Column ss:StyleID="s16" ss:AutoFitWidth="0" ss:Width="117.75"/>
+   <Column ss:StyleID="s16" ss:AutoFitWidth="0" ss:Width="175.5" ss:Span="1"/>
+   <Row>
+    <Cell ss:Index="2" ss:StyleID="s23"><Data ss:Type="String">date:</Data></Cell>
+    <Cell ss:StyleID="s24"><Data ss:Type="String">{R-DATE}</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:Index="2" ss:StyleID="s23"><Data ss:Type="String">time:</Data></Cell>
+    <Cell ss:StyleID="s25"><Data ss:Type="String">{R-TIME}</Data></Cell>
+   </Row>
+   <Row ss:Height="15.75">
+    <Cell><Data ss:Type="String">{R-TITLE}</Data><NamedCell ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s23"><Data ss:Type="String">datetime:</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s26"><Data ss:Type="String">{R-DATETIME;type=datetime}</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+   </Row>
+   <Row ss:Height="15.75">
+    <Cell ss:StyleID="s18"><Data ss:Type="String">Caption</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s18"><Data ss:Type="String">Group</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s18"><Data ss:Type="String">Date</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s18"><Data ss:Type="String">SUM 1</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s18"><Data ss:Type="String">SUM 2</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="s19"><Data ss:Type="String">{R-T-CAPTION}</Data></Cell>
+    <Cell ss:StyleID="s20"><Data ss:Type="String">{R-T-GROUP}</Data></Cell>
+    <Cell ss:StyleID="s21"><Data ss:Type="String">{R-T-DATE}</Data></Cell>
+    <Cell ss:StyleID="s22"><Data ss:Type="String">{R-T-SUM1}</Data></Cell>
+    <Cell ss:StyleID="s22"><Data ss:Type="String">{R-T-SUM2}</Data></Cell>
+   </Row>
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <PageSetup>
+    <Layout x:Orientation="Landscape"/>
+    <Header x:Margin="0.31496062992125984"/>
+    <Footer x:Margin="0.31496062992125984"/>
+    <PageMargins x:Bottom="0.39370078740157483" x:Left="0.39370078740157483"
+     x:Right="0.39370078740157483" x:Top="0.39370078740157483"/>
+   </PageSetup>
+   <Print>
+    <ValidPrinterInfo/>
+    <PaperSizeIndex>9</PaperSizeIndex>
+    <Scale>85</Scale>
+    <HorizontalResolution>600</HorizontalResolution>
+    <VerticalResolution>600</VerticalResolution>
+   </Print>
+   <Selected/>
+   <Panes>
+    <Pane>
+     <Number>3</Number>
+     <ActiveCol>4</ActiveCol>
+    </Pane>
+   </Panes>
+   <ProtectObjects>False</ProtectObjects>
+   <ProtectScenarios>False</ProtectScenarios>
+  </WorksheetOptions>
+  <DataValidation xmlns="urn:schemas-microsoft-com:office:excel">
+   <Range>R5C2</Range>
+   <Type>List</Type>
+   <Value>#REF!</Value>
+  </DataValidation>
+ </Worksheet>
+ <Worksheet ss:Name="Class attributes (2)">
+  <Names>
+   <NamedRange ss:Name="E_" ss:RefersTo="=#REF!"/>
+   <NamedRange ss:Name="F_" ss:RefersTo="=#REF!"/>
+   <NamedRange ss:Name="Print_Titles" ss:RefersTo="='Class attributes (2)'!R3:R4"/>
+   <NamedRange ss:Name="RANGE_SUM1" ss:RefersTo="=#REF!"/>
+  </Names>
+  <Table ss:ExpandedColumnCount="5" ss:ExpandedRowCount="5" x:FullColumns="1"
+   x:FullRows="1" ss:StyleID="s16" ss:DefaultRowHeight="15">
+   <Column ss:StyleID="s16" ss:AutoFitWidth="0" ss:Width="211.5"/>
+   <Column ss:StyleID="s16" ss:AutoFitWidth="0" ss:Width="186"/>
+   <Column ss:StyleID="s16" ss:AutoFitWidth="0" ss:Width="117.75"/>
+   <Column ss:StyleID="s16" ss:AutoFitWidth="0" ss:Width="175.5" ss:Span="1"/>
+   <Row>
+    <Cell ss:Index="2" ss:StyleID="s23"><Data ss:Type="String">date:</Data></Cell>
+    <Cell ss:StyleID="s24"><Data ss:Type="String">{R-DATE}</Data></Cell>
+   </Row>
+   <Row>
+    <Cell ss:Index="2" ss:StyleID="s23"><Data ss:Type="String">time:</Data></Cell>
+    <Cell ss:StyleID="s25"><Data ss:Type="String">{R-TIME}</Data></Cell>
+   </Row>
+   <Row ss:Height="15.75">
+    <Cell><Data ss:Type="String">{R-TITLE}</Data><NamedCell ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s23"><Data ss:Type="String">datetime:</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s26"><Data ss:Type="String">{R-DATETIME;type=datetime}</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+   </Row>
+   <Row ss:Height="15.75">
+    <Cell ss:StyleID="s18"><Data ss:Type="String">Caption</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s18"><Data ss:Type="String">Group</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s18"><Data ss:Type="String">Date</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s18"><Data ss:Type="String">SUM 1</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+    <Cell ss:StyleID="s18"><Data ss:Type="String">SUM 2</Data><NamedCell
+      ss:Name="Print_Titles"/></Cell>
+   </Row>
+   <Row>
+    <Cell ss:StyleID="s19"><Data ss:Type="String">{R-A-CAPTION}</Data></Cell>
+    <Cell ss:StyleID="s20"><Data ss:Type="String">{R-A-GROUP}</Data></Cell>
+    <Cell ss:StyleID="s21"><Data ss:Type="String">{R-A-DATE}</Data></Cell>
+    <Cell ss:StyleID="s22"><Data ss:Type="String">{R-A-SUM1}</Data></Cell>
+    <Cell ss:StyleID="s22"><Data ss:Type="String">{R-A-SUM2}</Data></Cell>
+   </Row>
+  </Table>
+  <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
+   <PageSetup>
+    <Layout x:Orientation="Landscape"/>
+    <Header x:Margin="0.31496062992125984"/>
+    <Footer x:Margin="0.31496062992125984"/>
+    <PageMargins x:Bottom="0.39370078740157483" x:Left="0.39370078740157483"
+     x:Right="0.39370078740157483" x:Top="0.39370078740157483"/>
+   </PageSetup>
+   <Print>
+    <ValidPrinterInfo/>
+    <PaperSizeIndex>9</PaperSizeIndex>
+    <Scale>85</Scale>
+    <HorizontalResolution>600</HorizontalResolution>
+    <VerticalResolution>600</VerticalResolution>
+   </Print>
+   <ProtectObjects>False</ProtectObjects>
+   <ProtectScenarios>False</ProtectScenarios>
+  </WorksheetOptions>
+  <DataValidation xmlns="urn:schemas-microsoft-com:office:excel">
+   <Range>R5C2</Range>
+   <Type>List</Type>
+   <Value>#REF!</Value>
+  </DataValidation>
+ </Worksheet>
+</Workbook>

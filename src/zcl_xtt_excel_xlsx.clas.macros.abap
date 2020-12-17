@@ -10,6 +10,16 @@ DEFINE int_2_text.
   condense &2.
 END-OF-DEFINITION.
 
+" with new name
+DEFINE create_tr_cache.
+  DATA lv_tabix TYPE sytabix.
+  lv_tabix = sy-tabix.
+
+  CREATE DATA &1.
+  int_2_text lv_tabix &1->tr_id.
+  CONCATENATE iv_tr_id `#` &1->tr_id `#` INTO &1->tr_id.
+END-OF-DEFINITION.
+
 DEFINE add_attr.
   lv_text = <ls_item>-&2.
   IF lv_text IS NOT INITIAL.

@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xfa generator="AdobeLiveCycleDesigner_V11.0.9.20200413.2.938664_SAP" APIVersion="3.6.20084.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/" timeStamp="2020-12-05T08:04:06Z" uuid="67d746cd-701b-4a12-8138-7898383253a0">
+<template xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xmlns="http://www.xfa.org/schema/xfa-template/3.6/">
+   <?formServer defaultPDFRenderFormat acrobat11.0dynamic?>
+   <subform name="form1" layout="tb" locale="ru_RU">
+      <pageSet>
+         <pageArea name="Page1" id="Page1">
+            <contentArea x="0.25in" y="0.25in" w="8in" h="10.5in"/>
+            <medium stock="letter" short="8.5in" long="11in"/>
+            <?templateDesigner expand 1?></pageArea>
+         <?templateDesigner expand 1?></pageSet>
+      <subform w="8in" layout="tb">
+         <subform w="156.137mm" layout="tb">
+            <draw>
+               <font typeface="Arial"/>
+               <value>
+                  <exData contentType="text/html" xliff:rid="C0372E4E-CDB4-46F9-87F7-CF670537F3A9">
+                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:'Courier New';font-size:11pt;text-decoration:none;letter-spacing:0in">{R-BL_2020;type=block;cond=sy-datum(4) eq '2019' }<span style="xfa-tab-count:1">         </span><br/>Covid-19<span style="xfa-tab-count:1">         </span><br/>Lockdowns<span style="xfa-tab-count:1">         </span><br/>42.500 <span style="xfa-tab-count:2">                  </span><br/>{R-BL_2020}<span style="xfa-tab-count:1">         </span><br/><br/></p></body>
+                  </exData>
+               </value>
+               <ui>
+                  <textEdit/>
+               </ui>
+               <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+            </draw>
+            <border>
+               <edge thickness="0.254mm"/>
+               <corner thickness="0.254mm"/>
+            </border>
+            <draw>
+               <font typeface="Arial"/>
+               <value>
+                  <exData contentType="text/html" xliff:rid="2DF69548-BB9E-4199-BEFF-3BF80AFB1B9D">
+                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:'Courier New';font-size:11pt;text-decoration:none;letter-spacing:0in">Delete all in subform!<span style="xfa-spacerun:yes"> </span></p></body>
+                  </exData>
+               </value>
+               <ui>
+                  <textEdit/>
+               </ui>
+               <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+            </draw>
+            <?templateDesigner expand 1?></subform>
+         <draw w="88.88mm" h="54.481mm">
+            <font typeface="Arial"/>
+            <value>
+               <exData contentType="text/html" xliff:rid="7C79D3A8-7C22-4041-BCE6-0B668F65EA51">
+                  <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;letter-spacing:0in">Basic word example</p><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;font-style:italic;letter-spacing:0in">Title<span style="font-style:normal">: </span><span style="font-weight:bold;font-style:normal">{R-TITLE}</span></p><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;letter-spacing:0in">Just put markers where you want</p><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;letter-spacing:0in">Just string<span style="xfa-tab-count:1">         </span><span style="color:#ff0000">{R-TEXT}</span><span style="xfa-tab-count:1">         </span><br/>Integer<span style="xfa-tab-count:2">                  </span>{R-INT}<span style="xfa-tab-count:1">         </span><br/><br/></p><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;letter-spacing:0in">Bottom: <span style="font-weight:bold;text-decoration:underline">{R-BOTTOM}</span></p><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;letter-spacing:0in"><span style="xfa-spacerun:yes"> </span></p></body>
+               </exData>
+            </value>
+            <ui>
+               <textEdit/>
+            </ui>
+            <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+         </draw>
+         <subform w="149.415mm" layout="tb">
+            <draw w="5.882486in">
+               <font typeface="Arial"/>
+               <value>
+                  <exData contentType="text/html" xliff:rid="F38BFD3D-60A4-4F36-9846-0DF0BBDD2B3E">
+                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:'Courier New';font-size:11pt;letter-spacing:0in">{R-BL2;type=block;cond=strlen( value-TITLE ) gt 0} Bottom ok:</p><p style="margin-bottom:8pt;line-height:12.95pt;font-family:'Courier New';font-size:11pt;font-weight:bold;letter-spacing:0in">{R-BOTTOM}<span style="font-weight:normal"><span style="xfa-spacerun:yes"> </span></span></p></body>
+                  </exData>
+               </value>
+               <ui>
+                  <textEdit/>
+               </ui>
+               <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+            </draw>
+            <border>
+               <edge thickness="0.254mm">
+                  <color value="0,255,255"/>
+               </edge>
+               <corner thickness="0.254mm">
+                  <color value="0,255,255"/>
+               </corner>
+            </border>
+            <?templateDesigner expand 1?></subform>
+         <subform w="149.415mm" layout="tb">
+            <draw w="5.882486in">
+               <font typeface="Courier New" size="11pt" baselineShift="0pt"/>
+               <value>
+                  <exData contentType="text/html" xliff:rid="38E5DB37-EFB3-470D-B738-24A1BAFDBE08">
+                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="font-family:'Courier New';letter-spacing:0in">{R-BL3;type=block;cond=strlen( value-TITLE ) eq -1}<span style="xfa-tab-count:1">         </span><br/>{R-BL3}Hide BL3</p></body>
+                  </exData>
+               </value>
+               <ui>
+                  <textEdit/>
+               </ui>
+               <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+               <para lineHeight="12.95pt" spaceAbove="0pt" spaceBelow="8pt" textIndent="0pt" marginLeft="0pt" marginRight="0pt"/>
+            </draw>
+            <border>
+               <edge thickness="0.254mm">
+                  <color value="0,0,255"/>
+               </edge>
+               <corner thickness="0.254mm">
+                  <color value="0,0,255"/>
+               </corner>
+            </border>
+            <?templateDesigner expand 1?></subform>
+         <?templateDesigner expand 1?></subform>
+      <proto/>
+      <?templateDesigner expand 1?>
+      <?renderCache.subset "Calibri" 0 0 UTF-16 2 132 00030011001C002F003A0045005A0064007901020110011A011E0150015A015D016C016F01750176017D0189018C0190019A01B501C101C601C70357037203820383?>
+      <?renderCache.subset "Calibri" 1 0 UTF-16 2 48 00030011001C002F003E0044004B005A0064037203820383?>
+      <?renderCache.subset "Calibri" 0 1 UTF-16 2 20 0064011E015D016F019A?>
+      <?renderCache.subset "Courier New" 0 0 UTF-16 2 212 00030004000A000B000C00100011001300140015001600170018001C001D001E00200025002600270028002B002C002F00300032003500370042004400450046004700480049004A004C004E004F0050005100520053005400550056005700580059005A005C005E0060?>
+      <?renderCache.subset "Courier New" 1 0 UTF-16 2 32 001000250030003200350037005E0060?>
+   </subform>
+   <?acrobat JavaScript strictScoping?>
+   <?templateDesigner SaveTaggedPDF 1?>
+   <?templateDesigner SavePDFWithEmbeddedFonts 1?>
+   <?templateDesigner FormTargetVersion 36?>
+   <?templateDesigner Zoom 82?>
+   <?templateDesigner Rulers horizontal:1, vertical:1, guidelines:1, crosshairs:0?></template>
+<config xmlns="http://www.xfa.org/schema/xci/3.0/">
+   <agent name="designer">
+      <!--  [0..n]  -->
+      <destination>pdf</destination>
+      <pdf>
+         <!--  [0..n]  -->
+         <fontInfo/>
+      </pdf>
+   </agent>
+   <present>
+      <!--  [0..n]  -->
+      <pdf>
+         <!--  [0..n]  -->
+         <version>1.7</version>
+         <adobeExtensionLevel>11</adobeExtensionLevel>
+      </pdf>
+      <xdp>
+         <packets>*</packets>
+      </xdp>
+   </present>
+   <psMap>
+      <font typeface="Calibri" psName="Calibri" weight="normal" posture="normal"/>
+      <font typeface="Calibri" psName="Calibri-Italic" weight="normal" posture="italic"/>
+      <font typeface="Calibri" psName="Calibri-Bold" weight="bold" posture="normal"/>
+   </psMap>
+</config>
+<xfa:datasets xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/">
+   <xfa:data xfa:dataNode="dataGroup"/>
+</xfa:datasets>
+<sourceSet xmlns="http://www.xfa.org/schema/xfa-source-set/2.8/"/>
+<connectionSet xmlns="http://www.xfa.org/schema/xfa-connection-set/2.8/"/>
+<localeSet xmlns="http://www.xfa.org/schema/xfa-locale-set/2.7/">
+   <locale name="ru_RU" desc="Russian (Russia)">
+      <calendarSymbols name="gregorian">
+         <monthNames>
+            <month>января</month>
+            <month>февраля</month>
+            <month>марта</month>
+            <month>апреля</month>
+            <month>мая</month>
+            <month>июня</month>
+            <month>июля</month>
+            <month>августа</month>
+            <month>сентября</month>
+            <month>октября</month>
+            <month>ноября</month>
+            <month>декабря</month>
+         </monthNames>
+         <monthNames abbr="1">
+            <month>янв.</month>
+            <month>февр.</month>
+            <month>марта</month>
+            <month>апр.</month>
+            <month>мая</month>
+            <month>июня</month>
+            <month>июля</month>
+            <month>авг.</month>
+            <month>сент.</month>
+            <month>окт.</month>
+            <month>нояб.</month>
+            <month>дек.</month>
+         </monthNames>
+         <dayNames>
+            <day>воскресенье</day>
+            <day>понедельник</day>
+            <day>вторник</day>
+            <day>среда</day>
+            <day>четверг</day>
+            <day>пятница</day>
+            <day>суббота</day>
+         </dayNames>
+         <dayNames abbr="1">
+            <day>Вс</day>
+            <day>Пн</day>
+            <day>Вт</day>
+            <day>Ср</day>
+            <day>Чт</day>
+            <day>Пт</day>
+            <day>Сб</day>
+         </dayNames>
+         <meridiemNames>
+            <meridiem>AM</meridiem>
+            <meridiem>PM</meridiem>
+         </meridiemNames>
+         <eraNames>
+            <era>до н.э.</era>
+            <era>н.э.</era>
+         </eraNames>
+      </calendarSymbols>
+      <datePatterns>
+         <datePattern name="full">D MMMM YYYY 'г.'</datePattern>
+         <datePattern name="long">D MMMM YYYY 'г.'</datePattern>
+         <datePattern name="med">DD.MM.YYYY</datePattern>
+         <datePattern name="short">DD.MM.YY</datePattern>
+      </datePatterns>
+      <timePatterns>
+         <timePattern name="full">H:MM:SS Z</timePattern>
+         <timePattern name="long">H:MM:SS Z</timePattern>
+         <timePattern name="med">H:MM:SS</timePattern>
+         <timePattern name="short">H:MM</timePattern>
+      </timePatterns>
+      <dateTimeSymbols>GanjkHmsSEDFwWxhKzZ</dateTimeSymbols>
+      <numberPatterns>
+         <numberPattern name="numeric">z,zz9.zzz</numberPattern>
+         <numberPattern name="currency">z,zz9.zz$</numberPattern>
+         <numberPattern name="percent">z,zz9%</numberPattern>
+      </numberPatterns>
+      <numberSymbols>
+         <numberSymbol name="decimal">,</numberSymbol>
+         <numberSymbol name="grouping"> </numberSymbol>
+         <numberSymbol name="percent">%</numberSymbol>
+         <numberSymbol name="minus">-</numberSymbol>
+         <numberSymbol name="zero">0</numberSymbol>
+      </numberSymbols>
+      <currencySymbols>
+         <currencySymbol name="symbol">р.</currencySymbol>
+         <currencySymbol name="isoname">RUR</currencySymbol>
+         <currencySymbol name="decimal">,</currencySymbol>
+      </currencySymbols>
+      <typefaces>
+         <typeface name="Myriad Pro"/>
+         <typeface name="Minion Pro"/>
+         <typeface name="Courier Std"/>
+         <typeface name="Adobe Pi Std"/>
+         <typeface name="Adobe Hebrew"/>
+         <typeface name="Adobe Arabic"/>
+         <typeface name="Adobe Thai"/>
+         <typeface name="Kozuka Gothic Pro-VI M"/>
+         <typeface name="Kozuka Mincho Pro-VI R"/>
+         <typeface name="Adobe Ming Std L"/>
+         <typeface name="Adobe Song Std L"/>
+         <typeface name="Adobe Myungjo Std M"/>
+         <typeface name="Adobe Devanagari"/>
+      </typefaces>
+   </locale>
+</localeSet>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.4-c005 78.150055, 2013/08/07-22:58:47        ">
+   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+      <rdf:Description xmlns:xmp="http://ns.adobe.com/xap/1.0/" xmlns:pdf="http://ns.adobe.com/pdf/1.3/" xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/" rdf:about="">
+         <xmp:MetadataDate>2020-12-05T08:04:06Z</xmp:MetadataDate>
+         <xmp:CreatorTool>Adobe LiveCycle Designer 11.0</xmp:CreatorTool>
+         <pdf:Producer>Adobe LiveCycle Designer 11.0</pdf:Producer>
+         <xmpMM:DocumentID>uuid:67d746cd-701b-4a12-8138-7898383253a0</xmpMM:DocumentID>
+      </rdf:Description>
+   </rdf:RDF>
+</x:xmpmeta></xdp:xdp>

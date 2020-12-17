@@ -24,13 +24,13 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZSY_XTT</ARBGB>
      <MSGNR>002</MSGNR>
-     <TEXT>Unknown type &apos;&amp;1&apos;</TEXT>
+     <TEXT>Unknown type &apos;&amp;1&apos; for &apos;&amp;2&apos;</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
      <ARBGB>ZSY_XTT</ARBGB>
      <MSGNR>003</MSGNR>
-     <TEXT>&amp;1 interpretation error</TEXT>
+     <TEXT>---</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -42,7 +42,127 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZSY_XTT</ARBGB>
      <MSGNR>005</MSGNR>
-     <TEXT>Wrong column index &amp;1</TEXT>
+     <TEXT>---</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>006</MSGNR>
+     <TEXT>Too long formula &amp;1&amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>007</MSGNR>
+     <TEXT>Could not find the &apos;&amp;1&apos; file</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>008</MSGNR>
+     <TEXT>No body tag &apos;&amp;1&apos; in a template</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>009</MSGNR>
+     <TEXT>Wrong bounds for &apos;&amp;1&apos;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>010</MSGNR>
+     <TEXT>No row tag &apos;&amp;1&apos; for &apos;&amp;2&apos;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>011</MSGNR>
+     <TEXT>Overlap in bounds of &apos;&amp;1&apos;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>012</MSGNR>
+     <TEXT>No &apos;&amp;1&apos; match in the template for &amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>013</MSGNR>
+     <TEXT>&amp;1 chars were skipped  within block &apos;&amp;2&apos;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>014</MSGNR>
+     <TEXT>Implicit type &apos;mask&apos; in field &apos;&amp;1&apos;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>015</MSGNR>
+     <TEXT>Unknown function &apos;&amp;1&apos;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>016</MSGNR>
+     <TEXT>Filed &apos;&amp;1&apos; declared several times</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>017</MSGNR>
+     <TEXT>Key: &apos;&amp;1&apos; is unknown</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>018</MSGNR>
+     <TEXT>Field &apos;&amp;1&apos; is not table!</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>019</MSGNR>
+     <TEXT>Severe error in the &apos;&amp;1&apos; scope</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>020</MSGNR>
+     <TEXT>Offset error in the &apos;&amp;1&apos; field</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>021</MSGNR>
+     <TEXT>Field &apos;&amp;1&apos; already declared in code. Use another name</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>022</MSGNR>
+     <TEXT>No &apos;&amp;1&apos; field in the structure &amp;2</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>023</MSGNR>
+     <TEXT>Wrong offset &amp;1 in &apos;&amp;2&apos;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>024</MSGNR>
+     <TEXT>Error in &apos;;COND=&apos; expression near &apos;&amp;1&apos;</TEXT>
+    </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>025</MSGNR>
+     <TEXT>An exception was caught during cond calculation &apos;&amp;1&apos;</TEXT>
     </T100>
    </T100>
    <I18N_LANGS>

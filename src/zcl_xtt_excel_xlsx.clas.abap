@@ -26,13 +26,18 @@ public section.
     redefinition .
 protected section.
 
+  methods ON_MATCH_FOUND
+    redefinition .
 private section.
 
   data MT_SHEETS type LCL_EX_SHEET_TAB .
+  data MO_SHEET type ref to LCL_EX_SHEET .
   data MO_ZIP type ref to CL_ABAP_ZIP .
   data MT_SHARED_STRINGS type STRINGTAB .
   data MT_DEFINED_NAMES type TT_EX_DEFINED_NAME .
 
+  methods SHARED_STRINGS_READ .
+  methods SHARED_STRINGS_SAVE .
   class-methods COLUMN_READ_XML
     importing
       !IO_SHEET type ref to LCL_EX_SHEET .
@@ -57,6 +62,21 @@ private section.
       !IO_SHEET type ref to LCL_EX_SHEET
       !IO_NODE type ref to IF_IXML_ELEMENT
       !IT_SHARED_STRINGS type STRINGTAB .
+  class-methods CELL_WRITE_NEW_ROW
+    importing
+      !IS_CELL type ref to TS_EX_CELL
+      !IO_SHEET type ref to LCL_EX_SHEET
+    changing
+      !CV_SHEET_DATA type STRING
+      !CV_CURRENT_ROW type I
+      !CV_CURRENT_COL type I .
+  class-methods CELL_WRITE_NEW_COL
+    importing
+      !IS_CELL type ref to TS_EX_CELL
+      !IO_SHEET type ref to LCL_EX_SHEET
+    changing
+      !CT_COLUMNS type TT_EX_COLUMN
+      !CV_CURRENT_COL type I .
   class-methods CELL_WRITE_XML
     importing
       !IS_CELL type ref to TS_EX_CELL
@@ -64,9 +84,7 @@ private section.
       !IV_NEW_COL_IND type I
       !IT_SHARED_STRINGS type STRINGTAB
     changing
-      !CV_SHEET_DATA type STRING
-      !CV_MERGE_CNT type I
-      !CV_MERGE_CELLS type STRING .
+      !CS_TRANSMIT type TS_TRANSMIT .
   class-methods ROW_READ_XML
     importing
       !IO_SHEET type ref to LCL_EX_SHEET
@@ -398,6 +416,77 @@ METHOD cell_read_xml.
 ENDMETHOD.                    "cell_read_xml
 
 
+METHOD cell_write_new_col.
+  " New column
+  cv_current_col = cv_current_col + is_cell->c_col_dx.
+
+  " Existing old column
+  DATA ls_column TYPE ts_ex_column.
+  READ TABLE io_sheet->mt_columns INTO ls_column
+   WITH TABLE KEY min = is_cell->c_col_ind.
+
+  " Prog error
+  CHECK sy-subrc = 0.
+
+  IF ls_column-outline_skip = abap_true.
+    CLEAR ls_column-outlinelevel.
+  ENDIF.
+
+  " New outline
+  IF is_cell->c_column_outline IS NOT INITIAL.
+    int_2_text is_cell->c_column_outline ls_column-outlinelevel.
+  ENDIF.
+
+  IF cv_current_col <> is_cell->c_col_ind.
+    ls_column-min = ls_column-max = cv_current_col.
+  ENDIF.
+  INSERT ls_column INTO TABLE ct_columns.
+ENDMETHOD.
+
+
+METHOD cell_write_new_row.
+  " New row index as a string
+  cv_current_row = cv_current_row + is_cell->c_row_dx.
+
+  " New row
+  CHECK is_cell->c_row_dx > 0.
+
+  " New column!
+  cv_current_col = 0.
+
+  " Closing tag
+  IF cv_sheet_data IS NOT INITIAL.
+    CONCATENATE cv_sheet_data `</row>` INTO cv_sheet_data.
+  ENDIF.
+
+  " Read by previous key
+  DATA ls_row TYPE REF TO ts_ex_row.
+  READ TABLE io_sheet->mt_rows WITH TABLE KEY r = is_cell->c_row REFERENCE INTO ls_row.
+  IF sy-subrc = 0.
+    zcl_xtt_excel_xlsx=>row_write_xml(
+     EXPORTING
+      is_row           = ls_row
+      iv_new_row       = cv_current_row
+      iv_outline_level = is_cell->c_row_outline
+     CHANGING
+      cv_sheet_data    = cv_sheet_data ).
+  ELSE.
+    " New row ref
+    DATA ls_blank_row TYPE REF TO ts_ex_row.
+    CREATE DATA ls_blank_row.
+
+    ls_blank_row->r = is_cell->c_row.
+    zcl_xtt_excel_xlsx=>row_write_xml(
+     EXPORTING
+      is_row           = ls_blank_row
+      iv_new_row       = cv_current_row
+      iv_outline_level = is_cell->c_row_outline
+     CHANGING
+      cv_sheet_data    = cv_sheet_data ).
+  ENDIF.
+ENDMETHOD.
+
+
 METHOD cell_write_xml.
   DATA:
     lv_new_col   TYPE char3,
@@ -407,17 +496,14 @@ METHOD cell_write_xml.
     lv_merge_col TYPE char3,
     lv_from      TYPE string,
     lv_to        TYPE string,
-    lo_eui_error TYPE REF TO zcx_eui_exception,
-    lo_xtt_error TYPE REF TO zcx_xtt_exception.
+    lo_error     TYPE REF TO zcx_eui_exception.
 
   " Update formula. Only for backward compatibility?
   DEFINE replace_all_with_buck.
     CONCATENATE:
      `$` &1 INTO lv_from,
-*     `$` &2 INTO lv_to.
-     ``  &1 INTO lv_to.
-
-     &2 = &2.
+     `$` &2 INTO lv_to.
+***     ``  &1 INTO lv_to.
 
     REPLACE ALL OCCURRENCES OF lv_from IN is_cell->c_formula WITH lv_to.
   END-OF-DEFINITION.
@@ -426,9 +512,10 @@ METHOD cell_write_xml.
   int_to_text iv_new_row.
   TRY.
       lv_new_col = zcl_eui_file_io=>int_2_column( iv_new_col_ind ).
-    CATCH zcx_eui_exception INTO lo_eui_error.
-      zcx_eui_exception=>raise_dump( io_error = lo_eui_error ).
+    CATCH zcx_eui_exception INTO lo_error.
+      zcx_xtt_exception=>raise_dump( io_error = lo_error ).
   ENDTRY.
+
 
   " Formula
   IF is_cell->c_formula IS NOT INITIAL.
@@ -440,27 +527,27 @@ METHOD cell_write_xml.
 
       " Row
       replace_all_with_buck lv_number        iv_new_row_txt.
-*      " Or Column with $
-*      IF sy-subrc <> 0.
-*        replace_all_with_buck is_cell->c_col lv_new_col.
-*      ENDIF.
+      " Or Column with $
+      IF sy-subrc <> 0.
+        replace_all_with_buck is_cell->c_col lv_new_col.
+      ENDIF.
     ENDIF.
 
-    DATA lv_r_dx TYPE i.
-    lv_r_dx = iv_new_row     - is_cell->c_row.
-    DATA lv_c_dx TYPE i.
-    lv_c_dx = iv_new_col_ind - is_cell->c_col_ind.
-    " TODO test
-*    DATA(lv_prev) = is_cell->c_formula.
-    TRY.
-        is_cell->c_formula = formula_shift(
-          iv_reference_formula = is_cell->c_formula
-          iv_shift_rows        = lv_r_dx
-          iv_shift_cols        = lv_c_dx ).
-      CATCH zcx_xtt_exception INTO lo_xtt_error.
-        zcx_eui_exception=>raise_dump( io_error = lo_xtt_error ).
-    ENDTRY.
-*    WRITE:/ lv_r_dx, lv_c_dx, lv_prev, is_cell->c_formula COLOR 2.
+****    DATA lv_r_dx TYPE i.
+****    lv_r_dx = iv_new_row     - is_cell->c_row.
+****    DATA lv_c_dx TYPE i.
+****    lv_c_dx = iv_new_col_ind - is_cell->c_col_ind.
+****    " TODO test
+*****    DATA(lv_prev) = is_cell->c_formula.
+****    TRY.
+****        is_cell->c_formula = formula_shift(
+****          iv_reference_formula = is_cell->c_formula
+****          iv_shift_rows        = lv_r_dx
+****          iv_shift_cols        = lv_c_dx ).
+****      CATCH zcx_xtt_exception INTO lo_xtt_error.
+****        zcx_eui_exception=>raise_dump( io_error = lo_xtt_error ).
+****    ENDTRY.
+*****    WRITE:/ lv_r_dx, lv_c_dx, lv_prev, is_cell->c_formula COLOR 2.
 
     " Write formula
     CONCATENATE `<f>` is_cell->c_formula `</f>` INTO lv_data.
@@ -490,23 +577,23 @@ METHOD cell_write_xml.
   is_cell->c_col_ind = iv_new_col_ind.
 
   " Address
-  CONCATENATE cv_sheet_data `<c r="` is_cell->c_col iv_new_row_txt `"` INTO cv_sheet_data.
+  CONCATENATE cs_transmit-new_txt_rows `<c r="` is_cell->c_col iv_new_row_txt `"` INTO cs_transmit-new_txt_rows.
 
   " Style and type
   IF is_cell->c_style IS NOT INITIAL.
-    CONCATENATE cv_sheet_data ` s="` is_cell->c_style `"` INTO cv_sheet_data.
+    CONCATENATE cs_transmit-new_txt_rows ` s="` is_cell->c_style `"` INTO cs_transmit-new_txt_rows.
   ENDIF.
   IF is_cell->c_type IS NOT INITIAL.
-    CONCATENATE cv_sheet_data ` t="` is_cell->c_type  `"` INTO cv_sheet_data.
+    CONCATENATE cs_transmit-new_txt_rows ` t="` is_cell->c_type  `"` INTO cs_transmit-new_txt_rows.
   ENDIF.
 
   " Data
-  CONCATENATE cv_sheet_data `>` lv_data `</c>` INTO cv_sheet_data.
+  CONCATENATE cs_transmit-new_txt_rows `>` lv_data `</c>` INTO cs_transmit-new_txt_rows.
 
   " Merged cell
   IF is_cell->c_merge_row_dx IS NOT INITIAL OR
      is_cell->c_merge_col_dx IS NOT INITIAL.
-    cv_merge_cnt = cv_merge_cnt + 1.
+    cs_transmit-_merge_cnt = cs_transmit-_merge_cnt + 1.
 
     " Calculate new val
     lv_index = is_cell->c_row     + is_cell->c_merge_row_dx.
@@ -515,13 +602,13 @@ METHOD cell_write_xml.
     lv_index = is_cell->c_col_ind + is_cell->c_merge_col_dx.
     TRY.
         lv_merge_col = zcl_eui_file_io=>int_2_column( lv_index  ).
-      CATCH zcx_eui_exception INTO lo_eui_error.
-        zcx_eui_exception=>raise_dump( io_error = lo_eui_error ).
+      CATCH zcx_eui_exception INTO lo_error.
+        zcx_xtt_exception=>raise_dump( io_error = lo_error ).
     ENDTRY.
 
-    CONCATENATE cv_merge_cells `<mergeCell ref="`
+    CONCATENATE cs_transmit-merge_cells `<mergeCell ref="`
       is_cell->c_col  iv_new_row_txt `:`
-      lv_merge_col    lv_number `"/> ` INTO cv_merge_cells.
+      lv_merge_col    lv_number `"/> ` INTO cs_transmit-merge_cells.
   ENDIF.
 ENDMETHOD.
 
@@ -589,73 +676,37 @@ ENDMETHOD.
 
 
 METHOD constructor.
-  DATA:
-    l_x_value        TYPE xstring,
-    l_shared_strings TYPE string,
-    lt_match         TYPE match_result_tab,
-    l_cnt            TYPE i,
-    l_ind            TYPE i,
-    ls_match_beg     TYPE REF TO match_result,
-    ls_match_end     TYPE REF TO match_result,
-    l_len            TYPE i,
-    l_off            TYPE i,
-    l_val            TYPE string,
-    lo_node          TYPE REF TO if_ixml_element,
-    lo_sheet         TYPE REF TO lcl_ex_sheet,
-    lo_workbook      TYPE REF TO if_ixml_document.
-
   super->constructor( io_file = io_file ).
+  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+  TRY.
+      DATA l_x_value TYPE xstring.
+      io_file->get_content( IMPORTING ev_as_xstring = l_x_value ).
+    CATCH zcx_eui_no_check INTO lo_no_check.
+      add_log_message( io_no_check = lo_no_check ).
+      RETURN.
+  ENDTRY.
 
   " Load zip archive from XSTRING
   CREATE OBJECT mo_zip.
-  io_file->get_content(
-   IMPORTING
-    ev_as_xstring = l_x_value ).
   mo_zip->load( l_x_value ).
 
 ***************************************
   " Main work book
+  DATA lo_workbook TYPE REF TO if_ixml_document.
   zcl_eui_conv=>xml_from_zip(
    EXPORTING
     io_zip     = mo_zip
     iv_name    = 'xl/workbook.xml'                          "#EC NOTEXT
    IMPORTING
     eo_xmldoc  = lo_workbook ).
-
+  IF lo_workbook IS INITIAL.
+    mo_logger->add_text( iv_text  = `The xlsx archive is broken` "#EC NOTEXT
+                         iv_msgty = 'E' ).
+    CLEAR mo_zip.
+    RETURN.
+  ENDIF.
 ***************************************
-  " Shared strings. Mainly <t> tags
-  zcl_eui_conv=>xml_from_zip(
-   EXPORTING
-    io_zip     = mo_zip
-    iv_name    = 'xl/sharedStrings.xml'                     "#EC NOTEXT
-   IMPORTING
-    ev_sdoc    = l_shared_strings ).
-
-  " Find all pairs
-  FIND ALL OCCURRENCES OF REGEX '(<si>)|(<\/si>)' IN l_shared_strings RESULTS lt_match. "#EC NOTEXT
-  l_cnt = lines( lt_match ).
-
-  l_ind = 0.
-  WHILE l_cnt > l_ind.
-    " Start tag
-    l_ind = l_ind + 1.
-    READ TABLE lt_match REFERENCE INTO ls_match_beg INDEX l_ind.
-
-    " End tag
-    l_ind = l_ind + 1.
-    READ TABLE lt_match REFERENCE INTO ls_match_end INDEX l_ind.
-
-    " Calc offeset
-    l_off = ls_match_beg->offset + 4. " strlen( <si> )
-    l_len = ls_match_end->offset - ls_match_beg->offset - 4.
-
-    " Get value
-    l_val = l_shared_strings+l_off(l_len).
-    l_val = get_without_t( l_val ).
-
-    " Add to table
-    APPEND l_val TO mt_shared_strings.
-  ENDWHILE.
+  shared_strings_read( ).
 
 ***************************************
   " Defined names for moving the second cell of areas
@@ -666,7 +717,10 @@ METHOD constructor.
     ct_defined_names = mt_defined_names ).
 
 ***************************************
-  " Sheets
+  " Read sheets
+  DATA lo_sheet TYPE REF TO lcl_ex_sheet.
+  DATA lo_node  TYPE REF TO if_ixml_element.
+
   lo_node = lo_workbook->find_from_name( 'sheet' ).         "#EC NOTEXT
   WHILE lo_node IS BOUND.
     " Prepare and add
@@ -837,9 +891,9 @@ ENDMETHOD.
 
 METHOD drawing_add.
   " No need
-  DATA lo_comp_cell LIKE ir_cell->c_comp_cell.
-  lo_comp_cell = ir_cell->c_comp_cell.
-  CHECK lo_comp_cell IS NOT INITIAL.
+  DATA lo_image LIKE ir_cell->c_image.
+  lo_image = ir_cell->c_image.
+  CHECK lo_image IS NOT INITIAL.
 
   " Obligatory text
   INSERT
@@ -850,7 +904,7 @@ METHOD drawing_add.
   DATA lv_mime_text TYPE string.
   DATA lv_rewrite   TYPE abap_bool.
 
-  lo_comp_cell->save_in_archive(
+  lo_image->save_in_archive(
    EXPORTING io_zip         = io_zip
              iv_prefix      = 'xl/media/'                   "#EC NOTEXT
    IMPORTING ev_file_name   = lv_file_name
@@ -902,8 +956,8 @@ METHOD drawing_add.
   " №2 - Add Image Relation
   CHECK lv_rewrite <> abap_true.
   CONCATENATE
-    `<Relationship Id="_rImgId`
-    lo_comp_cell->mv_index_txt
+    `<Relationship Id="_P`
+    lo_image->mv_index_txt
     `" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/`
     lv_file_name `"/>` INTO lv_value.
   CONCATENATE ir_me->dr_v_drawing_rel(lv_from_rel) lv_value `</Relationships>` INTO ir_me->dr_v_drawing_rel.
@@ -912,8 +966,8 @@ ENDMETHOD.
 
 METHOD drawing_get_image_basic.
   " Get comp ref
-  DATA lo_comp_cell LIKE ir_cell->c_comp_cell.
-  lo_comp_cell = ir_cell->c_comp_cell.
+  DATA lo_image LIKE ir_cell->c_image.
+  lo_image = ir_cell->c_image.
 
   " 1 cell
   DATA lv_row_dx TYPE i VALUE 1.
@@ -935,14 +989,14 @@ METHOD drawing_get_image_basic.
   int_to_text iv_new_col.
   int_to_text lv_row_dx.
   int_to_text lv_col_dx.
-  int_2_text lo_comp_cell->mv_width  lv_width_txt.
-  int_2_text lo_comp_cell->mv_height lv_height_txt.
+  int_2_text lo_image->mv_width  lv_width_txt.
+  int_2_text lo_image->mv_height lv_height_txt.
 
 **********************************************************************
   " twoCellAnchor if IMAGE matches the cell
   DATA lv_tag   TYPE string.
 
-  IF lo_comp_cell->mv_width IS INITIAL AND lo_comp_cell->mv_height IS INITIAL.
+  IF lo_image->mv_width IS INITIAL AND lo_image->mv_height IS INITIAL.
     lv_tag = `twoCellAnchor`.
     CONCATENATE
         `<xdr:to><xdr:col>` lv_col_dx_txt `</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>` lv_row_dx_txt `</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>`
@@ -960,8 +1014,8 @@ METHOD drawing_get_image_basic.
     `<xdr:from><xdr:col>` iv_new_col_txt `</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>`  iv_new_row_txt `</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from>`
     rv_comp_value
     `<xdr:pic>`
-    `<xdr:nvPicPr><xdr:cNvPr id="` lo_comp_cell->mv_index_txt `" name="Object_` lo_comp_cell->mv_index_txt `"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>`
-    `<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="_rImgId` lo_comp_cell->mv_index_txt `"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>`
+    `<xdr:nvPicPr><xdr:cNvPr id="` lo_image->mv_index_txt `" name="Object_` lo_image->mv_index_txt `"/><xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>`
+    `<xdr:blipFill><a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="_P` lo_image->mv_index_txt `"/><a:stretch><a:fillRect/></a:stretch></xdr:blipFill>`
     `<xdr:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>`
     `</xdr:pic>`
     `<xdr:clientData/>`
@@ -980,8 +1034,8 @@ METHOD drawing_get_image_template.
   rv_comp_value = lr_img_template->tag.
 
   " Get comp ref
-  DATA lo_comp_cell LIKE ir_cell->c_comp_cell.
-  lo_comp_cell = ir_cell->c_comp_cell.
+  DATA lo_image LIKE ir_cell->c_image.
+  lo_image = ir_cell->c_image.
 
   " Change id
   DATA lv_new_txt TYPE string.
@@ -989,11 +1043,11 @@ METHOD drawing_get_image_template.
   DATA lv_col_1 TYPE i.
 
   " Name is optional field
-  CONCATENATE `NAME_ID_` lo_comp_cell->mv_index_txt INTO lv_new_txt.
+  CONCATENATE `NAME_ID_` lo_image->mv_index_txt INTO lv_new_txt.
   REPLACE FIRST OCCURRENCE OF `{NAME_ID_0}` IN rv_comp_value WITH lv_new_txt.
 
   " Ref to another files
-  CONCATENATE ` r:embed="_rImgId` lo_comp_cell->mv_index_txt `" old_id="` INTO lv_new_txt.
+  CONCATENATE ` r:embed="_P` lo_image->mv_index_txt `" old_id="` INTO lv_new_txt.
   REPLACE FIRST OCCURRENCE OF ` r:embed="` IN rv_comp_value WITH lv_new_txt. "#EC NOTEXT
 
   " Row
@@ -1037,14 +1091,14 @@ METHOD drawing_read_xml.
    IMPORTING ev_sdoc    = rr_me->dr_v_drawing_rel ).
 
   " Get all tags
-  DATA lt_xml_match TYPE zcl_xtt_xml_base=>tt_xml_match.
+  DATA lt_xml_match TYPE zcl_xtt_util=>tt_xml_match.
   DATA ls_img_template TYPE ts_img_template.
   FIELD-SYMBOLS <ls_xml_match> LIKE LINE OF lt_xml_match.
 
   " All images from the last
-  zcl_xtt_xml_base=>get_tag_matches( EXPORTING iv_context   = rr_me->dr_v_drawing
-                                               iv_tag       = `xdr:twoCellAnchor`
-                                     IMPORTING et_xml_match = lt_xml_match ).
+  lt_xml_match = zcl_xtt_util=>get_xml_matches( iv_context   = rr_me->dr_v_drawing
+                                                iv_tag       = `xdr:twoCellAnchor`
+                                               ).
 
   LOOP AT lt_xml_match ASSIGNING <ls_xml_match>.
     " Entire `xdr:twoCellAnchor`
@@ -1052,7 +1106,7 @@ METHOD drawing_read_xml.
 
     " Get name & ref to cell with {R-T-IMG}
     DATA lv_xtt_name TYPE string.
-    zcl_xtt_xml_base=>get_from_tag(
+    zcl_xtt_util=>get_from_tag(
       EXPORTING
         iv_beg_part = `name="{`                             "#EC NOTEXT
         iv_end_part = `}`
@@ -1063,7 +1117,7 @@ METHOD drawing_read_xml.
         cv_xml      = ls_img_template-tag ).
     " Or from title (Alternative text)
     IF lv_xtt_name IS INITIAL.
-      zcl_xtt_xml_base=>get_from_tag(
+      zcl_xtt_util=>get_from_tag(
         EXPORTING
           iv_beg_part = `title="{`                          "#EC NOTEXT
           iv_end_part = `}`
@@ -1073,7 +1127,7 @@ METHOD drawing_read_xml.
           cv_xml      = ls_img_template-tag ).
     ENDIF.
 
-    zcl_xtt_xml_base=>get_from_tag(
+    zcl_xtt_util=>get_from_tag(
       EXPORTING
         iv_beg_part = `<xdr:row>`
         iv_end_part = `</xdr:row>`
@@ -1085,7 +1139,7 @@ METHOD drawing_read_xml.
         cv_xml      = ls_img_template-tag ).
     ls_img_template-row_dx = ls_img_template-row_dx - ls_img_template-row.
 
-    zcl_xtt_xml_base=>get_from_tag(
+    zcl_xtt_util=>get_from_tag(
       EXPORTING
         iv_beg_part = `<xdr:col>`
         iv_end_part = `</xdr:col>`
@@ -1246,9 +1300,9 @@ METHOD formula_shift.
               lv_tlen2                        TYPE i,         " Temp variable length
               lv_substr1                      TYPE string,    " Substring variable
               lv_abscol                       TYPE string,    " Absolute column symbol
-              lv_absrow                       TYPE string,    " Absolute row symbol
+              lv_absrow                       TYPE string.    " Absolute row symbol
 
-              lv_errormessage                 TYPE string.
+*              lv_errormessage                 TYPE string.
 
 *--------------------------------------------------------------------*
 * When copying a cell in EXCEL to another cell any inherent formulas
@@ -1380,7 +1434,8 @@ METHOD formula_shift.
             MOVE: iv_reference_formula+lv_offset1(lv_tlen) TO lv_ref_cell_addr. "Ref cell address
           CATCH cx_root.
             zcx_xtt_exception=>raise_sys_error( iv_message =
-              'Internal error in Class ZCL_XTT_EXCEL_XLSX Method FORMULA_SHIFT Spot 1 ' ).  " Change to messageclass if possible
+              'Internal error in Class ZCL_XTT_EXCEL_XLSX Method FORMULA_SHIFT Spot 1' "#EC NOTEXT
+           ).  " Change to messageclass if possible
         ENDTRY.
 
 *--------------------------------------------------------------------*
@@ -1573,55 +1628,16 @@ ENDMETHOD.
 
 
 METHOD get_raw.
-  DATA:
-    lo_sheet   TYPE REF TO lcl_ex_sheet,
-    lv_val     TYPE i,
-    l_off      TYPE i,
-    l_str      TYPE string,
-    lr_content TYPE REF TO xstring.
+  CHECK mo_zip IS NOT INITIAL.
 
 ***************************************
-  " Fill shared strings
-  CLEAR mt_shared_strings.
-  LOOP AT mt_sheets INTO lo_sheet.
-    lo_sheet->fill_shared_strings(
-     CHANGING
-      ct_shared_strings = mt_shared_strings ).
-  ENDLOOP.
-
-  " Unique lines
-  SORT mt_shared_strings BY table_line.
-  DELETE ADJACENT DUPLICATES FROM mt_shared_strings.
-
-  " Number of lines
-  lv_val = lines( mt_shared_strings ).
-  int_to_text lv_val.
-
-  " Header
-  CONCATENATE `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
-              `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="`
-                 lv_val_txt `" uniqueCount="` lv_val_txt `">` INTO lv_val_txt.
-
-  " Body
-  LOOP AT mt_shared_strings INTO l_str.
-    l_off = strlen( l_str ) - 1.
-    IF l_str(1) = '<' AND l_str+l_off(1) = '>'.
-      CONCATENATE lv_val_txt `<si>` l_str `</si>` INTO lv_val_txt.
-    ELSE.
-      CONCATENATE lv_val_txt `<si><t>` l_str `</t></si>` INTO lv_val_txt.
-    ENDIF.
-  ENDLOOP.
-  CONCATENATE lv_val_txt `</sst>` INTO lv_val_txt.
-
-  zcl_eui_conv=>xml_to_zip(
-   io_zip   = mo_zip
-   iv_name  = `xl/sharedStrings.xml`
-   iv_sdoc  = lv_val_txt ).
+  shared_strings_save( ).
 
 ***************************************
   " Save every sheet
+  DATA lo_sheet TYPE REF TO lcl_ex_sheet.
   LOOP AT mt_sheets INTO lo_sheet.
-    lo_sheet->save( me ).
+    lo_sheet->save( ).
   ENDLOOP.
 
 ***************************************
@@ -1633,13 +1649,19 @@ METHOD get_raw.
   " Remove from ZIP
   mo_zip->delete( EXPORTING name    = 'xl/calcChain.xml'    "#EC NOTEXT
                   EXCEPTIONS OTHERS = 0 ).
+
+  " 1-st process additional files
+  raise_raw_events( mo_zip ).
+
   " ZIP archive as xstring
   rv_content = mo_zip->save( ).
 
   " Change content in special cases
+  DATA lr_content TYPE REF TO xstring.
   GET REFERENCE OF rv_content INTO lr_content.
   RAISE EVENT prepare_raw
    EXPORTING
+     iv_path    = '' " Entire file
      ir_content = lr_content.
 ENDMETHOD.
 
@@ -1757,29 +1779,151 @@ ENDMETHOD.
 
 
 METHOD merge.
-  DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
-  DATA lo_sheet         TYPE REF TO lcl_ex_sheet.
+  CHECK mo_zip IS NOT INITIAL.
 
   " Update each sheet
-  LOOP AT mt_sheets INTO lo_sheet.
-    " Prepare for replacement
-    CREATE OBJECT lo_replace_block
-      EXPORTING
-        is_block      = is_block
-        iv_block_name = iv_block_name.
+  DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
+  LOOP AT mt_sheets INTO mo_sheet.
+    DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+    TRY.
+        " Prepare for replacement
+        CREATE OBJECT lo_replace_block
+          EXPORTING
+            is_block      = is_block
+            iv_block_name = iv_block_name.
 
-    " Find trees in file
-    lo_replace_block->extra_create_tree( lo_sheet->mt_extra_tab_opt ).
+        " Find trees in file
+        mo_sheet->merge( EXPORTING io_block = lo_replace_block
+                         CHANGING  ct_cells = mo_sheet->mt_cells ).
+      CATCH zcx_eui_no_check INTO lo_no_check.
+        add_log_message( io_no_check = lo_no_check ).
+    ENDTRY.
 
-    lo_sheet->merge(
-     EXPORTING
-      io_replace_block = lo_replace_block
-     CHANGING
-      ct_cells         = lo_sheet->mt_cells ).
+    " 1 sheet cache
+    zcl_xtt_scope=>clear_all( ).
   ENDLOOP.
 
   " For chain calls
   ro_xtt = me.
+ENDMETHOD.
+
+
+METHOD on_match_found.
+  CONSTANTS:
+    c_date_start TYPE d VALUE '18991230',
+    c_time_start TYPE t VALUE '000000'.
+  DATA:
+    l_len       TYPE i,
+    l_value     TYPE string,
+    l_date      TYPE float,
+    lv_prev_typ TYPE string.
+  FIELD-SYMBOLS:
+    <l_string> TYPE csequence,
+    <l_date>   TYPE d,
+    <l_time>   TYPE t.
+
+  " Just skip
+  CHECK is_field->typ <> zcl_xtt_replace_block=>mc_type-tree.
+
+  " If the exactly in one cell and number (ms_cell->c_typ can be 's' string)
+  l_len      = strlen( mo_sheet->ms_cell->c_value ).
+  iv_pos_end = iv_pos_end + 1.
+  IF iv_pos_beg = 0 AND l_len = iv_pos_end.
+    CASE is_field->typ.
+        " integer and double(float)
+      WHEN zcl_xtt_replace_block=>mc_type-integer OR zcl_xtt_replace_block=>mc_type-double.
+        CLEAR mo_sheet->ms_cell->c_type.
+
+        " Datetime Whole as a string like  d + t
+      WHEN zcl_xtt_replace_block=>mc_type-datetime.
+        ASSIGN is_field->dref->* TO <l_string>.
+
+        " Both parts
+        ASSIGN <l_string>(8)     TO <l_date> CASTING.
+        ASSIGN <l_string>+8(6)   TO <l_time> CASTING.
+        CLEAR mo_sheet->ms_cell->c_type.
+
+        " Date
+      WHEN zcl_xtt_replace_block=>mc_type-date.
+        ASSIGN is_field->dref->* TO <l_date> CASTING. " allow accept char(8) as date
+        CLEAR mo_sheet->ms_cell->c_type.
+
+        " Time
+      WHEN zcl_xtt_replace_block=>mc_type-time.
+        ASSIGN is_field->dref->* TO <l_time> CASTING. " allow accept char(6) as time
+        CLEAR mo_sheet->ms_cell->c_type.
+
+      WHEN zcl_xtt_replace_block=>mc_type-boolean.
+        mo_sheet->ms_cell->c_type = 'b'.
+
+      WHEN zcl_xtt_replace_block=>mc_type-image.
+        mo_sheet->ms_cell->c_image ?= is_field->oref.
+        CLEAR mo_sheet->ms_cell->c_value.
+        CLEAR mo_sheet->ms_cell->c_type.
+        RETURN.
+    ENDCASE.
+
+    DO 1 TIMES.
+      " Transform date to excel format as float
+      CHECK <l_date> IS ASSIGNED OR <l_time> IS ASSIGNED.
+
+      " Date
+      IF <l_date> IS ASSIGNED AND <l_date> IS NOT INITIAL.
+        " Number of days since
+        l_date = <l_date> - c_date_start.
+      ENDIF.
+
+      " Time
+      IF <l_time> IS ASSIGNED AND <l_time> IS NOT INITIAL.
+        " 0.5 half of a day
+        l_date = l_date + ( <l_time> - c_time_start ) / ( 60 * 60 * 24 ).
+      ENDIF.
+
+      " Save previous type for dates only
+      lv_prev_typ = is_field->typ.
+
+      " Empty string
+      IF     l_date IS INITIAL.
+        " Empty string
+        CREATE DATA is_field->dref TYPE string.
+        is_field->typ = zcl_xtt_replace_block=>mc_type-string.
+      ELSEIF l_date < 0.
+        " Use WRITE ... TO
+      ELSE.
+        GET REFERENCE OF l_date INTO is_field->dref.
+        is_field->typ = zcl_xtt_replace_block=>mc_type-double.
+      ENDIF.
+    ENDDO.
+  ENDIF.
+
+  " Try to get value as a string
+  IF l_value IS INITIAL.
+    l_value = zcl_xtt_replace_block=>get_as_string( is_field = is_field ).
+
+    " Use WRITE ... TO
+    IF l_date < 0.
+      mo_sheet->ms_cell->c_style = ''.
+      mo_sheet->ms_cell->c_type  = 's'.
+      " is_field->typ = zcl_xtt_replace_block=>mc_type-string.
+    ENDIF.
+  ENDIF.
+
+  IF lv_prev_typ IS NOT INITIAL.
+    is_field->typ = lv_prev_typ.
+  ENDIF.
+
+  IF iv_pos_end > l_len.
+    MESSAGE e020(zsy_xtt) WITH is_field->name INTO sy-msgli.
+    add_log_message( iv_syst = abap_true ).
+    mo_sheet->ms_cell->c_value = '999'.
+    RETURN.
+  ENDIF.
+
+  " Create new value
+  CONCATENATE
+   mo_sheet->ms_cell->c_value(iv_pos_beg)
+   l_value
+   mo_sheet->ms_cell->c_value+iv_pos_end INTO mo_sheet->ms_cell->c_value RESPECTING BLANKS.
 ENDMETHOD.
 
 
@@ -1858,4 +2002,99 @@ METHOD row_write_xml.
   " Closing >
   CONCATENATE cv_sheet_data `>`                INTO cv_sheet_data.
 ENDMETHOD.                    "row_write_xml
+
+
+METHOD shared_strings_read.
+  " Mainly <t> tags
+  DATA l_shared_strings TYPE string.
+  zcl_eui_conv=>xml_from_zip(
+   EXPORTING
+    io_zip     = mo_zip
+    iv_name    = 'xl/sharedStrings.xml'                     "#EC NOTEXT
+   IMPORTING
+    ev_sdoc    = l_shared_strings ).
+
+  " Find all pairs
+  DATA lt_match TYPE match_result_tab.
+  lt_match = zcl_xtt_util=>get_tag_matches( iv_context = l_shared_strings
+                                            iv_tag     = 'si' ).
+  " From the end
+  DATA l_cnt TYPE i.
+  l_cnt = lines( lt_match ).
+
+  DATA l_ind TYPE i.
+  l_ind = 0.
+  WHILE l_cnt > l_ind.
+    " Start tag
+    l_ind = l_ind + 1.
+    DATA ls_match_beg TYPE REF TO match_result.
+    READ TABLE lt_match REFERENCE INTO ls_match_beg INDEX l_ind.
+
+    " End tag
+    l_ind = l_ind + 1.
+    DATA ls_match_end TYPE REF TO match_result.
+    READ TABLE lt_match REFERENCE INTO ls_match_end INDEX l_ind.
+
+    " Calc offeset
+    DATA l_off TYPE i.
+    DATA l_len TYPE i.
+    l_off = ls_match_beg->offset + 4. " strlen( <si> )
+    l_len = ls_match_end->offset - ls_match_beg->offset - 4.
+
+    " Get value
+    DATA l_val TYPE string.
+    l_val = l_shared_strings+l_off(l_len).
+    l_val = get_without_t( l_val ).
+
+    " Add to table
+    APPEND l_val TO mt_shared_strings.
+  ENDWHILE.
+ENDMETHOD.
+
+
+METHOD shared_strings_save.
+  DATA lo_sheet TYPE REF TO lcl_ex_sheet.
+
+  " Fill shared strings
+  CLEAR mt_shared_strings.
+  LOOP AT mt_sheets INTO lo_sheet.
+    lo_sheet->fill_shared_strings(
+     CHANGING
+      ct_shared_strings = mt_shared_strings ).
+  ENDLOOP.
+
+  " Unique lines
+  SORT mt_shared_strings BY table_line.
+  DELETE ADJACENT DUPLICATES FROM mt_shared_strings.
+
+  " Number of lines
+  DATA lv_val TYPE i.
+  lv_val = lines( mt_shared_strings ).
+  int_to_text lv_val.
+
+  " Header
+  CONCATENATE `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
+              `<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="`
+                 lv_val_txt `" uniqueCount="` lv_val_txt `">` INTO lv_val_txt.
+
+  " Main body
+  DATA l_str TYPE string.
+  LOOP AT mt_shared_strings INTO l_str.
+    DATA l_off TYPE i.
+    l_off = strlen( l_str ) - 1.
+
+    " Is XML ?
+    IF l_str(1) = '<' AND l_str+l_off(1) = '>'.
+      CONCATENATE lv_val_txt `<si>` l_str `</si>` INTO lv_val_txt.
+    ELSE.
+      CONCATENATE lv_val_txt `<si><t>` l_str `</t></si>` INTO lv_val_txt.
+    ENDIF.
+  ENDLOOP.
+  CONCATENATE lv_val_txt `</sst>` INTO lv_val_txt.
+
+  zcl_eui_conv=>xml_to_zip(
+   io_zip   = mo_zip
+   iv_name  = `xl/sharedStrings.xml`
+   iv_sdoc  = lv_val_txt ).
+ENDMETHOD.
 ENDCLASS.

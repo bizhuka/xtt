@@ -6,7 +6,9 @@ METHOD example_10.
     BEGIN OF ts_icon,
       id   TYPE icon-id,
       name TYPE bapibds01-objkey,
-      img  TYPE REF TO zcl_xtt_comp_cell, " <--- IMAGE
+      " use code declaration instead
+      img  TYPE REF TO object, " zcl_xtt_image
+      raw  TYPE xstring,
     END OF ts_icon,
 
     " Document structure
@@ -20,7 +22,7 @@ METHOD example_10.
   ls_root-title = 'Test icons'(tic).
 
   " Get icon IDs
-  SELECT id name INTO CORRESPONDING FIELDS OF TABLE ls_root-t
+  SELECT id name INTO CORRESPONDING FIELDS OF TABLE ls_root-t ##too_many_itab_fields
   FROM icon UP TO p_r_cnt ROWS
   WHERE oleng = 2.
 
@@ -62,37 +64,37 @@ METHOD example_10.
     " As xString
     lv_image = zcl_eui_conv=>binary_to_xstring( it_table  = lt_content
                                                 iv_length = lv_size ).
+
+    " @see code declaration (preferable way)
+    IF iv_raw = abap_true.
+      <ls_icon>-raw = lv_image.
+      CONTINUE.
+    ENDIF.
+
+    " old approach (direct call)
     DATA lv_width  TYPE i.
     DATA lv_height TYPE i.
     IF p_size = abap_true.
       lv_width = lv_height = 200000.
     ENDIF.
 
-    " Create new instance
-    <ls_icon>-img = zcl_xtt_comp_cell=>create_image( iv_image  = lv_image
-                                                     iv_ext    = '.gif' "#EC NOTEXT
-                                                     iv_width  = lv_width
-                                                     iv_height = lv_height ).
+    " Create new instance (for internal use only)
+    <ls_icon>-img = zcl_xtt_image=>create_image( iv_image  = lv_image
+                                                 iv_ext    = '.gif' "#EC NOTEXT
+                                                 iv_width  = lv_width
+                                                 iv_height = lv_height ).
   ENDLOOP.
 
   " Show data structure only
   IF p_stru = abap_true.
-    check_break_point_id( ).
     BREAK-POINT ID zxtt_break_point. " Double click here --> ls_root <--
 
     " For internal use
-    CHECK jekyll_add_json( ls_root ) = abap_true.
+    CHECK mo_injection IS NOT INITIAL.
+    mo_injection->send_merge( ls_root ).
   ENDIF.
 
-  " Info about template & the main class itself
-  DATA lo_file TYPE REF TO zif_xtt_file.
-  CREATE OBJECT:
-   lo_file TYPE zcl_xtt_file_smw0 EXPORTING
-     iv_objid = iv_template,
-
-   ro_xtt TYPE (iv_class_name) EXPORTING
-    io_file = lo_file.
-
   " Paste data
-  ro_xtt->merge( is_block = ls_root iv_block_name = 'R' ).
+  io_xtt->merge( is_block      = ls_root
+                 iv_block_name = 'R' ).
 ENDMETHOD.

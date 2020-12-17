@@ -1,18 +1,19 @@
 **********************************************************************
 *  XTT - Xml template toolkit examples
-*  @see https://github.com/bizhuka/xtt
-*  @version: 1.0
+*  @see https://bizhuka.github.io/xtt/
+*  @version: 2.0
 **********************************************************************
 REPORT z_xtt_index.
 
 INCLUDE z_xtt_index_scr.
 INCLUDE z_xtt_index_cld.
+INCLUDE z_xtt_index_cli_12.
 INCLUDE z_xtt_index_cli.
-
+INCLUDE z_xtt_index_test.
 
 **********************************************************************
 DATA:
- go_main TYPE REF TO cl_main. "#EC NEEDED
+ go_main TYPE REF TO lcl_main. "#EC NEEDED
 
 INITIALIZATION.
   CREATE OBJECT go_main.

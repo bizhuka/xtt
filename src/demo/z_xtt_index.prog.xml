@@ -83,6 +83,12 @@
     </item>
     <item>
      <ID>S</ID>
+     <KEY>P_APPSER</KEY>
+     <ENTRY>Download to app server</ENTRY>
+     <LENGTH>30</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
      <KEY>P_B_CNT</KEY>
      <ENTRY>Block count Each contains rows</ENTRY>
      <LENGTH>38</LENGTH>

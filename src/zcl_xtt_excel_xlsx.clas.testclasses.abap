@@ -1,7 +1,7 @@
 *"* use this source file for your ABAP unit test classes
 
-CLASS lcl_test  DEFINITION FOR TESTING  "#AU Risk_Level Harmless
-                                 .      "#AU Duration Short
+CLASS lcl_test  DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
+                                 .           "#AU Duration Short
   PUBLIC SECTION.
     METHODS:
       check_formula_shift FOR TESTING.
@@ -38,12 +38,12 @@ CLASS lcl_test IMPLEMENTATION.
                       'shifting formula '
                       &1
                INTO lv_message SEPARATED BY space.
-          cl_abap_unit_assert=>assert_equals(  act   = lv_resulting_formula
-                                               exp   = &4
-                                               msg   = lv_message
-                                               quit  = 0  " continue tests
-                                               level = if_aunit_constants=>critical ).
-      ENDTRY.
+          zcl_eui_conv=>assert_equals(  act   = lv_resulting_formula
+                                        exp   = &4
+                                        msg   = lv_message
+                                        quit  = 0  " continue tests
+                                        level = if_aunit_constants=>critical ).
+ ENDTRY.
     END-OF-DEFINITION.
 
 * Test shifts that should result in a valid output

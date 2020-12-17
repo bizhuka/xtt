@@ -36,9 +36,14 @@ ENDMETHOD.
 
 
 METHOD zif_xtt_file~get_content.
+  CLEAR ev_as_xstring.
+  CLEAR ev_as_string.
+
   IF ev_as_xstring IS REQUESTED.
     ev_as_xstring = mv_xstring.
-  ELSEIF ev_as_string IS REQUESTED.
+  ENDIF.
+
+  IF ev_as_string IS REQUESTED.
     ev_as_string = zcl_eui_conv=>xstring_to_string( mv_xstring ).
   ENDIF.
 ENDMETHOD.

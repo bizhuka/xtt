@@ -8,6 +8,12 @@
     <WWWPARAMS>
      <RELID>MI</RELID>
      <OBJID>ZXXT_10_WORD_DOCX</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.DOCX</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_10_WORD_DOCX</OBJID>
      <NAME>filename</NAME>
      <VALUE>ZXXT_10_WORD.DOCX</VALUE>
     </WWWPARAMS>
@@ -16,12 +22,6 @@
      <OBJID>ZXXT_10_WORD_DOCX</OBJID>
      <NAME>mimetype</NAME>
      <VALUE>Word</VALUE>
-    </WWWPARAMS>
-    <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZXXT_10_WORD_DOCX</OBJID>
-     <NAME>fileextension</NAME>
-     <VALUE>.DOCX</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

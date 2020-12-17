@@ -26,7 +26,7 @@ private section.
       !CV_POS_END type I .
   class-methods REPLACE_BINARY_DATA
     importing
-      !IO_COMP_CELL type ref to ZCL_XTT_COMP_CELL
+      !IO_IMAGE type ref to ZCL_XTT_IMAGE
       !IV_BIN_AFTER type ABAP_BOOL
     changing
       !CV_XML type STRING
@@ -71,9 +71,9 @@ METHOD detect_image_annotation.
     <ls_m_end>     TYPE match_result,
     <ls_m_start>   TYPE match_result.
 
-  zcl_xtt_xml_base=>get_tag_matches( EXPORTING iv_context = cv_xml
-                                               iv_tag     = `aml:annotation` "#EC NOTEXT
-                                     IMPORTING et_match   =  lt_match ).
+  lt_match = zcl_xtt_util=>get_tag_matches( iv_context = cv_xml
+                                            iv_tag     = `aml:annotation` "#EC NOTEXT
+                                           ).
   " Get index after {R-T-IMG}
   DATA lv_tabix TYPE i.
   READ TABLE lt_match TRANSPORTING NO FIELDS BINARY SEARCH
@@ -110,12 +110,17 @@ METHOD detect_image_annotation.
   cv_pos_beg = <ls_m_start>-offset.
 
   " Delete 2,3,4 `<aml:annotation aml:id="0" w:type="Word.Comment.End"/>` ... `</aml:annotation>`
-  DATA lv_len TYPE i.
-  lv_len = <ls_m_txt_end>-offset + <ls_m_txt_end>-length - <ls_m_end>-offset + strlen( `</w:r>` ).
-  REPLACE SECTION OFFSET <ls_m_end>-offset LENGTH lv_len OF cv_xml WITH ''. "lv_spaces. repeat( val = ` ` )
+  DATA: lv_len TYPE i, lv_blanks TYPE STRING.
+
+  lv_len    = <ls_m_txt_end>-offset + <ls_m_txt_end>-length - <ls_m_end>-offset + strlen( `</w:r>` ).
+  lv_blanks = zcl_xtt_util=>repeat( val = ` `
+                                    occ = lv_len ).
+  REPLACE SECTION OFFSET <ls_m_end>-offset LENGTH lv_len OF cv_xml WITH lv_blanks.
 
   " Delete 1-st `<aml:annotation aml:id="0" w:type="Word.Comment.Start"/>`
-  REPLACE SECTION OFFSET <ls_m_start>-offset LENGTH <ls_m_start>-length OF cv_xml WITH ''. "lv_spaces.
+  lv_blanks = zcl_xtt_util=>repeat( val = ` `
+                                    occ = <ls_m_start>-length ).
+  REPLACE SECTION OFFSET <ls_m_start>-offset LENGTH <ls_m_start>-length OF cv_xml WITH lv_blanks.
 
   " Yes is within annotation
   ev_is_annotation = abap_true.
@@ -124,21 +129,17 @@ ENDMETHOD.
 
 METHOD on_match_found.
   DO 1 TIMES.
-    CHECK is_field->typ = zcl_xtt_replace_block=>mc_type_comp_cell
+    CHECK is_field->typ = zcl_xtt_replace_block=>mc_type-image
       AND is_field->oref IS NOT INITIAL.
 
     " Transform ref
-    DATA lo_comp_cell TYPE REF TO zcl_xtt_comp_cell.
-    lo_comp_cell ?= is_field->oref.
-
-    " As ordinary string
-    FIELD-SYMBOLS <lv_content> TYPE string.
-    ASSIGN iv_content->* TO <lv_content>.
+    DATA lo_image TYPE REF TO zcl_xtt_image.
+    lo_image ?= is_field->oref.
 
     DATA lv_is_annotation TYPE abap_bool.
     " №1 Is image based ?
     detect_image_annotation( IMPORTING ev_is_annotation = lv_is_annotation
-                             CHANGING  cv_xml           = <lv_content>
+                             CHANGING  cv_xml           = cv_content
                                        cv_pos_beg       = iv_pos_beg
                                        cv_pos_end       = iv_pos_end ).
     " №2 Is image based ?
@@ -148,31 +149,33 @@ METHOD on_match_found.
     lv_alt_pos = iv_pos_beg - 5.
 
     " Yes image id {R-T-IMG} in alternative text
-    IF iv_pos_beg > 0 AND strlen( <lv_content> ) > iv_pos_beg AND <lv_content>+lv_alt_pos(5) = `alt="`.
+    IF iv_pos_beg > 0 AND strlen( cv_content ) > iv_pos_beg AND cv_content+lv_alt_pos(5) = `alt="`.
       lv_id_in_alter_text = abap_true.
     ENDIF.
 
     " Is image template based
     IF lv_is_annotation = abap_true OR lv_id_in_alter_text = abap_true.
-      replace_binary_data( EXPORTING io_comp_cell = lo_comp_cell
+      replace_binary_data( EXPORTING io_image     = lo_image
                                      iv_bin_after = lv_is_annotation
-                           CHANGING  cv_xml       = <lv_content>
+                           CHANGING  cv_xml       = cv_content
                                      cv_value     = mv_value
                                      cv_pos_beg   = iv_pos_beg
                                      cv_pos_end   = iv_pos_end ).
     ELSE.
       " Create whole tag from scratch (just insert as new mv_value)
-      zcl_xtt_word_docx=>get_image_tag( EXPORTING io_comp_cell = lo_comp_cell
-                                                  iv_inline    = abap_true
-                                        IMPORTING ev_tag       = mv_value ).
+      zcl_xtt_word_docx=>get_image_tag( EXPORTING io_image  = lo_image
+                                                  iv_inline = abap_true
+                                        IMPORTING ev_tag    = mv_value ).
     ENDIF.
   ENDDO.
 
   super->on_match_found(
-    iv_content = iv_content
+   EXPORTING
     is_field   = is_field
     iv_pos_beg = iv_pos_beg
-    iv_pos_end = iv_pos_end ).
+    iv_pos_end = iv_pos_end
+   CHANGING
+    cv_content = cv_content ).
 ENDMETHOD.
 
 
@@ -181,22 +184,17 @@ METHOD replace_binary_data.
   DATA lv_name  TYPE string.
 
   " Get binary data, not whole tag
-  zcl_xtt_word_docx=>get_image_tag( EXPORTING io_comp_cell = io_comp_cell
-                                              iv_inline    = abap_true
-                                    IMPORTING ev_bindata   = lv_value
-                                              ev_name      = lv_name ).
-  DATA lt_replace TYPE tt_replace.
-  FIELD-SYMBOLS <ls_replace> LIKE LINE OF lt_replace.
-
-  " Rename some attributes
-  APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
-  <ls_replace>-from = `<v:imagedata src="`.
-  CONCATENATE         `<v:imagedata src="` lv_name `" old_src="`
-                      INTO <ls_replace>-to.
-  " Change id
-  replace_1st_from( EXPORTING it_replace = lt_replace
-                              iv_from    = cv_pos_beg
-                    CHANGING  cv_xml     = cv_xml ).
+  zcl_xtt_word_docx=>get_image_tag( EXPORTING io_image   = io_image
+                                              iv_inline  = abap_true
+                                    IMPORTING ev_bindata = lv_value
+                                              ev_name    = lv_name ).
+  DATA lv_to TYPE string.
+  CONCATENATE `<v:imagedata src="` lv_name `"` INTO lv_to.
+  zcl_xtt_util=>replace_1st( EXPORTING iv_from     = `<v:imagedata src="\b[^"]*"`
+                                       iv_to       = lv_to
+                                       iv_pos      = cv_pos_beg
+                                       iv_keep_len = abap_true
+                             CHANGING  cv_xml      = cv_xml ).
 
   " Get upper <draw> tag
   DATA lt_match     TYPE match_result_tab.
@@ -204,28 +202,26 @@ METHOD replace_binary_data.
   DATA ls_match_beg TYPE REF TO match_result.
 
   " All tags
-  get_tag_matches( EXPORTING iv_context = cv_xml
-                             iv_tag     = 'w:binData'
-                   IMPORTING et_match   = lt_match ).
+  lt_match = zcl_xtt_util=>get_tag_matches( iv_context = cv_xml
+                                            iv_tag     = 'w:binData' ).
+  " TODO always 2 last 'w:binData' tags ?
+  sy-tabix = lines( lt_match ) + 1.
 
   " Get upper nearest value. index of the entry before which it would be inserted
-  READ TABLE lt_match TRANSPORTING NO FIELDS BINARY SEARCH
-   WITH KEY offset = cv_pos_beg.
-  CHECK sy-subrc = 4.
+*  READ TABLE lt_match TRANSPORTING NO FIELDS BINARY SEARCH WITH KEY offset = cv_pos_beg.
+*  CHECK sy-subrc = 4.
 
-  " Read bounds
-  IF iv_bin_after = abap_true.
-    READ TABLE lt_match REFERENCE INTO ls_match_beg INDEX sy-tabix.
-    sy-tabix = sy-tabix + 1.
-    READ TABLE lt_match REFERENCE INTO ls_match_end INDEX sy-tabix.
-
-
-  ELSE.
-    sy-tabix = sy-tabix - 1.
-    READ TABLE lt_match REFERENCE INTO ls_match_end INDEX sy-tabix.
-    sy-tabix = sy-tabix - 1.
-    READ TABLE lt_match REFERENCE INTO ls_match_beg INDEX sy-tabix.
-  ENDIF.
+*  " Read bounds
+*  IF iv_bin_after = abap_true.
+*    READ TABLE lt_match REFERENCE INTO ls_match_beg INDEX sy-tabix.
+*    sy-tabix = sy-tabix + 1.
+*    READ TABLE lt_match REFERENCE INTO ls_match_end INDEX sy-tabix.
+*  ELSE.
+  sy-tabix = sy-tabix - 1.
+  READ TABLE lt_match REFERENCE INTO ls_match_end INDEX sy-tabix.
+  sy-tabix = sy-tabix - 1.
+  READ TABLE lt_match REFERENCE INTO ls_match_beg INDEX sy-tabix.
+*  ENDIF.
 
   CHECK ls_match_end IS NOT INITIAL
     AND ls_match_beg IS NOT INITIAL.

@@ -6,32 +6,21 @@
 *&---------------------------------------------------------------------*
 
 METHOD example_07.
-  DATA:
-    lo_file    TYPE REF TO zif_xtt_file,
-    lv_ole_app TYPE ole2_object.
-
   " Show data structure only
-  IF p_stru = abap_true AND ms_cur_demo IS INITIAL.
+  IF p_stru = abap_true AND mo_injection IS INITIAL.
     MESSAGE 'No data at all'(nda) TYPE 'S' DISPLAY LIKE 'E'.
     RETURN.
   ENDIF.
 
-  " Info about template & the main class itself
-  CREATE OBJECT:
-   lo_file TYPE zcl_xtt_file_smw0 EXPORTING
-     iv_objid = iv_template,
-
-   ro_xtt TYPE (iv_class_name) EXPORTING
-    io_file = lo_file.
-
   SET HANDLER:
-   on_prepare_raw_07 FOR ro_xtt.
+   on_prepare_raw_07 FOR io_xtt.
 
   CASE 'X'.
     WHEN p_dwnl.
-      ro_xtt->download(        " All parameters are optional
+      DATA lv_ole_app TYPE ole2_object.
+      io_xtt->download(        " All parameters are optional
        EXPORTING
-        iv_open     = zcl_xtt=>mc_by_ole " Open with ole
+        iv_open     = zcl_xtt=>mc_by-ole " Open with ole
        CHANGING
         cv_fullpath = p_path
         cv_ole_app  = lv_ole_app ).      " Get ole2_object back
@@ -40,11 +29,11 @@ METHOD example_07.
       check_ole_07( io_ole_app = lv_ole_app ).
 
     WHEN p_show.
-      ro_xtt->show( io_handler = me ).
+      io_xtt->show( io_handler = me ).
   ENDCASE.
 
   " Skip further execution
-  CLEAR ro_xtt.
+  ev_break = abap_true.
 ENDMETHOD.
 
 " Macro always will execute for download method (regardless VBA security level)
@@ -99,6 +88,9 @@ METHOD on_prepare_raw_07.
   FIELD-SYMBOLS:
     <lv_content> TYPE xstring.
 
+  " If entire archive
+  CHECK iv_path IS INITIAL.
+
   " As xstring
   ASSIGN ir_content->* TO <lv_content>.
 
@@ -118,6 +110,9 @@ METHOD on_prepare_raw_07.
 
     WHEN 'ZCL_XTT_WORD_DOCX'. " OR 'ZCL_XTT_WORD_XML'.
       lv_path_in_arc = 'word/document.xml'.                 "#EC NOTEXT
+
+    WHEN OTHERS.
+      zcx_xtt_exception=>raise_dump( iv_message = 'Unknown case' ).
   ENDCASE.
 
   " Get content as a string from file

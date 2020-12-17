@@ -1,195 +1,141 @@
-class ZCL_XTT_REPLACE_BLOCK definition
-  public
-  final
-  create public .
+CLASS zcl_xtt_replace_block DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC
 
-public section.
-  type-pools ABAP .
+  GLOBAL FRIENDS zcl_xtt_cond .
 
-  types:
-    BEGIN OF ts_field,
-        name TYPE string,        " Name in template
-        typ  TYPE string,        " Type of data
-        dref TYPE REF TO data,   " Value for replacement
-        oref TYPE REF TO object, " Value for replacement
+  PUBLIC SECTION.
+    TYPE-POOLS abap .
+
+    TYPES:
+      BEGIN OF ts_field,
+        name    TYPE string,        " Name in template
+        typ     TYPE string,        " Type of data
+        dref    TYPE REF TO data,   " Value for replacement
+        oref    TYPE REF TO object, " Value for replacement
+        fl_id   TYPE string,
+        fl_stat TYPE abap_bool,
       END OF ts_field .
-  types:
-    tt_field TYPE SORTED TABLE OF ts_field WITH UNIQUE KEY name .
-  types:
-    BEGIN OF ts_tree_attr,
+    TYPES:
+      BEGIN OF ts_field_ext.
+        INCLUDE TYPE ts_field AS fld.
+      TYPES:
+        rb_level TYPE i,
+        rb_id    TYPE string,
+        desc     TYPE REF TO cl_abap_typedescr,
+      END OF ts_field_ext .
+    TYPES:
+      tt_field TYPE SORTED TABLE OF ts_field WITH UNIQUE KEY name .
+    TYPES:
+      BEGIN OF ts_tree_attr,
         name TYPE string,
         attr TYPE REF TO data, " OR REF TO
       END OF ts_tree_attr .
-  types:
-    tt_tree_attr TYPE HASHED TABLE OF ts_tree_attr WITH UNIQUE KEY name .
-  types:
-    BEGIN OF ts_tree,
-        level      TYPE i,             " From 0
-        sub_nodes  TYPE tt_tree_attr,
-        data       TYPE REF TO DATA,
+    TYPES:
+      tt_tree_attr TYPE HASHED TABLE OF ts_tree_attr WITH UNIQUE KEY name .
+    TYPES:
+      BEGIN OF ts_tree,
+        level     TYPE i,             " From 0
+        sub_nodes TYPE tt_tree_attr,
+        data      TYPE REF TO data,
       END OF ts_tree .
-  types:
-    tt_tree TYPE STANDARD TABLE OF REF TO ts_tree WITH DEFAULT KEY .
-  types:
-    BEGIN OF ts_func,
-      level  TYPE i,
-      name   TYPE string,
-      field  TYPE string,
-      " fields TYPE SORTED TABLE OF string WITH UNIQUE KEY TABLE_LINE,
-    END OF ts_func .
-  types:
-    tt_func TYPE SORTED TABLE OF ts_func WITH UNIQUE KEY TABLE_LINE .
-  types:
-    BEGIN OF ts_tree_group,
-      level    TYPE i,
-      top      TYPE abap_bool,
-      if_where TYPE string,
-      if_show  TYPE abap_bool, " Show or hide
-      if_form  TYPE string,    " Name of preform
-      " funcs    TYPE SORTED TABLE OF ts_func WITH UNIQUE KEY name,
-    end OF ts_tree_group .
-  types:
-    BEGIN OF ts_extra_tab_opt,
-      name        TYPE string, " Name of table 'R-T'
-      direction   TYPE string, " ;direction=column ?
-      group       TYPE string, " ;group=BUKRS;WERKS or ;group=FILED-FILED_PAR
-    END OF ts_extra_tab_opt .
-  types:
-    TT_EXTRA_TAB_OPT TYPE SORTED TABLE OF ts_extra_tab_opt WITH UNIQUE KEY name .
-  types:
-    BEGIN OF ts_row_offset.
-      INCLUDE TYPE ts_tree_group.
-  types:
-      first    TYPE i,
-      last     TYPE i,
-    END OF ts_row_offset .
-  types:
-    tt_row_offset TYPE SORTED TABLE OF ts_row_offset WITH UNIQUE KEY level top if_where .
-  types:
-    tt_std_ref_data TYPE STANDARD TABLE OF REF TO DATA .
+    TYPES:
+      tt_tree TYPE STANDARD TABLE OF REF TO ts_tree WITH DEFAULT KEY .
+    TYPES:
+      tt_std_ref_data TYPE STANDARD TABLE OF REF TO data .
 
-  constants MC_CHAR_BLOCK_BEGIN type CHAR1 value '{' ##NO_TEXT.
-  constants MC_CHAR_BLOCK_END type CHAR1 value '}' ##NO_TEXT.
-  constants MC_CHAR_NAME_DELIMITER type CHAR1 value '-' ##NO_TEXT.
-  constants MC_CHAR_OPTION_DELIMITER type CHAR1 value ';' ##NO_TEXT.
-  constants MC_TYPE_STRUCT type STRING value 'struct' ##NO_TEXT.
-  constants MC_TYPE_OBJECT type STRING value 'object' ##NO_TEXT.
-  constants MC_TYPE_TABLE type STRING value 'table' ##NO_TEXT.
-  constants MC_TYPE_TREE type STRING value 'tree' ##NO_TEXT.
-  constants MC_TYPE_INTEGER type STRING value 'integer' ##NO_TEXT.
-  constants MC_TYPE_DOUBLE type STRING value 'double' ##NO_TEXT.
-  constants MC_TYPE_DATE type STRING value 'date' ##NO_TEXT.
-  constants MC_TYPE_TIME type STRING value 'time' ##NO_TEXT.
-  constants MC_TYPE_BOOLEAN type STRING value 'boolean' ##NO_TEXT.
-  constants MC_TYPE_DATETIME type STRING value 'datetime' ##NO_TEXT.
-  constants MC_TYPE_STRING type STRING value 'string' ##NO_TEXT.
-  constants MC_TYPE_MASK type STRING value 'mask' ##NO_TEXT.
-  constants MC_TYPE_AS_IS type STRING value 'as_is' ##NO_TEXT.
-  constants MC_TYPE_COMP_CELL type STRING value 'comp_cell' ##NO_TEXT.
-  data MT_FIELDS type TT_FIELD .
+    CONSTANTS:
+      BEGIN OF mc_block,
+        open       TYPE char1 VALUE '{',
+        close      TYPE char1 VALUE '}',
+        name_delim TYPE char1 VALUE '-',
+        opt_delim  TYPE char1 VALUE ';',
+      END OF mc_block .
+    CONSTANTS:
+      BEGIN OF mc_type,
+        struct   TYPE string VALUE 'struct',
+        object   TYPE string VALUE 'object',
+        table    TYPE string VALUE 'table',
+        tree     TYPE string VALUE 'tree',
+        integer  TYPE string VALUE 'integer',
+        double   TYPE string VALUE 'double',
+        date     TYPE string VALUE 'date',
+        time     TYPE string VALUE 'time',
+        boolean  TYPE string VALUE 'boolean',  " Excel (TRUE|FALSE)
+        datetime TYPE string VALUE 'datetime', " Virtual type (DATE + TIME)
+        string   TYPE string VALUE 'string',
+        mask     TYPE string VALUE 'mask',     " Use WRITE TO
+        as_is    TYPE string VALUE 'as_is',    " Do not convert to any format
+        image    TYPE string VALUE 'image',
+        block    TYPE string VALUE 'block',
+      END OF mc_type .
+    DATA mt_fields TYPE tt_field .
+    DATA ms_ext TYPE ts_field_ext READ-ONLY .
 
-  events MATCH_FOUND
-    exporting
-      value(IV_CONTENT) type ref to STRING
-      value(IS_FIELD) type ref to TS_FIELD
-      value(IV_POS_BEG) type I
-      value(IV_POS_END) type I .
-  class-events PREPARE_TREE
-    exporting
-      value(IR_TREE) type ref to TS_TREE
-      value(IR_DATA) type ref to DATA
-      value(IR_SUB_DATA) type ref to DATA optional
-      value(IT_SUB_DATA_REF) type TT_STD_REF_DATA optional .
-  class-events ON_TREE_CHANGE_LEVEL
-    exporting
-      value(IR_TREE) type ref to ZCL_XTT_REPLACE_BLOCK=>TS_TREE
-      value(IV_BLOCK_NAME) type CSEQUENCE
-      value(IV_TOP) type ABAP_BOOL
-      value(IV_LEVEL_INDEX) type ref to I .
+    CLASS-EVENTS prepare_tree
+      EXPORTING
+        VALUE(ir_tree) TYPE REF TO ts_tree
+        VALUE(ir_data) TYPE REF TO data
+        VALUE(ir_sub_data) TYPE REF TO data OPTIONAL
+        VALUE(it_sub_data_ref) TYPE tt_std_ref_data OPTIONAL .
 
-  methods CONSTRUCTOR
-    importing
-      !IS_BLOCK type ANY optional
-      !IV_BLOCK_NAME type STRING optional
-      !IS_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD optional .
-  methods EXTRA_CREATE_TREE
-    importing
-      !IT_EXTRA_TAB_OPT type TT_EXTRA_TAB_OPT .
-  class-methods EXTRA_ADD_TAB_OPT
-    importing
-      !IV_TEXT type STRING
-    changing
-      !CT_EXTRA_TAB_OPT type TT_EXTRA_TAB_OPT .
-  methods FIND_MATCH
-    importing
-      !IV_SKIP_TAGS type ABAP_BOOL optional
-    changing
-      !CV_CONTENT type STRING .
-  class-methods GET_AS_STRING
-    importing
-      !IS_FIELD type ref to TS_FIELD
-    returning
-      value(RV_RESULT) type STRING .
-  class-methods TREE_CREATE
-    importing
-      !IT_TABLE type ref to DATA
-      !IV_FIELDS type CSEQUENCE
-    returning
-      value(RR_ROOT) type ref to ZCL_XTT_REPLACE_BLOCK=>TS_TREE .
-  class-methods TREE_CREATE_RELAT
-    importing
-      !IT_TABLE type ref to DATA
-      !IV_NODE_KEY type CSEQUENCE
-      !IV_RELAT_KEY type CSEQUENCE
-    returning
-      value(RR_ROOT) type ref to DATA
-    exceptions
-      EX_LOOP_REF
-      EX_KEY_DUPL .
-  class-methods TREE_RAISE_PREPARE
-    importing
-      !IR_TREE type ref to TS_TREE
-      !IV_LEVEL type I .
-  class-methods TREE_FIND_MATCH
-    importing
-      !IR_TREE type ref to ZCL_XTT_REPLACE_BLOCK=>TS_TREE
-      !IV_BLOCK_NAME type CSEQUENCE
-      !IV_TOP type ABAP_BOOL
-      !IV_CHECK_PROG type STRING
-      !IT_ROW_MATCH type SORTED TABLE
-    returning
-      value(RR_FOUND_MATCH) type ref to DATA .
-  class-methods TREE_DETECT_OPTIONS
-    importing
-      !IV_TEXT type CSEQUENCE
-      !IV_POS type I
-    changing
-      !CS_ROW_OFFSET type TS_ROW_OFFSET
-      !CT_ROW_OFFSET type TT_ROW_OFFSET .
-  class-methods TREE_INITIALIZE
-    importing
-      !IR_TREE type ref to TS_TREE
-    exporting
-      !EV_PROGRAM type STRING
-    changing
-      !CT_ROW_MATCH type SORTED TABLE .
+    METHODS constructor
+      IMPORTING
+        !is_block      TYPE any OPTIONAL
+        !iv_block_name TYPE string OPTIONAL
+        !is_field      TYPE REF TO ts_field OPTIONAL .
+    METHODS reuse_check
+      IMPORTING
+        !ir_field    TYPE REF TO ts_field
+      RETURNING
+        VALUE(rv_ok) TYPE abap_bool .
+    METHODS find_match
+      IMPORTING
+        !io_xtt     TYPE REF TO zcl_xtt
+        !is_scope   TYPE zcl_xtt_scope=>ts_scope
+      CHANGING
+        !cv_content TYPE string .
+    CLASS-METHODS get_as_string
+      IMPORTING
+        !is_field        TYPE REF TO ts_field
+      RETURNING
+        VALUE(rv_result) TYPE string .
+    CLASS-METHODS tree_create
+      IMPORTING
+        !it_table      TYPE REF TO data
+        !iv_fields     TYPE csequence
+      RETURNING
+        VALUE(rr_root) TYPE REF TO ts_tree .
+    CLASS-METHODS tree_create_relat
+      IMPORTING
+        !it_table      TYPE REF TO data
+        !iv_node_key   TYPE csequence
+        !iv_relat_key  TYPE csequence
+      RETURNING
+        VALUE(rr_root) TYPE REF TO data
+      EXCEPTIONS
+        ex_loop_ref
+        ex_key_dupl .
+    CLASS-METHODS tree_raise_prepare
+      IMPORTING
+        !ir_tree  TYPE REF TO ts_tree
+        !iv_level TYPE i .
+    METHODS set_id
+      IMPORTING
+        !iv_id TYPE string .
   PROTECTED SECTION.
 private section.
 
-  data MV_BLOCK_BEGIN type STRING .
-  class-data MT_FUNC type TT_FUNC .
+  data MV_SUB_OFFSET type I .
 
-  methods ADD_2_FIELDS
+  class-methods _GET_FIELD_EXT
     importing
-      !IV_NAME type CSEQUENCE
-      !IV_TYPE type CSEQUENCE optional
-      !IR_VALUE type ref to DATA .
-  class-methods CATCH_PREPARE_TREE
-    for event PREPARE_TREE of ZCL_XTT_REPLACE_BLOCK
-    importing
-      !IR_TREE
-      !IR_DATA
-      !IR_SUB_DATA .
+      !IS_BLOCK type ANY
+      !IV_BLOCK_NAME type STRING
+      !IS_FIELD type ref to TS_FIELD optional
+    returning
+      value(RS_FIELD_EXT) type TS_FIELD_EXT .
 ENDCLASS.
 
 
@@ -197,95 +143,687 @@ ENDCLASS.
 CLASS ZCL_XTT_REPLACE_BLOCK IMPLEMENTATION.
 
 
-METHOD add_2_fields.
-  DATA:
-    ls_field   TYPE ts_field,
-    l_typekind TYPE abap_typekind,
-    l_mask     TYPE string.
-  FIELD-SYMBOLS:
-    <lv_value> TYPE any,
-    <fs_data>  TYPE any.
+METHOD constructor.
+  ms_ext = _get_field_ext( is_block      = is_block
+                           iv_block_name = iv_block_name
+                           is_field      = is_field ).
 
-  " Data could be changed
-  ASSIGN ir_value->* TO <lv_value>.
+  " Structure or object sub field
+  DATA ls_sub_field          TYPE ts_field_ext.
+  FIELD-SYMBOLS <fs_sub_fld> TYPE any.
 
-  " 1 Detect C_TYPE_* (References)
-  ls_field-name = iv_name.
-  DESCRIBE FIELD:
-   <lv_value> TYPE      l_typekind,
-   <lv_value> EDIT MASK l_mask.
+  " Detect by name what to do
+  CASE ms_ext-typ.
+      " A structure is the most popular case
+    WHEN mc_type-struct.
+      DATA lo_sdesc TYPE REF TO cl_abap_structdescr.
+      lo_sdesc ?= ms_ext-desc.
 
-  CASE l_typekind.
-      " Special case for objects
-    WHEN cl_abap_typedescr=>typekind_intf OR cl_abap_typedescr=>typekind_class OR cl_abap_typedescr=>typekind_oref.
-      ls_field-oref = <lv_value>.
-      ls_field-typ  = zcl_xtt_replace_block=>mc_type_object.
+      " Get structure data
+      FIELD-SYMBOLS <ls_struc> TYPE any.
+      ASSIGN ms_ext-dref->* TO <ls_struc>.
 
-      " Special cases
+      " Add every field
+      FIELD-SYMBOLS <ls_comp>  TYPE abap_compdescr.
+      LOOP AT lo_sdesc->components ASSIGNING <ls_comp>.
+        " Name and data
+        ASSIGN COMPONENT sy-tabix OF STRUCTURE <ls_struc> TO <fs_sub_fld>.
+        CONCATENATE ms_ext-name mc_block-name_delim <ls_comp>-name INTO ls_sub_field-name.
+
+        " Add sub field
+        ls_sub_field = _get_field_ext( is_block      = <fs_sub_fld>
+                                       iv_block_name = ls_sub_field-name ).
+        CHECK ls_sub_field-desc IS NOT INITIAL.
+        ls_sub_field-fl_stat = abap_true.
+        INSERT ls_sub_field-fld INTO TABLE mt_fields.
+      ENDLOOP.
+
+      " If it is plain structure
+      IF is_field IS NOT INITIAL AND is_field->dref = ms_ext-dref.
+        mv_sub_offset = strlen( is_field->name ) + 1. " strlen( mc_block-name_delim )
+      ENDIF.
+
+      " Object processed as a structure ↑↑↑
+    WHEN mc_type-object.
+      DATA lo_odesc TYPE REF TO cl_abap_objectdescr.
+      FIELD-SYMBOLS <ls_attr>  TYPE abap_attrdescr.
+
+      lo_odesc ?= ms_ext-desc.
+      " Add every field
+      LOOP AT lo_odesc->attributes ASSIGNING <ls_attr> WHERE visibility = cl_abap_objectdescr=>public.
+        " Name and data
+        ASSIGN ms_ext-oref->(<ls_attr>-name) TO <fs_sub_fld>.
+        CONCATENATE ms_ext-name mc_block-name_delim <ls_attr>-name INTO ls_sub_field-name.
+
+        " Add sub field
+        ls_sub_field = _get_field_ext( is_block      = <fs_sub_fld>
+                                       iv_block_name = ls_sub_field-name ).
+        CHECK ls_sub_field-desc IS NOT INITIAL.
+        ls_sub_field-fl_stat = abap_true.
+        INSERT ls_sub_field-fld INTO TABLE mt_fields.
+      ENDLOOP.
+
+      " If it is the same class
       DO 1 TIMES.
-        CHECK l_typekind = cl_abap_typedescr=>typekind_oref
-          AND ls_field-oref IS NOT INITIAL.
+        CHECK is_field IS NOT INITIAL
+          AND is_field->dref IS NOT INITIAL
+          AND ms_ext-oref    IS NOT INITIAL.
 
-        DATA lo_type TYPE REF TO cl_abap_typedescr.
-        lo_type ?= cl_abap_classdescr=>describe_by_object_ref( ls_field-oref ).
+        FIELD-SYMBOLS <lo_obj> TYPE any.
+        ASSIGN is_field->dref->* TO <lo_obj>.
+        " TODO Could be dump ?
+        CHECK <lo_obj> = ms_ext-oref.
 
-        CASE lo_type->absolute_name.
-          WHEN '\CLASS=ZCL_XTT_COMP_CELL'. " Or instanse of. Use castinf '?=' ?
-            ls_field-typ = zcl_xtt_replace_block=>mc_type_comp_cell.
-        ENDCASE.
+        mv_sub_offset = strlen( is_field->name ) + 1. " strlen( mc_block-name_delim )
+        mv_sub_offset = -1 * mv_sub_offset.
       ENDDO.
 
-      " Add new field
-      INSERT ls_field INTO TABLE mt_fields.
-      RETURN. " <-- That's all
-
-      " Try to detect data
-    WHEN cl_abap_typedescr=>typekind_dref.
-      ls_field-dref = <lv_value>.
-      ASSIGN ls_field-dref->* TO <fs_data>.  " <-- Usally use dref
-      DESCRIBE FIELD <fs_data> TYPE l_typekind.
-
     WHEN OTHERS.
-      ls_field-dref = ir_value.
+      " CL_ABAP_TABLEDESCR, CL_ABAP_ELEMDESCR
+      INSERT ms_ext-fld INTO TABLE mt_fields.
+  ENDCASE.
+ENDMETHOD.
+
+
+METHOD find_match.
+
+  " Replace by fields
+  DATA lr_field TYPE REF TO ts_field.
+  READ TABLE mt_fields REFERENCE INTO lr_field
+   WITH TABLE KEY name = is_scope-field.
+
+  " Cannot find
+  IF sy-subrc <> 0 OR
+    " Or complex type
+     lr_field->typ = mc_type-struct OR
+     lr_field->typ = mc_type-object OR
+     " lr_field->typ = mc_type-tree   OR " TODO check!
+     lr_field->typ = mc_type-table.
+
+    " Markers for block's range (tables only). Can specify block's end(start) explicitly
+    IF ms_ext-rb_level >= is_scope-sc_level AND ms_ext-typ <> mc_type-tree. " is_scope-field = ms_ext-name.
+      DATA: lv_len TYPE i, lv_off TYPE i.
+      lv_len = strlen( cv_content ).
+      lv_off = is_scope-end + 1.
+      IF lv_len >= lv_off.
+        CONCATENATE cv_content(is_scope-beg) cv_content+lv_off INTO cv_content RESPECTING BLANKS.
+      ELSE.
+        MESSAGE e023(zsy_xtt) WITH lv_off lr_field->name INTO sy-msgli.
+        io_xtt->add_log_message( iv_syst = abap_true ).
+      ENDIF.
+    ENDIF.
+
+    " Go on
+    RETURN.
+  ENDIF.
+
+  DATA lv_type_warn TYPE abap_bool.
+  lv_type_warn = abap_true.
+
+  " Set additional options
+  FIELD-SYMBOLS <ls_pair> LIKE LINE OF is_scope-t_pair.
+  LOOP AT is_scope-t_pair ASSIGNING <ls_pair>.  "<-- First item is field name
+    CASE <ls_pair>-key.
+        " Change type
+      WHEN 'type'.
+        lr_field->typ = <ls_pair>-val.
+        CLEAR lv_type_warn.
+    ENDCASE.
+  ENDLOOP.
+
+  CASE lr_field->typ.
+    WHEN mc_type-mask.
+      IF lv_type_warn = abap_true.
+        MESSAGE w014(zsy_xtt) WITH lr_field->name INTO sy-msgli.
+        io_xtt->add_log_message( iv_syst = abap_true ).
+      ENDIF.
+
+    WHEN mc_type-image.
+      zcl_xtt_image=>create_image_decl( ir_field = lr_field
+                                        it_pair  = is_scope-t_pair ).
+
+*    WHEN mc_type-block.
+*      " Just proccess later
+*      RETURN.
   ENDCASE.
 
-  IF iv_type IS NOT INITIAL.
-    ls_field-typ = iv_type.
+  " Replace value in event handler
+  io_xtt->on_match_found( EXPORTING is_field   = lr_field
+                                    iv_pos_beg = is_scope-beg
+                                    iv_pos_end = is_scope-end
+                          CHANGING  cv_content = cv_content ).
+ENDMETHOD.
+
+
+  METHOD get_as_string.
+    DATA:
+      l_text TYPE text255, " For long values use 'string' OR 'as_is', but do not use 'mask'
+      l_len  TYPE i.
+    FIELD-SYMBOLS:
+      <l_string> TYPE csequence,
+      <l_any>    TYPE any, "numeric, + n
+      <l_date>   TYPE d,
+      <l_time>   TYPE t.
+
+    " Just skip
+    CHECK is_field->dref IS NOT INITIAL OR is_field->oref IS NOT INITIAL.
+
+    " Convert field to a string
+    CASE is_field->typ.
+        " String
+      WHEN mc_type-string.
+        ASSIGN is_field->dref->* TO <l_string>.
+
+        " If too long
+        l_len = strlen( <l_string> ).
+        IF l_len > 32767.
+          rv_result = <l_string>(32767).
+        ELSE.
+          rv_result = <l_string>.
+        ENDIF.
+
+        " Delete symbols 0-31
+        REPLACE ALL OCCURRENCES OF REGEX '[^[:print:]]' IN rv_result WITH ''.
+
+        " Replace special chars
+        rv_result = cl_http_utility=>escape_html( rv_result ).
+
+        " Numbers
+      WHEN mc_type-integer OR mc_type-double.
+        ASSIGN is_field->dref->* TO <l_any>.
+
+        " Old method faster cl_abap_format=>o_simple
+        WRITE <l_any> TO l_text EXPONENT 0 NO-SIGN NO-GROUPING LEFT-JUSTIFIED.
+
+        IF <l_any> >= 0.
+          rv_result = l_text.
+        ELSE.
+          CONCATENATE `-` l_text INTO rv_result.
+        ENDIF.
+        " Even with replace is faster than using mask like RRV_.__
+        REPLACE FIRST OCCURRENCE OF ',' IN rv_result WITH '.'.
+
+        " As is using an edit mask
+      WHEN mc_type-mask.
+        ASSIGN is_field->dref->* TO <l_any>.
+        WRITE <l_any> TO l_text LEFT-JUSTIFIED.
+        rv_result = l_text.
+
+        " Do not transform at all
+      WHEN mc_type-as_is.
+        ASSIGN is_field->dref->* TO <l_any>.
+        rv_result = <l_any>.
+
+        " Boolean
+      WHEN mc_type-boolean.
+        ASSIGN is_field->dref->* TO <l_string>.
+        IF <l_string> IS NOT INITIAL. " = abap_true.
+          rv_result = '1'.
+        ELSE.
+          rv_result = '0'.
+        ENDIF.
+
+        " Whole as a string like  d + t
+      WHEN mc_type-datetime.
+        ASSIGN is_field->dref->* TO <l_string>.
+
+        " Both parts
+        ASSIGN <l_string>(8)     TO <l_date> CASTING.
+        ASSIGN <l_string>+8(6)   TO <l_time> CASTING.
+
+        " Date
+      WHEN mc_type-date.
+        ASSIGN is_field->dref->* TO <l_date>.
+
+        " Time
+      WHEN mc_type-time.
+        ASSIGN is_field->dref->* TO <l_time>.
+
+      WHEN mc_type-image.
+        rv_result = is_field->name.
+        RETURN.
+
+      WHEN OTHERS.
+        MESSAGE e002(zsy_xtt) WITH is_field->typ is_field->name INTO sy-msgli.
+        zcx_eui_no_check=>raise_sys_error( ).
+    ENDCASE.
+
+    " Never will happen in MS Excel template (MS Word and pdf only)
+    " Excel uses its own formats for date and time
+    " Format depends on country
+    IF <l_date> IS ASSIGNED AND <l_date> IS NOT INITIAL.
+      WRITE <l_date> TO l_text.
+      rv_result = l_text.
+    ENDIF.
+
+    IF <l_time> IS ASSIGNED.
+      WRITE <l_time> TO l_text.
+
+      " Datetime ?
+      IF <l_date> IS ASSIGNED.  " Both parts
+        CONCATENATE rv_result ` ` l_text INTO rv_result.
+      ELSE.                     " Just time
+        rv_result = l_text.
+      ENDIF.
+    ENDIF.
+  ENDMETHOD.
+
+
+METHOD reuse_check.
+  CHECK mv_sub_offset IS NOT INITIAL.
+
+  DATA lv_off    LIKE mv_sub_offset.
+  DATA lv_is_obj TYPE abap_bool.
+  IF mv_sub_offset > 0.
+    lv_off = mv_sub_offset.
   ELSE.
-    " 2 Detect C_TYPE_*
-    CASE l_typekind.
+    lv_off = -1 * mv_sub_offset.
+    lv_is_obj = abap_true.
+  ENDIF.
+
+  " rv_ok = abap_false
+  DEFINE check_subrc.
+    IF sy-subrc <> 0.
+      RETURN.
+    ENDIF.
+  END-OF-DEFINITION.
+
+  " New source
+  FIELD-SYMBOLS <ls_field_src> TYPE any.
+  ASSIGN ir_field->dref->* TO <ls_field_src>.
+  check_subrc.
+
+  " No dynamic fields
+  DELETE mt_fields WHERE fl_stat <> abap_true. "#EC CI_SORTSEQ
+
+  " Check by existing items
+  DATA lr_field TYPE REF TO ts_field.
+  LOOP AT mt_fields REFERENCE INTO lr_field.
+    DATA lv_tabix TYPE sytabix.
+    lv_tabix = sy-tabix.
+
+    DATA lv_name TYPE string.
+    lv_name = lr_field->name+lv_off.
+
+    " New source field
+    FIELD-SYMBOLS <lv_src> TYPE any.
+    IF lv_is_obj = abap_true.
+      CONCATENATE `<ls_field_src>->` lv_name INTO lv_name.
+      ASSIGN (lv_name) TO <lv_src>.
+    ELSE.
+      ASSIGN COMPONENT lv_name OF STRUCTURE <ls_field_src> TO <lv_src>.
+    ENDIF.
+    check_subrc.
+
+    IF lr_field->oref IS INITIAL.
+      GET REFERENCE OF <lv_src> INTO lr_field->dref.
+      CONTINUE.
+    ENDIF.
+
+    TRY.
+        CALL METHOD lr_field->oref->('CLONE')
+          EXPORTING
+            source = <lv_src>
+          RECEIVING
+            result = lr_field->oref.
+
+        IF lr_field->oref IS INITIAL.
+          lr_field->oref = <lv_src>.
+        ENDIF.
+
+        " No clone method ?
+      CATCH cx_sy_dyn_call_illegal_method.
+        lr_field->oref = <lv_src>.
+    ENDTRY.
+  ENDLOOP.
+
+  " Context for dynamic fields
+  ms_ext-dref = ir_field->dref.
+  ms_ext-oref = ir_field->oref.
+
+  rv_ok = abap_true.
+ENDMETHOD.
+
+
+METHOD set_id.
+  " Replace in child
+  FIELD-SYMBOLS <ls_field> LIKE LINE OF mt_fields.
+  LOOP AT mt_fields ASSIGNING <ls_field>.
+    <ls_field>-fl_id = <ls_field>-name.
+
+    REPLACE FIRST OCCURRENCE OF ms_ext-rb_id IN <ls_field>-fl_id
+                                WITH iv_id.
+  ENDLOOP.
+
+  " Own replace
+  ms_ext-rb_id = iv_id.
+ENDMETHOD.
+
+
+  METHOD tree_create.
+    DATA:
+      lo_tdesc    TYPE REF TO cl_abap_tabledescr,
+      lo_sdesc    TYPE REF TO cl_abap_structdescr,
+      ls_curtree  TYPE REF TO ts_tree,
+      ls_subtree  TYPE REF TO ts_tree,
+      lt_fields   TYPE stringtab,
+      ls_field    TYPE string,
+      l_field_val TYPE string,
+      ls_attr     TYPE ts_tree_attr,
+      ls_attr_ref TYPE REF TO ts_tree_attr.
+*    l_level     TYPE i.
+    FIELD-SYMBOLS:
+      <lt_table> TYPE ANY TABLE,
+      <ls_item>  TYPE any,
+      <fs_any>   TYPE any.
+
+    DEFINE create_tree.
+      CREATE DATA &1.
+*    &1->level = &2.
+      CREATE DATA &1->data TYPE HANDLE lo_sdesc.
+    END-OF-DEFINITION.
+
+    ASSIGN it_table->* TO <lt_table>.
+    lo_tdesc ?= cl_abap_tabledescr=>describe_by_data( <lt_table> ).
+    lo_sdesc ?= lo_tdesc->get_table_line_type( ).
+
+    " Level 0
+    create_tree rr_root. " 0.
+
+    " More convenient than pass table
+    IF iv_fields CS ','.
+      SPLIT iv_fields AT ',' INTO TABLE lt_fields.
+    ELSE.
+      SPLIT iv_fields AT ';' INTO TABLE lt_fields.
+    ENDIF.
+
+    LOOP AT <lt_table> ASSIGNING <ls_item>.
+      ls_curtree = rr_root.
+*    l_level    = 0.
+
+      LOOP AT lt_fields INTO ls_field.
+        " Next level
+*      l_level = sy-tabix.
+
+        " Value of the field
+        ASSIGN COMPONENT ls_field OF STRUCTURE <ls_item> TO <fs_any>.
+        l_field_val = <fs_any>.
+
+        " Find existing
+        READ TABLE ls_curtree->sub_nodes REFERENCE INTO ls_attr_ref
+         WITH TABLE KEY name = l_field_val.
+
+        " Insert as a new subTREE
+        IF sy-subrc <> 0.
+          " New TREE
+          create_tree ls_subtree. "l_level.
+
+          " Add
+          ls_attr-name  = l_field_val.
+          ls_attr-attr  = ls_subtree.
+
+          INSERT ls_attr INTO TABLE ls_curtree->sub_nodes REFERENCE INTO ls_attr_ref.
+        ENDIF.
+
+        " Make current
+        ls_curtree ?= ls_attr_ref->attr.
+      ENDLOOP.
+
+      " Last level
+*    l_level = l_level + 1.
+      create_tree ls_subtree. " l_level.
+      GET REFERENCE OF <ls_item> INTO ls_subtree->data.
+
+      " Add
+      ls_attr-name  = lines( ls_curtree->sub_nodes ).
+      ls_attr-attr  = ls_subtree.
+      INSERT ls_attr INTO TABLE ls_curtree->sub_nodes.
+    ENDLOOP.
+
+*  " Raise event
+*  tree_raise_prepare(
+*   ir_tree  = rr_root
+*   iv_level = 0 ).
+  ENDMETHOD.
+
+
+  METHOD tree_create_relat.
+    TYPES:
+      BEGIN OF ts_relat,
+        node_key  TYPE string,
+        relat_key TYPE string,
+*      relat_not_empty TYPE abap_bool,
+        tree      TYPE REF TO ts_tree,
+      END OF ts_relat,
+      tt_relat TYPE HASHED TABLE OF ts_relat WITH UNIQUE KEY node_key.
+
+    DATA:
+      ls_tree      TYPE REF TO ts_tree,
+      lt_tree      TYPE REF TO tt_tree,
+      ls_relat     TYPE ts_relat,
+      lt_relat     TYPE tt_relat,
+      ls_tree_attr TYPE ts_tree_attr.
+
+    FIELD-SYMBOLS:
+      <lt_table>     TYPE ANY TABLE,
+      <ls_row>       TYPE any,
+      <lv_node_key>  TYPE any,
+      <lv_relat_key> TYPE any,
+      <ls_relat>     TYPE ts_relat,
+      <ls_relat_par> TYPE ts_relat,
+      <lt_tree>      TYPE tt_tree.
+
+    ASSIGN it_table->* TO <lt_table>.
+    " Add to mediator
+    LOOP AT <lt_table> ASSIGNING <ls_row>.
+      ASSIGN COMPONENT iv_node_key  OF STRUCTURE <ls_row> TO <lv_node_key>.
+      ASSIGN COMPONENT iv_relat_key OF STRUCTURE <ls_row> TO <lv_relat_key>.
+
+      IF <lv_node_key> = <lv_relat_key>.
+        RAISE ex_loop_ref.
+      ENDIF.
+
+      " Is level 0 OR error ?
+*    IF <lv_relat_key> IS NOT INITIAL.
+*      ls_relat-relat_not_empty = abap_true.
+*    ENDIF.
+
+      ls_relat-node_key  = <lv_node_key>.
+      ls_relat-relat_key = <lv_relat_key>.
+      CREATE DATA ls_relat-tree.
+      GET REFERENCE OF <ls_row> INTO ls_relat-tree->data.
+
+      " Insert new item
+      INSERT ls_relat INTO TABLE lt_relat.
+      IF sy-subrc <> 0.
+        RAISE ex_key_dupl.
+      ENDIF.
+
+      CLEAR ls_relat.
+    ENDLOOP.
+
+    " Where write result
+    CREATE DATA lt_tree.
+    ASSIGN lt_tree->* TO <lt_tree>.
+
+    LOOP AT lt_relat ASSIGNING <ls_relat>.
+      " Try to find
+      READ TABLE lt_relat ASSIGNING <ls_relat_par>
+       WITH TABLE KEY node_key = <ls_relat>-relat_key.
+
+      " To level
+      IF sy-subrc <> 0.
+*      IF <ls_relat>-relat_not_empty = abap_true.
+*        RAISE ex_ref_to_nowhere.
+*      ENDIF.
+
+        "<ls_relat>-tree->level = 0.
+        INSERT <ls_relat>-tree INTO TABLE <lt_tree>.
+      ELSE.
+        " Add as child
+        ls_tree_attr-name      = <ls_relat>-node_key. " lines( <lt_tree_attr> ).
+        ls_tree_attr-attr      = <ls_relat>-tree.
+        "<ls_relat>-tree->level = <ls_relat_par>-tree->level + 1.
+        INSERT ls_tree_attr INTO TABLE <ls_relat_par>-tree->sub_nodes.
+      ENDIF.
+    ENDLOOP.
+
+    rr_root = lt_tree.
+*  " Raise events
+*  LOOP AT <lt_tree> INTO ls_tree.
+*    tree_raise_prepare(
+*     ir_tree  = ls_tree
+*     iv_level = 0 ).
+*  ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD tree_raise_prepare.
+    DATA:
+      ls_tree      TYPE REF TO ts_tree,
+      lr_table     TYPE REF TO data,
+      lr_table_ref TYPE tt_std_ref_data, " For data changing
+      lv_level     TYPE i.
+    FIELD-SYMBOLS:
+      <ls_tree_attr> TYPE ts_tree_attr,
+      <ls_sub_tree>  TYPE ts_tree,
+      <ls_row>       TYPE any,
+      <lt_std_table> TYPE STANDARD TABLE.
+
+    ir_tree->level = iv_level.
+
+    " Sub levels first
+    lv_level = iv_level + 1.
+    LOOP AT ir_tree->sub_nodes ASSIGNING <ls_tree_attr>.
+      ls_tree ?= <ls_tree_attr>-attr.
+      tree_raise_prepare(
+       ir_tree  = ls_tree
+       iv_level = lv_level ).
+    ENDLOOP.
+
+**********************************************************************
+
+    " Set sub_data --> fill lr_table
+    " Standard table of subnodes
+    IF ir_tree->sub_nodes IS NOT INITIAL.
+      ASSIGN ir_tree->data->* TO <ls_row>.
+
+      " Create sub levels
+      CREATE DATA lr_table LIKE STANDARD TABLE OF <ls_row>.
+      ASSIGN lr_table->* TO <lt_std_table>.
+      LOOP AT ir_tree->sub_nodes ASSIGNING <ls_tree_attr>.
+        ASSIGN <ls_tree_attr>-attr->* TO <ls_sub_tree>.
+        ASSIGN <ls_sub_tree>-data->* TO <ls_row>.
+
+        " 2 kinds
+        APPEND:
+         <ls_row>           TO <lt_std_table>, " Copy of data (convenient for handler to process)
+         <ls_sub_tree>-data TO lr_table_ref.   " Original refs to data (to change it in handler)
+      ENDLOOP.
+    ENDIF.
+
+    " Own call
+    RAISE EVENT prepare_tree
+     EXPORTING
+       ir_tree         = ir_tree
+       ir_data         = ir_tree->data
+       ir_sub_data     = lr_table
+       it_sub_data_ref = lr_table_ref.
+  ENDMETHOD.
+
+
+METHOD _get_field_ext.
+  " Result block
+  FIELD-SYMBOLS <fs_block> TYPE any.
+
+  IF is_field IS INITIAL.
+    rs_field_ext-name = iv_block_name.
+    ASSIGN is_block TO <fs_block>.
+  ELSE." ROOT-FIELD1...
+    rs_field_ext-name  = is_field->name.
+    rs_field_ext-rb_id = is_field->fl_id.
+    IF is_field->dref IS NOT INITIAL.
+      ASSIGN is_field->dref->* TO <fs_block>.
+    ELSEIF is_field->oref IS NOT INITIAL. " Objects
+      ASSIGN is_field->oref    TO <fs_block>.
+    ENDIF.
+    CHECK <fs_block> IS ASSIGNED.
+  ENDIF.
+  " Same with name by default
+  IF rs_field_ext-rb_id IS INITIAL.
+    rs_field_ext-rb_id = rs_field_ext-name.
+  ENDIF.
+
+  " Ingone option of grandchildren {R-T-FIELD}
+  FIND ALL OCCURRENCES OF mc_block-name_delim IN rs_field_ext-name MATCH COUNT rs_field_ext-rb_level.
+
+  " TODO join with ADD_2_FIELDS
+  rs_field_ext-desc = cl_abap_typedescr=>describe_by_data( <fs_block> ).
+  DO.
+    IF rs_field_ext-desc->type_kind = cl_abap_typedescr=>typekind_dref.
+      DATA lv_ref TYPE REF TO data.
+      lv_ref ?= <fs_block>.
+      rs_field_ext-desc = cl_abap_typedescr=>describe_by_data_ref( lv_ref ).
+
+      ASSIGN lv_ref->* TO <fs_block>.
+      rs_field_ext-dref = lv_ref.
+      CONTINUE.
+    ENDIF.
+
+    CASE rs_field_ext-desc->type_kind.
         " Structures
       WHEN cl_abap_typedescr=>typekind_struct1 OR cl_abap_typedescr=>typekind_struct2.
-        ls_field-typ = zcl_xtt_replace_block=>mc_type_struct.
+        rs_field_ext-typ = mc_type-struct.
+
+        IF rs_field_ext-desc->absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK\TYPE=TS_TREE'.
+          rs_field_ext-typ = mc_type-tree.
+        ENDIF.
+
+        " Special case for objects
+      WHEN cl_abap_typedescr=>typekind_intf OR cl_abap_typedescr=>typekind_class OR cl_abap_typedescr=>typekind_oref.
+        " Only for objects
+        IF <fs_block> IS NOT INITIAL.
+          rs_field_ext-typ  = mc_type-object.
+          rs_field_ext-oref = <fs_block>.
+          rs_field_ext-desc = cl_abap_typedescr=>describe_by_object_ref( rs_field_ext-oref ).
+
+          IF rs_field_ext-desc->absolute_name = '\CLASS=ZCL_XTT_IMAGE'.
+            rs_field_ext-typ = mc_type-image.
+          ENDIF.
+        ENDIF.
+
+        RETURN.
 
         " Tables
       WHEN cl_abap_typedescr=>typekind_table.
-        ls_field-typ = zcl_xtt_replace_block=>mc_type_table.
+        rs_field_ext-typ = mc_type-table.
 
         " Integer, byte, short
       WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int1  OR cl_abap_typedescr=>typekind_int2.
-        ls_field-typ = zcl_xtt_replace_block=>mc_type_integer.
+        rs_field_ext-typ = mc_type-integer.
 
         " Use mask and don't delete dots in ZCL_XTT_REPLACE_BLOCK=>get_as_string
       WHEN cl_abap_typedescr=>typekind_num OR cl_abap_typedescr=>typekind_numeric.
+        DATA l_mask TYPE string.
+        DESCRIBE FIELD <fs_block> EDIT MASK l_mask.
         IF l_mask IS INITIAL.
-          ls_field-typ = zcl_xtt_replace_block=>mc_type_integer.
+          rs_field_ext-typ = mc_type-integer.
         ELSE. " For safety
-          ls_field-typ = zcl_xtt_replace_block=>mc_type_mask.
+          rs_field_ext-typ = mc_type-mask.
         ENDIF.
 
         " Double
       WHEN cl_abap_typedescr=>typekind_packed OR cl_abap_typedescr=>typekind_float OR
            '/' OR 'a' OR 'e'. " cl_abap_typedescr=>typekind_decfloat  OR cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
-        ls_field-typ = zcl_xtt_replace_block=>mc_type_double.
+        rs_field_ext-typ = mc_type-double.
 
         " Date
       WHEN cl_abap_typedescr=>typekind_date.
-        ls_field-typ = zcl_xtt_replace_block=>mc_type_date.
+        rs_field_ext-typ = mc_type-date.
 
         " Time
       WHEN cl_abap_typedescr=>typekind_time.
-        ls_field-typ = zcl_xtt_replace_block=>mc_type_time.
+        rs_field_ext-typ = mc_type-time.
 
         " No trunsformation for STRING
       WHEN cl_abap_typedescr=>typekind_char OR cl_abap_typedescr=>typekind_clike OR
@@ -293,1083 +831,29 @@ METHOD add_2_fields.
            cl_abap_typedescr=>typekind_w OR
            " Binary data in template? Dump ?
            cl_abap_typedescr=>typekind_hex OR cl_abap_typedescr=>typekind_xsequence OR cl_abap_typedescr=>typekind_xstring.
-        ls_field-typ = zcl_xtt_replace_block=>mc_type_string.
+        rs_field_ext-typ = mc_type-string.
 
 *TYPEKIND_IREF, TYPEKIND_BREF
 *TYPEKIND_DATA, TYPEKIND_SIMPLE, TYPEKIND_ANY
       WHEN OTHERS.
-        MESSAGE x002(zsy_xtt) WITH l_typekind.
-    ENDCASE.
-  ENDIF.
-
-  " And add
-  INSERT ls_field INTO TABLE mt_fields.
-ENDMETHOD.
-
-
-METHOD catch_prepare_tree.
-  DATA lv_message TYPE string.
-  FIELD-SYMBOLS:
-    <ls_func>      LIKE LINE OF mt_func,
-    <ls_data>      TYPE any,
-    <lt_sub_data>  TYPE ANY TABLE, " STANDARD ?
-    <ls_sub_data>  TYPE any,
-    <lv_field>     TYPE any,
-    <lv_sub_field> TYPE any.
-
-  CHECK mt_func IS NOT INITIAL AND ir_sub_data IS NOT INITIAL.
-
-  " Cast to specefic data
-  ASSIGN:
-   ir_data->*        TO <ls_data>,
-   ir_sub_data->*    TO <lt_sub_data>.
-
-  DO 2 TIMES.
-    " If no match was found & all formulas in 0 level then 2 times
-    CASE sy-index.
-      WHEN 1.
-        DATA lv_level TYPE i.
-        DATA lv_all_0 TYPE abap_bool VALUE abap_true.
-        DATA lv_found TYPE abap_bool VALUE abap_false.
-        lv_level = ir_tree->level.
-
-      WHEN 2.
-        CHECK lv_all_0 = abap_true AND lv_found <> abap_true.
-        lv_level = 0.
+        MESSAGE e002(zsy_xtt) WITH rs_field_ext-desc->type_kind INTO sy-msgli.
+        zcx_eui_no_check=>raise_sys_error( ).
     ENDCASE.
 
-    LOOP AT mt_func ASSIGNING <ls_func>.
-      " Is all formulas for level = 0 ?
-      IF <ls_func>-level <> 0.
-        lv_all_0 = abap_false.
-      ENDIF.
-
-      " Only for certain levele
-      CHECK <ls_func>-level = lv_level.
-
-      " Yes match found
-      lv_found = abap_true.
-
-      ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_data> TO <lv_field>.
-      CHECK sy-subrc = 0.
-
-      CASE <ls_func>-name.
-        WHEN 'COUNT'.
-          <lv_field> = lines( <lt_sub_data> ).
-
-        WHEN 'FIRST'. " 'LAST'.
-          LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
-            ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_sub_data> TO <lv_sub_field>.
-            <lv_field> = <lv_sub_field>.
-            EXIT.
-          ENDLOOP.
-
-        WHEN 'SUM' OR 'AVG'.
-          " Calculate sum
-          <lv_field> = 0.
-          LOOP AT <lt_sub_data> ASSIGNING <ls_sub_data>.
-            ASSIGN COMPONENT <ls_func>-field OF STRUCTURE <ls_sub_data> TO <lv_sub_field>.
-            <lv_field> = <lv_field> + <lv_sub_field>.
-          ENDLOOP.
-
-          IF <ls_func>-name = 'AVG'.
-            <lv_field> = <lv_field> / lines( <lt_sub_data> ).
-          ENDIF.
-
-        WHEN OTHERS.
-          CONCATENATE `Unknown function ` <ls_func>-name INTO lv_message. "#EC NOTEXT
-          zcx_xtt_exception=>raise_dump( iv_message = lv_message ).
-      ENDCASE.
-    ENDLOOP.
+    " 1 time only
+    EXIT.
   ENDDO.
-ENDMETHOD.
 
-
-METHOD constructor.
-  DATA:
-    lv_block_name   LIKE iv_block_name,
-    lo_desc         TYPE REF TO cl_abap_typedescr,
-    lo_sdesc        TYPE REF TO cl_abap_structdescr,
-    lo_odesc        TYPE REF TO cl_abap_objectdescr,
-    lr_data         TYPE REF TO data,
-    lr_ref          TYPE REF TO data,
-    lo_name         TYPE REF TO cl_abap_typedescr,
-    lo_block        TYPE REF TO object,
-    l_field_name    TYPE string,
-    l_absolute_name TYPE string,
-    lv_name         TYPE string.
-  FIELD-SYMBOLS:
-    <fs_block> TYPE any,
-    <fs_any>   TYPE any,
-    <ls_comp>  TYPE abap_compdescr,
-    <ls_attr>  TYPE abap_attrdescr.
-
-  " For nested structures
-  lv_block_name = iv_block_name.
-  IF is_field IS NOT SUPPLIED.
-    " Work by field symbol
-    ASSIGN is_block TO <fs_block>.
-  ELSE.
-    " ROOT-FIELD1...
-    lv_block_name = is_field->name.
-
-    " Objects
-    IF is_field->oref IS NOT INITIAL.
-      ASSIGN is_field->oref TO <fs_block>.
-    ELSE. " Other types
-      ASSIGN is_field->dref->* TO <fs_block>.
-    ENDIF.
-  ENDIF.
-
-  " What will search in template. At first '{ROOT-'
-  CONCATENATE zcl_xtt_replace_block=>mc_char_block_begin lv_block_name INTO mv_block_begin.
-
-  " 1 Is data (The most common)
-  TRY.
-      lo_desc = cl_abap_typedescr=>describe_by_data( <fs_block> ).
-    CATCH cx_dynamic_check.
-      MESSAGE x003(zsy_xtt) WITH lv_block_name.
-  ENDTRY.
-
-  " Description of description :)
-  lo_name = cl_abap_typedescr=>describe_by_object_ref( lo_desc ).
-  WHILE lo_name->absolute_name = '\CLASS=CL_ABAP_REFDESCR'.
-    " Reference to nowhere
-    CLEAR lo_desc.
-    IF <fs_block> IS INITIAL.
-      EXIT.
-    ENDIF.
-
-    " 2 Is data ref ?
-    TRY.
-        lo_desc = cl_abap_typedescr=>describe_by_data_ref( <fs_block> ).
-        lr_ref ?= <fs_block>.
-        ASSIGN lr_ref->* TO <fs_block>.
-      CATCH cx_dynamic_check.
-        CLEAR lo_desc.
-    ENDTRY.
-
-    " 3 Is object ref?
-    IF lo_desc IS INITIAL.
-      TRY.
-          lo_desc = cl_abap_typedescr=>describe_by_object_ref( <fs_block> ).
-          lo_block ?= <fs_block>.
-        CATCH cx_dynamic_check.
-          EXIT.
-      ENDTRY.
-    ENDIF.
-
-    " Goes deeper ->*  ->*
-    lo_name = cl_abap_typedescr=>describe_by_object_ref( lo_desc ).
-  ENDWHILE.
+  " Result
+  GET REFERENCE OF <fs_block> INTO rs_field_ext-dref.
 
   " Skip ?
-  IF lo_desc IS INITIAL.
-    lv_name = lv_block_name.
-    IF lv_name IS INITIAL AND is_field IS NOT INITIAL.
-      lv_name = is_field->name.
+  IF rs_field_ext-desc IS INITIAL.
+    IF rs_field_ext-name IS INITIAL AND is_field IS NOT INITIAL.
+      rs_field_ext-name = is_field->name.
     ENDIF.
-    MESSAGE x004(zsy_xtt) WITH lv_name.
+    MESSAGE e004(zsy_xtt) WITH rs_field_ext-name INTO sy-msgli.
+    zcx_eui_no_check=>raise_sys_error( ).
   ENDIF.
-
-*lo_desc is instance of:
-*CL_ABAP_TYPEDESCR
-*-CL_ABAP_DATADESCR
-*--CL_ABAP_COMPLEXDESCR
-*---CL_ABAP_STRUCTDESCR  +
-*---CL_ABAP_TABLEDESCR   + WHEN OTHERS
-*
-*--CL_ABAP_ELEMDESCR     + WHEN OTHERS
-*--CL_ABAP_REFDESCR      - Is not possible (DESCRIBE_BY_DATA_REF DESCRIBE_BY_OBJECT_REF)
-*
-*-CL_ABAP_OBJECTDESCR    +
-*--CL_ABAP_CLASSDESCR    +
-*--CL_ABAP_INTFDESCR     +
-
-  " Detect by name what to do
-  CASE lo_name->absolute_name.
-      " A structure is the most popular case
-    WHEN '\CLASS=CL_ABAP_STRUCTDESCR'.
-      lo_sdesc ?= lo_desc.
-      l_absolute_name = lo_sdesc->absolute_name.
-
-**********************************************************************
-      " TREE (Dynamic objects)
-      IF l_absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK\TYPE=TS_TREE'.
-        is_field->typ = zcl_xtt_replace_block=>mc_type_tree.
-
-        GET REFERENCE OF <fs_block> INTO lr_data.
-        me->add_2_fields(
-           iv_name     = lv_block_name
-           iv_type     = is_field->typ
-           ir_value    = lr_data ).
-        RETURN.
-      ENDIF.
-
-**********************************************************************
-      " Add every field
-      LOOP AT lo_sdesc->components ASSIGNING <ls_comp>.
-        " Name and data
-        ASSIGN COMPONENT sy-tabix OF STRUCTURE <fs_block> TO <fs_any>.
-        CONCATENATE lv_block_name zcl_xtt_replace_block=>mc_char_name_delimiter <ls_comp>-name INTO l_field_name.
-
-        " Insert field to me->fields
-        GET REFERENCE OF <fs_any> INTO lr_data.
-        me->add_2_fields(
-          iv_name     = l_field_name
-          ir_value    = lr_data ).
-      ENDLOOP.
-
-      " Object processed as a structure ↑↑↑
-    WHEN `\CLASS=CL_ABAP_CLASSDESCR` OR `\CLASS=CL_ABAP_INTFDESCR` OR `\CLASS=CL_ABAP_OBJECTDESCR`.
-      lo_odesc ?= lo_desc.
-      lo_block ?= <fs_block>.
-      " Add every field
-      LOOP AT lo_odesc->attributes ASSIGNING <ls_attr> WHERE visibility = cl_abap_objectdescr=>public.
-        " Name and data
-        ASSIGN lo_block->(<ls_attr>-name) TO <fs_any>.
-        CONCATENATE lv_block_name zcl_xtt_replace_block=>mc_char_name_delimiter <ls_attr>-name INTO l_field_name.
-
-        " Insert field to me->fields
-        GET REFERENCE OF <fs_any> INTO lr_data.
-        me->add_2_fields(
-           iv_name     = l_field_name
-           ir_value    = lr_data ).
-      ENDLOOP.
-
-    WHEN OTHERS.
-
-      " CL_ABAP_TABLEDESCR, CL_ABAP_ELEMDESCR
-      GET REFERENCE OF <fs_block> INTO lr_data.
-      me->add_2_fields(
-         iv_name     = lv_block_name
-         ir_value    = lr_data ).
-  ENDCASE.
-ENDMETHOD.
-
-
-METHOD extra_add_tab_opt.
-  DATA ls_extra_tab_opt LIKE LINE OF ct_extra_tab_opt.
-  DATA lv_ind           TYPE i.
-  DATA lv_field         TYPE string.
-  DATA lv_key           TYPE string.
-  DATA lv_value         TYPE string.
-  DATA lt_param         TYPE stringtab.
-
-  " Get without {}
-  lv_ind   = strlen( iv_text ).
-  lv_ind   = lv_ind - 2.
-  lv_field = iv_text+1(lv_ind).
-
-  " First part is a name
-  SPLIT lv_field AT `;` INTO TABLE lt_param.
-  READ TABLE lt_param INTO ls_extra_tab_opt-name INDEX 1.
-
-  " Find a match by name
-  " TRANSLATE ls_extra_tab_opt-name TO UPPER CASE. Better make case sensetive
-  READ TABLE ct_extra_tab_opt TRANSPORTING NO FIELDS
-   WITH TABLE KEY name = ls_extra_tab_opt-name.
-  IF sy-subrc = 0.
-    CONCATENATE 'Filed' ls_extra_tab_opt-name 'declared several times'  INTO lv_field SEPARATED BY space.
-    zcx_xtt_exception=>raise_dump( iv_message = lv_field ).
-  ENDIF.
-
-  " Set additional options
-  ls_extra_tab_opt-group = abap_undefined.
-  LOOP AT lt_param INTO lv_field FROM 2.  "<-- First item is field name
-    SPLIT lv_field AT '=' INTO lv_key lv_value.
-    CASE lv_key.
-      WHEN 'direction'.
-        ls_extra_tab_opt-direction = lv_value.
-      WHEN 'group'.
-        ls_extra_tab_opt-group     = lv_value.
-      WHEN OTHERS.
-        CONCATENATE 'Key: ' lv_key 'is unknown'  INTO lv_field SEPARATED BY space.
-        zcx_xtt_exception=>raise_dump( iv_message = lv_field ).
-    ENDCASE.
-  ENDLOOP.
-
-  " And add
-  INSERT ls_extra_tab_opt INTO TABLE ct_extra_tab_opt.
-ENDMETHOD.
-
-
-METHOD extra_create_tree.
-  " Check extra paramaters
-  CHECK it_extra_tab_opt IS NOT INITIAL.
-
-  DATA lv_group1 TYPE string.
-  DATA lv_group2 TYPE string.
-  FIELD-SYMBOLS <ls_extra_tab_opt> LIKE LINE OF it_extra_tab_opt.
-  FIELD-SYMBOLS <ls_field>         LIKE LINE OF mt_fields.
-
-  " Find matching
-  LOOP AT it_extra_tab_opt ASSIGNING <ls_extra_tab_opt> "#EC CI_SORTSEQ
-       WHERE group <> abap_undefined. " group could be empty
-    " 1 field
-    READ TABLE mt_fields ASSIGNING <ls_field>
-     WITH TABLE KEY name = <ls_extra_tab_opt>-name.
-
-    " Just skip ?
-    CHECK sy-subrc = 0.
-
-    " Table ?
-    IF <ls_field>-typ <> mc_type_table.
-      CONCATENATE 'Field' <ls_field>-name 'is not table!' INTO lv_group1 SEPARATED BY space.
-      zcx_xtt_exception=>raise_dump( iv_message = lv_group1 ).
-    ENDIF.
-
-    CLEAR lv_group2.
-    SPLIT <ls_extra_tab_opt>-group AT '-' INTO lv_group1 lv_group2.
-
-    " Have both parts
-    IF lv_group2 IS NOT INITIAL.
-      <ls_field>-dref = tree_create_relat(
-        it_table      = <ls_field>-dref
-        iv_node_key   = lv_group1
-        iv_relat_key  = lv_group2 ).
-      CONTINUE.
-    ENDIF.
-
-    " Now is tree
-    <ls_field>-typ = zcl_xtt_replace_block=>mc_type_tree.
-
-    " Fields separeted by ;
-    <ls_field>-dref = tree_create(
-     it_table      = <ls_field>-dref
-     iv_fields     = lv_group1 ).
-  ENDLOOP.
-ENDMETHOD.
-
-
-METHOD find_match.
-  DATA:
-    lr_content    TYPE REF TO string,
-    lt_find_res   TYPE match_result_tab,
-    l_find_pos    TYPE i,
-    l_off         TYPE i,
-    l_beg         TYPE i,
-    l_cnt         TYPE i,
-    l_whole_field TYPE string,
-    lt_params     TYPE stringtab,
-    ls_param      TYPE string,
-    l_key         TYPE string,
-    l_val         TYPE string,
-    l_fld_name    TYPE string,
-    ls_field      TYPE REF TO ts_field.
-  FIELD-SYMBOLS:
-   <ls_find_res> LIKE LINE OF lt_find_res.
-
-  " To change text in event handler
-  GET REFERENCE OF cv_content INTO lr_content.
-
-  " Look for '{ROOT-'
-  FIND ALL OCCURRENCES OF mv_block_begin IN cv_content RESULTS lt_find_res.
-
-  " Search from the last position. That's why 1 run only
-  l_find_pos = lines( lt_find_res ).
-  WHILE l_find_pos > 0.
-    " Read the next match
-    READ TABLE lt_find_res ASSIGNING <ls_find_res> INDEX l_find_pos.
-    l_find_pos = l_find_pos - 1.
-
-    " End of tech name
-    CHECK strlen( cv_content ) > <ls_find_res>-offset.
-    FIND FIRST OCCURRENCE OF zcl_xtt_replace_block=>mc_char_block_end IN SECTION OFFSET <ls_find_res>-offset OF cv_content MATCH OFFSET l_off.
-    CHECK sy-subrc = 0.
-
-    " Read tech name
-    l_beg = <ls_find_res>-offset + 1.
-    l_cnt = l_off - <ls_find_res>-offset - 1.
-    l_whole_field = cv_content+l_beg(l_cnt).
-
-    " Delete all rubbish between
-    IF iv_skip_tags = abap_true.
-      REPLACE ALL OCCURRENCES OF REGEX '<[^\>]+>' IN l_whole_field WITH ''.
-    ENDIF.
-
-    " First part is a name
-    SPLIT l_whole_field AT zcl_xtt_replace_block=>mc_char_option_delimiter INTO TABLE lt_params.
-    READ TABLE lt_params INTO l_fld_name INDEX 1.
-    CHECK sy-subrc = 0.
-
-    " Find a match by name
-    " TRANSLATE l_fld_name TO UPPER CASE. Better make case sensetive
-    READ TABLE mt_fields REFERENCE INTO ls_field
-     WITH TABLE KEY name = l_fld_name.
-
-    " Cannot find
-    IF sy-subrc <> 0 OR
-      " Or complex type
-       ls_field->typ = zcl_xtt_replace_block=>mc_type_struct OR
-       ls_field->typ = zcl_xtt_replace_block=>mc_type_object OR
-       " ls_field->typ = zcl_xtt_replace_block=>mc_type_tree   OR " TODO check!
-       ls_field->typ = zcl_xtt_replace_block=>mc_type_table.
-
-      " Markers for block's range (tables only). Can specify block's end(start) explicitly
-      CONCATENATE zcl_xtt_replace_block=>mc_char_block_begin l_fld_name INTO l_fld_name.
-      IF mv_block_begin = l_fld_name.
-        l_off = l_off + 1.
-        CONCATENATE cv_content(<ls_find_res>-offset) cv_content+l_off INTO cv_content RESPECTING BLANKS.
-      ENDIF.
-      CONTINUE.
-    ENDIF.
-
-    " Set additional options
-    LOOP AT lt_params INTO ls_param FROM 2.  "<-- First item is field name
-      SPLIT ls_param AT '=' INTO l_key l_val.
-      CASE l_key.
-          " Change type
-        WHEN 'type'.
-          ls_field->typ = l_val.
-      ENDCASE.
-    ENDLOOP.
-
-    " Replace value in event handler
-    RAISE EVENT match_found
-     EXPORTING
-      iv_content = lr_content
-      is_field   = ls_field
-      iv_pos_beg = <ls_find_res>-offset
-      iv_pos_end = l_off.
-  ENDWHILE.
-ENDMETHOD.
-
-
-METHOD get_as_string.
-  DATA:
-    l_text TYPE text255, " For long values use 'string' OR 'as_is', but do not use 'mask'
-    l_len  TYPE i.
-  FIELD-SYMBOLS:
-    <l_string> TYPE csequence,
-    <l_any>    TYPE any, "numeric, + n
-    <l_date>   TYPE d,
-    <l_time>   TYPE t.
-
-  " Just skip
-  CHECK is_field->dref IS NOT INITIAL OR is_field->oref IS NOT INITIAL.
-
-  " Convert field to a string
-  CASE is_field->typ.
-      " String
-    WHEN zcl_xtt_replace_block=>mc_type_string.
-      ASSIGN is_field->dref->* TO <l_string>.
-
-      " If too long
-      l_len = strlen( <l_string> ).
-      IF l_len > 32767.
-        rv_result = <l_string>(32767).
-      ELSE.
-        rv_result = <l_string>.
-      ENDIF.
-
-      " Delete symbols 0-31
-      REPLACE ALL OCCURRENCES OF REGEX '[^[:print:]]' IN rv_result WITH ''.
-
-      " Replace special chars
-      rv_result = cl_http_utility=>escape_html( rv_result ).
-
-      " Numbers
-    WHEN zcl_xtt_replace_block=>mc_type_integer OR zcl_xtt_replace_block=>mc_type_double.
-      ASSIGN is_field->dref->* TO <l_any>.
-
-      " Old method faster cl_abap_format=>o_simple
-      WRITE <l_any> TO l_text EXPONENT 0 NO-SIGN NO-GROUPING LEFT-JUSTIFIED.
-
-      IF <l_any> >= 0.
-        rv_result = l_text.
-      ELSE.
-        CONCATENATE `-` l_text INTO rv_result.
-      ENDIF.
-      " Even with replace is faster than using mask like RRV_.__
-      REPLACE FIRST OCCURRENCE OF ',' IN rv_result WITH '.'.
-
-      " As is using an edit mask
-    WHEN zcl_xtt_replace_block=>mc_type_mask.
-      ASSIGN is_field->dref->* TO <l_any>.
-      WRITE <l_any> TO l_text LEFT-JUSTIFIED.
-      rv_result = l_text.
-
-      " Do not transform at all
-    WHEN zcl_xtt_replace_block=>mc_type_as_is.
-      ASSIGN is_field->dref->* TO <l_any>.
-      rv_result = <l_any>.
-
-      " Boolean
-    WHEN zcl_xtt_replace_block=>mc_type_boolean.
-      ASSIGN is_field->dref->* TO <l_string>.
-      IF <l_string> IS NOT INITIAL. " = abap_true.
-        rv_result = '1'.
-      ELSE.
-        rv_result = '0'.
-      ENDIF.
-
-      " Whole as a string like  d + t
-    WHEN zcl_xtt_replace_block=>mc_type_datetime.
-      ASSIGN is_field->dref->* TO <l_string>.
-
-      " Both parts
-      ASSIGN <l_string>(8)     TO <l_date> CASTING.
-      ASSIGN <l_string>+8(6)   TO <l_time> CASTING.
-
-      " Date
-    WHEN zcl_xtt_replace_block=>mc_type_date.
-      ASSIGN is_field->dref->* TO <l_date>.
-
-      " Time
-    WHEN zcl_xtt_replace_block=>mc_type_time.
-      ASSIGN is_field->dref->* TO <l_time>.
-
-    WHEN zcl_xtt_replace_block=>mc_type_comp_cell.
-      rv_result = is_field->name.
-      RETURN.
-
-    WHEN OTHERS.
-      MESSAGE s002(zsy_xtt) WITH is_field->typ INTO sy-msgli.
-      zcx_xtt_exception=>raise_dump( iv_message = sy-msgli ).
-  ENDCASE.
-
-  " Never will happen in MS Excel template (MS Word and pdf only)
-  " Excel uses its own formats for date and time
-  " Format depends on country
-  IF <l_date> IS ASSIGNED AND <l_date> IS NOT INITIAL.
-    WRITE <l_date> TO l_text.
-    rv_result = l_text.
-  ENDIF.
-
-  IF <l_time> IS ASSIGNED.
-    WRITE <l_time> TO l_text.
-
-    " Datetime ?
-    IF <l_date> IS ASSIGNED.  " Both parts
-      CONCATENATE rv_result ` ` l_text INTO rv_result.
-    ELSE.                     " Just time
-      rv_result = l_text.
-    ENDIF.
-  ENDIF.
-ENDMETHOD.
-
-
-METHOD tree_create.
-  DATA:
-    lo_tdesc    TYPE REF TO cl_abap_tabledescr,
-    lo_sdesc    TYPE REF TO cl_abap_structdescr,
-    ls_curtree  TYPE REF TO zcl_xtt_replace_block=>ts_tree,
-    ls_subtree  TYPE REF TO zcl_xtt_replace_block=>ts_tree,
-    lt_fields   TYPE stringtab,
-    ls_field    TYPE string,
-    l_field_val TYPE string,
-    ls_attr     TYPE ts_tree_attr,
-    ls_attr_ref TYPE REF TO ts_tree_attr.
-*    l_level     TYPE i.
-  FIELD-SYMBOLS:
-    <lt_table> TYPE ANY TABLE,
-    <ls_item>  TYPE any,
-    <fs_any>   TYPE any.
-
-  DEFINE create_tree.
-    CREATE DATA &1.
-*    &1->level = &2.
-    CREATE DATA &1->data TYPE HANDLE lo_sdesc.
-  END-OF-DEFINITION.
-
-  ASSIGN it_table->* TO <lt_table>.
-  lo_tdesc ?= cl_abap_tabledescr=>describe_by_data( <lt_table> ).
-  lo_sdesc ?= lo_tdesc->get_table_line_type( ).
-
-  " Level 0
-  create_tree rr_root. " 0.
-
-  " More convenient than pass table
-  IF iv_fields CS ','.
-    SPLIT iv_fields AT ',' INTO TABLE lt_fields.
-  ELSE.
-    SPLIT iv_fields AT ';' INTO TABLE lt_fields.
-  ENDIF.
-
-  LOOP AT <lt_table> ASSIGNING <ls_item>.
-    ls_curtree = rr_root.
-*    l_level    = 0.
-
-    LOOP AT lt_fields INTO ls_field.
-      " Next level
-*      l_level = sy-tabix.
-
-      " Value of the field
-      ASSIGN COMPONENT ls_field OF STRUCTURE <ls_item> TO <fs_any>.
-      l_field_val = <fs_any>.
-
-      " Find existing
-      READ TABLE ls_curtree->sub_nodes REFERENCE INTO ls_attr_ref
-       WITH TABLE KEY name = l_field_val.
-
-      " Insert as a new subTREE
-      IF sy-subrc <> 0.
-        " New TREE
-        create_tree ls_subtree. "l_level.
-
-        " Add
-        ls_attr-name  = l_field_val.
-        ls_attr-attr  = ls_subtree.
-
-        INSERT ls_attr INTO TABLE ls_curtree->sub_nodes REFERENCE INTO ls_attr_ref.
-      ENDIF.
-
-      " Make current
-      ls_curtree ?= ls_attr_ref->attr.
-    ENDLOOP.
-
-    " Last level
-*    l_level = l_level + 1.
-    create_tree ls_subtree. " l_level.
-    GET REFERENCE OF <ls_item> INTO ls_subtree->data.
-
-    " Add
-    ls_attr-name  = lines( ls_curtree->sub_nodes ).
-    ls_attr-attr  = ls_subtree.
-    INSERT ls_attr INTO TABLE ls_curtree->sub_nodes.
-  ENDLOOP.
-
-*  " Raise event
-*  tree_raise_prepare(
-*   ir_tree  = rr_root
-*   iv_level = 0 ).
-ENDMETHOD.
-
-
-METHOD tree_create_relat.
-  TYPES:
-    BEGIN OF ts_relat,
-      node_key        TYPE string,
-      relat_key       TYPE string,
-*      relat_not_empty TYPE abap_bool,
-      tree            TYPE REF TO ts_tree,
-    END OF ts_relat,
-    tt_relat TYPE HASHED TABLE OF ts_relat WITH UNIQUE KEY node_key.
-
-  DATA:
-    ls_tree      TYPE REF TO ts_tree,
-    lt_tree      TYPE REF TO tt_tree,
-    ls_relat     TYPE ts_relat,
-    lt_relat     TYPE tt_relat,
-    ls_tree_attr TYPE ts_tree_attr.
-
-  FIELD-SYMBOLS:
-    <lt_table>     TYPE ANY TABLE,
-    <ls_row>       TYPE any,
-    <lv_node_key>  TYPE any,
-    <lv_relat_key> TYPE any,
-    <ls_relat>     TYPE ts_relat,
-    <ls_relat_par> TYPE ts_relat,
-    <lt_tree>      TYPE tt_tree.
-
-  ASSIGN it_table->* TO <lt_table>.
-  " Add to mediator
-  LOOP AT <lt_table> ASSIGNING <ls_row>.
-    ASSIGN COMPONENT iv_node_key  OF STRUCTURE <ls_row> TO <lv_node_key>.
-    ASSIGN COMPONENT iv_relat_key OF STRUCTURE <ls_row> TO <lv_relat_key>.
-
-    IF <lv_node_key> = <lv_relat_key>.
-      RAISE ex_loop_ref.
-    ENDIF.
-
-    " Is level 0 OR error ?
-*    IF <lv_relat_key> IS NOT INITIAL.
-*      ls_relat-relat_not_empty = abap_true.
-*    ENDIF.
-
-    ls_relat-node_key  = <lv_node_key>.
-    ls_relat-relat_key = <lv_relat_key>.
-    CREATE DATA ls_relat-tree.
-    GET REFERENCE OF <ls_row> INTO ls_relat-tree->data.
-
-    " Insert new item
-    INSERT ls_relat INTO TABLE lt_relat.
-    IF sy-subrc <> 0.
-      RAISE ex_key_dupl.
-    ENDIF.
-
-    CLEAR ls_relat.
-  ENDLOOP.
-
-  " Where write result
-  CREATE DATA lt_tree.
-  ASSIGN lt_tree->* TO <lt_tree>.
-
-  LOOP AT lt_relat ASSIGNING <ls_relat>.
-    " Try to find
-    READ TABLE lt_relat ASSIGNING <ls_relat_par>
-     WITH TABLE KEY node_key = <ls_relat>-relat_key.
-
-    " To level
-    IF sy-subrc <> 0.
-*      IF <ls_relat>-relat_not_empty = abap_true.
-*        RAISE ex_ref_to_nowhere.
-*      ENDIF.
-
-      "<ls_relat>-tree->level = 0.
-      INSERT <ls_relat>-tree INTO TABLE <lt_tree>.
-    ELSE.
-      " Add as child
-      ls_tree_attr-name      = <ls_relat>-node_key. " lines( <lt_tree_attr> ).
-      ls_tree_attr-attr      = <ls_relat>-tree.
-      "<ls_relat>-tree->level = <ls_relat_par>-tree->level + 1.
-      INSERT ls_tree_attr INTO TABLE <ls_relat_par>-tree->sub_nodes.
-    ENDIF.
-  ENDLOOP.
-
-  rr_root = lt_tree.
-*  " Raise events
-*  LOOP AT <lt_tree> INTO ls_tree.
-*    tree_raise_prepare(
-*     ir_tree  = ls_tree
-*     iv_level = 0 ).
-*  ENDLOOP.
-ENDMETHOD.
-
-
-METHOD tree_detect_options.
-  DATA:
-    lt_text  TYPE stringtab,
-    lv_text  TYPE string,
-    lv_value TYPE string,
-    ls_func  TYPE ts_func,
-    lv_ind   TYPE i.
-  FIELD-SYMBOLS:
-    <ls_func>    LIKE ls_func,
-    <ls_row_off> TYPE ts_row_offset.
-
-  " Read from texts
-  lv_text = iv_text.
-
-  " TODO unescape all? Only for <>
-  REPLACE ALL OCCURRENCES OF:
-   '&lt;'   IN lv_text WITH '<',
-   '&gt;'   IN lv_text WITH '>',
-   '&amp;'  IN lv_text WITH '&',
-   '&quot;' IN lv_text WITH '"',
-   '&apos;' IN lv_text WITH `'`.
-
-  SPLIT lv_text AT ';' INTO TABLE lt_text.
-  LOOP AT lt_text INTO lv_text.
-    CLEAR lv_value.
-    SPLIT lv_text AT '=' INTO lv_text lv_value.
-
-    CASE lv_text.
-      WHEN 'level'.
-        CLEAR cs_row_offset.
-        cs_row_offset-level = lv_value.
-
-      WHEN 'top'.
-        cs_row_offset-top = lv_value.
-
-      WHEN 'show_if'.
-        cs_row_offset-if_where = lv_value.
-        cs_row_offset-if_show  = abap_true.
-
-      WHEN 'hide_if'.
-        cs_row_offset-if_where = lv_value.
-        cs_row_offset-if_show  = abap_false.
-
-      WHEN 'func'.
-        ls_func-name = lv_value.
-        READ TABLE lt_text INTO ls_func-field INDEX 1.
-
-    ENDCASE.
-  ENDLOOP.
-
-  " Exist or new
-  READ TABLE ct_row_offset ASSIGNING <ls_row_off>
-   FROM cs_row_offset.
-  IF sy-subrc <> 0.
-    CLEAR:
-     cs_row_offset-first,
-     cs_row_offset-last. " Clear only here !!!
-    INSERT cs_row_offset INTO TABLE ct_row_offset ASSIGNING <ls_row_off>.
-  ENDIF.
-
-  <ls_row_off>-last = iv_pos.
-  IF <ls_row_off>-first IS INITIAL.
-    <ls_row_off>-first = <ls_row_off>-last.
-  ENDIF.
-
-***************************
-  " Add function
-  CHECK ls_func-name IS NOT INITIAL.
-
-  " Current level
-  ls_func-level = cs_row_offset-level.
-
-  TRANSLATE:
-   ls_func-name  TO UPPER CASE,
-   ls_func-field TO UPPER CASE.
-
-  SPLIT ls_func-field AT '-' INTO TABLE lt_text.
-  lv_ind = lines( lt_text ).
-  READ TABLE lt_text INTO ls_func-field INDEX lv_ind.
-
-  " And add
-  INSERT ls_func INTO TABLE mt_func.
-ENDMETHOD.
-
-
-METHOD tree_find_match.
-  DATA:
-    lv_level_index TYPE REF TO i,
-    lv_last_top    TYPE abap_bool,
-    lv_last_index  TYPE i,
-    ls_tree_group  TYPE ts_tree_group,
-    lv_ok          TYPE abap_bool,
-    lr_row_match   TYPE REF TO data.
-  FIELD-SYMBOLS:
-    <ls_data>      TYPE any,
-    <ls_row_match> TYPE any.
-
-  " Data to ANY
-  ASSIGN ir_tree->data->* TO <ls_data>.
-
-  " What level to use
-  CREATE DATA lv_level_index.
-  lv_level_index->* = -1.
-  lv_last_top       = iv_top.
-
-  IF iv_top <> abap_undefined.
-    lv_level_index->* = ir_tree->level.
-  ELSE.
-    lv_last_index = lines( it_row_match ).
-    READ TABLE it_row_match ASSIGNING <ls_row_match> INDEX lv_last_index.
-    IF sy-subrc = 0.
-      MOVE-CORRESPONDING <ls_row_match> TO ls_tree_group.
-      lv_level_index->* = ls_tree_group-level.
-      lv_last_top       = ls_tree_group-top.
-    ENDIF.
-  ENDIF.
-
-  " Change level by external condition
-  RAISE EVENT on_tree_change_level EXPORTING
-    ir_tree        = ir_tree
-    iv_block_name  = iv_block_name
-    iv_top         = iv_top
-    iv_level_index = lv_level_index.
-
-  " Check all conditions
-  CLEAR rr_found_match.
-  LOOP AT it_row_match ASSIGNING <ls_row_match>.
-    " Slow match by level and top
-    MOVE-CORRESPONDING <ls_row_match> TO ls_tree_group.
-    CHECK ls_tree_group-level = lv_level_index->* AND ls_tree_group-top = lv_last_top.
-
-    " As refernce
-    GET REFERENCE OF <ls_row_match> INTO lr_row_match.
-
-    " Just get default row group
-    IF ls_tree_group-if_form IS INITIAL.
-      rr_found_match = lr_row_match.
-    ENDIF.
-
-    CHECK ls_tree_group-if_form IS NOT INITIAL AND
-          iv_check_prog IS NOT INITIAL.
-
-    CLEAR lv_ok.
-    PERFORM (ls_tree_group-if_form) IN PROGRAM (iv_check_prog) IF FOUND
-      USING
-            <ls_data>
-      CHANGING
-            lv_ok.
-
-    IF lv_ok = abap_true.
-      " Hide
-      IF ls_tree_group-if_show = abap_true.
-        rr_found_match = lr_row_match.
-      ELSE.
-        CLEAR rr_found_match.
-      ENDIF.
-
-      EXIT.
-    ENDIF.
-  ENDLOOP.
-ENDMETHOD.
-
-
-METHOD tree_initialize.
-  DATA:
-    ls_tree_group TYPE ts_tree_group,
-    lv_ok         TYPE abap_bool,
-    lo_struc      TYPE REF TO cl_abap_structdescr, " TODO class attributes
-    ls_comp       TYPE REF TO abap_compdescr,
-    lv_len        TYPE string,
-    lv_dec        TYPE string,
-    lv_type       TYPE string,
-    lt_code       TYPE stringtab,
-    lv_line       TYPE string,
-    lv_message    TYPE string,
-    lv_pos        TYPE i.                                   "#EC NEEDED
-  FIELD-SYMBOLS:
-    <ls_row_match> TYPE any,
-    <lv_any>       TYPE any.
-
-  " The same key and base fields
-  LOOP AT ct_row_match ASSIGNING <ls_row_match>.
-    MOVE-CORRESPONDING <ls_row_match> TO ls_tree_group.
-
-    " Yes create new program on fly
-    IF ls_tree_group-if_where IS NOT INITIAL.
-      lv_ok = abap_true.
-    ENDIF.
-  ENDLOOP.
-
-  " Raise event
-  SET HANDLER catch_prepare_tree.
-  tree_raise_prepare(
-   ir_tree  = ir_tree
-   iv_level = 0 ).
-  CLEAR mt_func.
-
-  " No need in program
-  CHECK lv_ok = abap_true.
-
-  ASSIGN ir_tree->data->* TO <lv_any>.
-  lo_struc ?= cl_abap_typedescr=>describe_by_data( <lv_any> ).
-
-  " Structure declaration
-  APPEND `REPORT DYNAMIC_IF.` TO lt_code.
-  APPEND `TYPE-POOLS ABAP.` TO lt_code. " Required for ABAP 7.01
-  APPEND `TYPES: BEGIN OF TS_ROW, ` TO lt_code.
-
-  LOOP AT lo_struc->components REFERENCE INTO ls_comp.
-    " Convert to strings
-    lv_len = ls_comp->length.
-    lv_dec = ls_comp->decimals.
-
-    CASE ls_comp->type_kind.
-        " Convert to string
-      WHEN cl_abap_typedescr=>typekind_char OR cl_abap_typedescr=>typekind_clike OR
-           cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string.
-        lv_type = 'STRING'.
-
-        " Integer, byte, short
-      WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int1  OR cl_abap_typedescr=>typekind_int2.
-        lv_type = 'INT4'.
-
-        " Use mask and don't delete dots in ZCL_XTT_REPLACE_BLOCK=>get_as_string
-      WHEN cl_abap_typedescr=>typekind_num OR cl_abap_typedescr=>typekind_numeric.
-        CONCATENATE ` n LENGTH ` lv_len INTO lv_type. "#EC NOTEXT   thanks to Zhukov, Evgenii  No need ` DECIMALS ` lv_dec
-
-        " Double
-      WHEN cl_abap_typedescr=>typekind_packed OR cl_abap_typedescr=>typekind_float OR
-           '/' OR 'a' OR 'e'. " cl_abap_typedescr=>typekind_decfloat  OR cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
-        lv_type = ` p LENGTH 16 DECIMALS 5`. "#EC NOTEXT No need to be spcific
-
-        " Date
-      WHEN cl_abap_typedescr=>typekind_date.
-        lv_type = 'SYDATUM'.
-
-        " Time
-      WHEN cl_abap_typedescr=>typekind_time.
-        lv_type = 'SYUZEIT'.
-
-      WHEN OTHERS.
-        CONTINUE.
-    ENDCASE.
-
-    CONCATENATE ls_comp->name ` TYPE ` lv_type `,` INTO lv_type. "#EC NOTEXT
-    APPEND lv_type TO lt_code.
-  ENDLOOP.
-
-  APPEND 'END OF TS_ROW.' TO lt_code.                       "#EC NOTEXT
-
-  " Global structure
-  APPEND '' TO lt_code.
-  APPEND 'DATA: ROW TYPE TS_ROW.' TO lt_code.               "#EC NOTEXT
-  APPEND '' TO lt_code.
-
-  " Generate FORMs
-  LOOP AT ct_row_match ASSIGNING <ls_row_match>.
-    MOVE-CORRESPONDING <ls_row_match> TO ls_tree_group.
-    CHECK ls_tree_group-if_where IS NOT INITIAL.
-
-    " Name of FORM
-    ls_tree_group-if_form = sy-tabix.
-    CONDENSE ls_tree_group-if_form.
-    CONCATENATE `F_` ls_tree_group-if_form INTO ls_tree_group-if_form.
-
-    " Change form name
-    ASSIGN COMPONENT 'IF_FORM' OF STRUCTURE <ls_row_match> TO <lv_any>.
-    <lv_any> = ls_tree_group-if_form.
-
-    " FORM declaration
-    CONCATENATE `FORM ` ls_tree_group-if_form ` USING is_row TYPE ANY CHANGING cv_ok TYPE abap_bool.` INTO lv_line. "#EC NOTEXT
-    APPEND lv_line TO lt_code.
-
-    APPEND 'MOVE-CORRESPONDING is_row TO row.' TO lt_code.  "#EC NOTEXT
-
-    CONCATENATE `IF ` ls_tree_group-if_where `. cv_ok = 'X'. ENDIF.` INTO lv_line. "#EC NOTEXT
-    APPEND lv_line TO lt_code.
-
-    APPEND 'ENDFORM.' TO lt_code.                           "#EC NOTEXT
-    APPEND '' TO lt_code.
-  ENDLOOP.
-
-  GENERATE SUBROUTINE POOL lt_code NAME ev_program
-    MESSAGE lv_message
-    LINE lv_pos.                    "#EC CI_GENERATE. <--- in lt_code[]
-
-  " Ooops! wrong syntax in if_show of if_hide!
-  CHECK sy-subrc <> 0.
-  zcx_xtt_exception=>raise_dump( iv_message = lv_message ).
-ENDMETHOD.
-
-
-METHOD tree_raise_prepare.
-  DATA:
-    ls_tree      TYPE REF TO zcl_xtt_replace_block=>ts_tree,
-    lr_table     TYPE REF TO data,
-    lr_table_ref TYPE zcl_xtt_replace_block=>tt_std_ref_data, " For data changing
-    lv_level     TYPE i.
-  FIELD-SYMBOLS:
-    <ls_tree_attr> TYPE zcl_xtt_replace_block=>ts_tree_attr,
-    <ls_sub_tree>  TYPE zcl_xtt_replace_block=>ts_tree,
-    <ls_row>       TYPE any,
-    <lt_std_table> TYPE STANDARD TABLE.
-
-  ir_tree->level = iv_level.
-
-  " Sub levels first
-  lv_level = iv_level + 1.
-  LOOP AT ir_tree->sub_nodes ASSIGNING <ls_tree_attr>.
-    ls_tree ?= <ls_tree_attr>-attr.
-    tree_raise_prepare(
-     ir_tree  = ls_tree
-     iv_level = lv_level ).
-  ENDLOOP.
-
-**********************************************************************
-
-  " Set sub_data --> fill lr_table
-  " Standard table of subnodes
-  IF ir_tree->sub_nodes IS NOT INITIAL.
-    ASSIGN ir_tree->data->* TO <ls_row>.
-
-    " Create sub levels
-    CREATE DATA lr_table LIKE STANDARD TABLE OF <ls_row>.
-    ASSIGN lr_table->* TO <lt_std_table>.
-    LOOP AT ir_tree->sub_nodes ASSIGNING <ls_tree_attr>.
-      ASSIGN <ls_tree_attr>-attr->* TO <ls_sub_tree>.
-      ASSIGN <ls_sub_tree>-data->* TO <ls_row>.
-
-      " 2 kinds
-      APPEND:
-       <ls_row>           TO <lt_std_table>, " Copy of data (convenient for handler to process)
-       <ls_sub_tree>-data TO lr_table_ref.   " Original refs to data (to change it in handler)
-    ENDLOOP.
-  ENDIF.
-
-  " Own call
-  RAISE EVENT prepare_tree
-   EXPORTING
-     ir_tree         = ir_tree
-     ir_data         = ir_tree->data
-     ir_sub_data     = lr_table
-     it_sub_data_ref = lr_table_ref.
 ENDMETHOD.
 ENDCLASS.

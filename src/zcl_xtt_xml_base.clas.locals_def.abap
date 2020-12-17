@@ -2,33 +2,61 @@
 *"* definitions, interfaces or type declarations) you need for
 *"* components in the private section
 
-CLASS lcl_tree_handler DEFINITION FINAL.
+CLASS lcl_tree_handler DEFINITION INHERITING FROM zcl_xtt_tree_function FINAL.
   PUBLIC SECTION.
-    DATA:
-      mt_text_match TYPE zcl_xtt_xml_base=>tt_text_match,
-      mo_owner      TYPE REF TO zcl_xtt_xml_base,
-      mv_block_name TYPE string,
-      mv_check_prog TYPE string.
-
-    CLASS-METHODS:
-      find_extra
-        CHANGING
-          ct_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt
-          cv_content       TYPE string.
+    TYPES:
+      " tree cache
+      BEGIN OF ts_match_cache,
+        tr_id   TYPE string,
+        tr_text TYPE string,
+      END OF ts_match_cache.
 
     METHODS:
-      constructor
+      " only have to be intance
+      detect_row_offset_01
         IMPORTING
-          io_owner      TYPE REF TO zcl_xtt_xml_base
-          ir_tree       TYPE REF TO zcl_xtt_replace_block=>ts_tree
-          iv_block_name TYPE string
-          it_text_match TYPE zcl_xtt_xml_base=>tt_text_match,
+          ir_field  TYPE REF TO zcl_xtt_replace_block=>ts_field
+          iv_middle TYPE csequence
+          it_match  TYPE match_result_tab
+          iv_beg    TYPE i,
+      check_overlaps_02
+        IMPORTING
+          ir_field TYPE REF TO zcl_xtt_replace_block=>ts_field,
+      fill_text_match_03
+        IMPORTING
+          iv_tr_id  TYPE string
+          it_match  TYPE match_result_tab
+          iv_beg    TYPE i
+          iv_middle TYPE csequence.
+
+    METHODS:
+      fill_text_match
+        IMPORTING
+                  iv_tr_id           TYPE string
+                  iv_middle          TYPE csequence
+                  is_bounds          TYPE zcl_xtt_xml_base=>ts_bounds
+                  ir_field           TYPE REF TO zcl_xtt_replace_block=>ts_field
+        RETURNING VALUE(rv_has_text) TYPE abap_bool,
 
       add_tree_data
         IMPORTING
-          ir_tree TYPE REF TO zcl_xtt_replace_block=>ts_tree
+          io_owner TYPE REF TO zcl_xtt_xml_base
+          ir_tree  TYPE REF TO zcl_xtt_replace_block=>ts_tree
+          iv_tabix TYPE sytabix
         CHANGING
-          cv_text TYPE string.
+          cv_text  TYPE string,
+
+      add_tree_data_own
+        IMPORTING
+          io_owner       TYPE REF TO zcl_xtt_xml_base
+          ir_tree        TYPE REF TO zcl_xtt_replace_block=>ts_tree
+          iv_tabix       TYPE sytabix
+        EXPORTING
+          ev_text_top    TYPE string
+          ev_text_bottom TYPE string.
+*        CHANGING
+    " cv_text  TYPE string.
+
 ENDCLASS.
 
 " Access to private data

@@ -18,12 +18,6 @@
      <LANGU>E</LANGU>
      <DESCRIPT>CONSTRUCTOR</DESCRIPT>
     </SEOCOMPOTX>
-    <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT_EXCEL_XML</CLSNAME>
-     <CMPNAME>HIDE_EXCEL_WARNING</CMPNAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Don&apos;t recomend to use! You can change file ext in SMWO</DESCRIPT>
-    </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>
  </asx:abap>

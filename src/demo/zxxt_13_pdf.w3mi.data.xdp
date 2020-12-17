@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xfa generator="AdobeLiveCycleDesigner_V11.0.9.20200413.2.938664_SAP" APIVersion="3.6.20084.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/" timeStamp="2020-11-30T03:03:16Z" uuid="333f3c2d-6e70-43ed-8457-2f6c1c647148">
+<template xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xmlns="http://www.xfa.org/schema/xfa-template/3.3/">
+   <?formServer defaultPDFRenderFormat acrobat10.0dynamic?>
+   <subform name="form1" layout="tb" locale="ru_RU" restoreState="auto">
+      <pageSet>
+         <pageArea name="Page1" id="Page1">
+            <contentArea x="6.35mm" y="25.4mm" w="269.875mm" h="184.15mm"/>
+            <medium stock="letter" short="215.9mm" long="279.4mm" orientation="landscape"/>
+            <draw x="6.35mm" w="269.875mm" h="28.164mm">
+               <font typeface="Arial"/>
+               <value>
+                  <exData contentType="text/html" xliff:rid="FD3F74F3-7BFC-4866-9BC7-D655CE7D227F">
+                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="font-family:'Times New Roman';text-decoration:none;letter-spacing:0in"><span style="xfa-tab-count:1">         </span><span style="font-family:Calibri;font-size:11pt">{R-TIME}<span style="xfa-tab-count:1">         </span><br/>am or pm?<span style="xfa-spacerun:yes">                           </span><span style="xfa-tab-count:1">         </span>{R;cond=WHEN value-TIME GE '120000' THEN 'post meridiem' ELSE 'ante meridiem'}</span><span style="font-family:Calibri;font-size:11pt"><span style="xfa-tab-count:1">         </span><br/>Number of lines in R-T table<span style="xfa-tab-count:1">         </span>{R;cond=`Time= ` &amp;&amp; sy-uzeit(2) &amp;&amp; ':' &amp;&amp; sy-uzeit+2(2) &amp;&amp; ':' &amp;&amp; sy-uzeit+4(2)}<span style="xfa-tab-count:1">         </span></span><span style="font-family:Calibri;font-size:11pt"><br/>Read table value by []<span style="xfa-spacerun:yes">        </span><span style="xfa-tab-count:1">         </span>{R;cond=WHEN line_exists( value-t[ group = 'GRP A' ] ) THEN |First caption in group 'A' { value-t[ group = 'GRP A' ]-caption }|}<span style="xfa-tab-count:1">         </span></span><span style="font-family:Calibri;font-size:11pt"><br/>Additional payment<span style="xfa-spacerun:yes">                      </span>{R;cond=WHEN value-DATE(4) = '2020' THEN |{ 42500 NUMBER = USER }| ELSE 0}</span><span style="font-family:Calibri;font-size:11pt"><span style="xfa-tab-count:1">         </span><br/></span><br/></p></body>
+                  </exData>
+               </value>
+               <ui>
+                  <textEdit/>
+               </ui>
+               <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+            </draw>
+            <?templateDesigner expand 1?></pageArea>
+         <?templateDesigner expand 1?></pageSet>
+      <subform w="269.875mm" layout="tb">
+         <subform name="Table1" layout="table" columnWidths="12.44mm 40.6402mm 40.6402mm 40.6402mm 40.6402mm 40.6402mm 40.6402mm">
+            <border>
+               <edge/>
+            </border>
+            <subform layout="row" name="HeaderRow" id="HeaderRow_ID">
+               <assist role="TH"/>
+               <draw h="10mm">
+                  <ui>
+                     <textEdit>
+                        <margin/>
+                     </textEdit>
+                  </ui>
+                  <value>
+                     <text xliff:rid="FD4172AB-C924-4BE4-9841-2D5C45AB1D89">№</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <para vAlign="middle"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+               </draw>
+               <draw h="10mm" name="Cell1">
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <value>
+                     <text xliff:rid="83483D43-7C10-463E-B94B-4ADC352A4DB9">Caption</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <para vAlign="middle" hAlign="center"/>
+               </draw>
+               <draw h="10mm" name="Cell2">
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <value>
+                     <text xliff:rid="ADF01250-2066-40E1-BDD6-CD5CF0A62EA6">Group</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <para vAlign="middle" hAlign="center"/>
+               </draw>
+               <draw h="10mm" name="Cell4">
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <value>
+                     <text xliff:rid="8B31CA66-6574-45A9-975D-C26701AD9A2C">SUM1</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <para vAlign="middle" hAlign="center"/>
+               </draw>
+               <draw h="10mm" name="Cell5">
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <value>
+                     <text xliff:rid="09C16CC7-6950-4AEC-959B-32FDE11147E8">SUM2</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <para vAlign="middle" hAlign="center"/>
+               </draw>
+               <border>
+                  <edge presence="hidden"/>
+               </border>
+               <occur max="-1"/>
+               <bind match="none"/>
+               <draw>
+                  <font typeface="Arial"/>
+                  <value>
+                     <exData contentType="text/html" xliff:rid="D0C06BDE-C7EE-451F-B96A-5EFA8DF34565">
+                        <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;letter-spacing:0in">Which field is bigger?<br/>Result is STRING by default</p></body>
+                     </exData>
+                  </value>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+                  <border>
+                     <edge/>
+                     <corner thickness="0.175mm"/>
+                  </border>
+               </draw>
+               <draw>
+                  <font typeface="Arial"/>
+                  <value>
+                     <exData contentType="text/html" xliff:rid="08A22B7F-8B00-4C1F-9391-9C364FAC5561">
+                        <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;letter-spacing:0in">Plus (GROUP cp '*A*'<span style="xfa-spacerun:yes">  </span>) ELSE minus<br/>Covert result to double</p></body>
+                     </exData>
+                  </value>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+                  <border>
+                     <edge/>
+                     <corner thickness="0.175mm"/>
+                  </border>
+               </draw>
+               <?templateDesigner expand 1?></subform>
+            <subform layout="row" name="Row1">
+               <assist role="TR"/>
+               <draw>
+                  <font typeface="Arial"/>
+                  <value>
+                     <exData contentType="text/html" xliff:rid="6E52A908-7500-4B3B-88FC-F87785EAA008">
+                        <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;color:#0066cc;text-decoration:none;letter-spacing:0in">{R-T;cond=sy-tabix}</p></body>
+                     </exData>
+                  </value>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+                  <border>
+                     <edge/>
+                     <corner thickness="0.175mm"/>
+                  </border>
+               </draw>
+               <draw h="10mm" name="Cell1">
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <value>
+                     <text xliff:rid="62FA1503-5B7C-4CC4-9FFE-28102AFB29CA">{R-T-CAPTION}</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <para vAlign="middle" hAlign="center"/>
+               </draw>
+               <draw h="10mm" name="Cell2">
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <value>
+                     <text xliff:rid="EF88A2A4-760E-427F-8DF4-BB49261C3ADB">{R-T-GROUP}</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <para vAlign="middle" hAlign="center"/>
+               </draw>
+               <draw h="10mm" name="Cell4">
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <value>
+                     <text xliff:rid="C3D5510B-76A8-42F8-9865-361895C88D77">{R-T-SUM1;type=mask}</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <para vAlign="middle" hAlign="right"/>
+               </draw>
+               <draw h="10mm" name="Cell5">
+                  <border>
+                     <edge/>
+                     <corner thickness="0.1778mm"/>
+                  </border>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <value>
+                     <text xliff:rid="A52803C0-8BD7-4500-8458-DD48B672516F">{R-T-SUM2;type=mask}</text>
+                  </value>
+                  <font typeface="Arial"/>
+                  <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                  <para vAlign="middle" hAlign="right"/>
+               </draw>
+               <border>
+                  <edge presence="hidden"/>
+               </border>
+               <bind match="none"/>
+               <draw>
+                  <font typeface="Arial"/>
+                  <value>
+                     <exData contentType="text/html" xliff:rid="C67C712A-E9B8-4970-BA74-2625EE571393">
+                        <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;letter-spacing:0in"><span style="color:#0066cc">{R-T;cond=WHEN value-SUM1 GT value-sum2 THEN 'Sum 1 is bigger' ELSE 'Sum2 is bigger'}</span></p></body>
+                     </exData>
+                  </value>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+                  <border>
+                     <edge/>
+                     <corner thickness="0.175mm"/>
+                  </border>
+               </draw>
+               <draw>
+                  <font typeface="Arial"/>
+                  <value>
+                     <exData contentType="text/html" xliff:rid="9F718D1D-70FE-4CA0-BA70-A775F3802FD8">
+                        <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;color:#0066cc;letter-spacing:0in">{R-T;cond=WHEN value-GROUP cp '*A*' THEN value-SUM1 + value-SUM2 ELSE |{ value-SUM1 - value-SUM2 NUMBER = USER }| }</p></body>
+                     </exData>
+                  </value>
+                  <ui>
+                     <textEdit/>
+                  </ui>
+                  <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+                  <border>
+                     <edge/>
+                     <corner thickness="0.175mm"/>
+                  </border>
+               </draw>
+               <?templateDesigner expand 1?></subform>
+            <bind match="none"/>
+            <?templateDesigner rowpattern first:1, next:1, firstcolor:f0f0f0, nextcolor:ffffff, apply:0?>
+            <overflow leader="HeaderRow"/>
+            <?templateDesigner expand 1?></subform>
+         <?templateDesigner expand 1?></subform>
+      <proto/>
+      <desc>
+         <text name="version">11.0.1.20160812.1.925753.903801</text>
+      </desc>
+      <?templateDesigner expand 1?>
+      <?renderCache.subset "Arial" 0 0 UTF-16 2 132 001000140015001E002000240026002A002C0030003100320033003500360037003800440048004C004E00500051005200530055005600570058005C005E0060028B?>
+      <?renderCache.subset "Calibri" 0 0 UTF-16 2 260 00030004001100120018001C00260027002C002F003E00440045004B0057005A005E0064006800740102010F0110011A011E01280150015A015D016F01750176017D0189018C0190019A01B501C001C601C701CC01ED034D03560357036E0372037A037E037F0380038103820383038E0396039803EC03ED03EE03F003F1043D0441?>
+      <?renderCache.subset "Times New Roman" 0 0 UTF-16 2 4 0003?></subform>
+   <?templateDesigner DefaultPreviewDynamic 1?>
+   <?templateDesigner DefaultRunAt client?>
+   <?templateDesigner Grid show:1, snap:1, units:0, color:ff8080, origin:(0,0), interval:(125000,125000)?>
+   <?templateDesigner WidowOrphanControl 0?>
+   <?templateDesigner DefaultCaptionFontSettings face:Arial;size:10;weight:normal;style:normal?>
+   <?templateDesigner DefaultValueFontSettings face:Arial;size:10;weight:normal;style:normal?>
+   <?templateDesigner DefaultLanguage JavaScript?>
+   <?acrobat JavaScript strictScoping?>
+   <?templateDesigner SaveTaggedPDF 0?>
+   <?templateDesigner SavePDFWithEmbeddedFonts 0?>
+   <?templateDesigner SavePDFWithLog 0?>
+   <?templateDesigner FormTargetVersion 33?>
+   <?templateDesigner Rulers horizontal:1, vertical:1, guidelines:1, crosshairs:0?>
+   <?templateDesigner Zoom 67?></template>
+<config xmlns="http://www.xfa.org/schema/xci/3.0/">
+   <agent name="designer">
+      <!--  [0..n]  -->
+      <destination>pdf</destination>
+      <pdf>
+         <!--  [0..n]  -->
+         <fontInfo/>
+      </pdf>
+   </agent>
+   <present>
+      <!--  [0..n]  -->
+      <pdf>
+         <!--  [0..n]  -->
+         <version>1.7</version>
+         <adobeExtensionLevel>8</adobeExtensionLevel>
+      </pdf>
+      <xdp>
+         <packets>*</packets>
+      </xdp>
+   </present>
+   <psMap>
+      <font typeface="Calibri" psName="Calibri" weight="normal" posture="normal"/>
+   </psMap>
+</config>
+<localeSet xmlns="http://www.xfa.org/schema/xfa-locale-set/2.7/">
+   <locale name="ru_RU" desc="Russian (Russia)">
+      <calendarSymbols name="gregorian">
+         <monthNames>
+            <month>января</month>
+            <month>февраля</month>
+            <month>марта</month>
+            <month>апреля</month>
+            <month>мая</month>
+            <month>июня</month>
+            <month>июля</month>
+            <month>августа</month>
+            <month>сентября</month>
+            <month>октября</month>
+            <month>ноября</month>
+            <month>декабря</month>
+         </monthNames>
+         <monthNames abbr="1">
+            <month>янв.</month>
+            <month>февр.</month>
+            <month>марта</month>
+            <month>апр.</month>
+            <month>мая</month>
+            <month>июня</month>
+            <month>июля</month>
+            <month>авг.</month>
+            <month>сент.</month>
+            <month>окт.</month>
+            <month>нояб.</month>
+            <month>дек.</month>
+         </monthNames>
+         <dayNames>
+            <day>воскресенье</day>
+            <day>понедельник</day>
+            <day>вторник</day>
+            <day>среда</day>
+            <day>четверг</day>
+            <day>пятница</day>
+            <day>суббота</day>
+         </dayNames>
+         <dayNames abbr="1">
+            <day>Вс</day>
+            <day>Пн</day>
+            <day>Вт</day>
+            <day>Ср</day>
+            <day>Чт</day>
+            <day>Пт</day>
+            <day>Сб</day>
+         </dayNames>
+         <meridiemNames>
+            <meridiem>AM</meridiem>
+            <meridiem>PM</meridiem>
+         </meridiemNames>
+         <eraNames>
+            <era>до н.э.</era>
+            <era>н.э.</era>
+         </eraNames>
+      </calendarSymbols>
+      <datePatterns>
+         <datePattern name="full">D MMMM YYYY 'г.'</datePattern>
+         <datePattern name="long">D MMMM YYYY 'г.'</datePattern>
+         <datePattern name="med">DD.MM.YYYY</datePattern>
+         <datePattern name="short">DD.MM.YY</datePattern>
+      </datePatterns>
+      <timePatterns>
+         <timePattern name="full">H:MM:SS Z</timePattern>
+         <timePattern name="long">H:MM:SS Z</timePattern>
+         <timePattern name="med">H:MM:SS</timePattern>
+         <timePattern name="short">H:MM</timePattern>
+      </timePatterns>
+      <dateTimeSymbols>GanjkHmsSEDFwWxhKzZ</dateTimeSymbols>
+      <numberPatterns>
+         <numberPattern name="numeric">z,zz9.zzz</numberPattern>
+         <numberPattern name="currency">z,zz9.zz$</numberPattern>
+         <numberPattern name="percent">z,zz9%</numberPattern>
+      </numberPatterns>
+      <numberSymbols>
+         <numberSymbol name="decimal">,</numberSymbol>
+         <numberSymbol name="grouping"> </numberSymbol>
+         <numberSymbol name="percent">%</numberSymbol>
+         <numberSymbol name="minus">-</numberSymbol>
+         <numberSymbol name="zero">0</numberSymbol>
+      </numberSymbols>
+      <currencySymbols>
+         <currencySymbol name="symbol">р.</currencySymbol>
+         <currencySymbol name="isoname">RUR</currencySymbol>
+         <currencySymbol name="decimal">,</currencySymbol>
+      </currencySymbols>
+      <typefaces>
+         <typeface name="Myriad Pro"/>
+         <typeface name="Minion Pro"/>
+         <typeface name="Courier Std"/>
+         <typeface name="Adobe Pi Std"/>
+         <typeface name="Adobe Hebrew"/>
+         <typeface name="Adobe Arabic"/>
+         <typeface name="Adobe Thai"/>
+         <typeface name="Kozuka Gothic Pro-VI M"/>
+         <typeface name="Kozuka Mincho Pro-VI R"/>
+         <typeface name="Adobe Ming Std L"/>
+         <typeface name="Adobe Song Std L"/>
+         <typeface name="Adobe Myungjo Std M"/>
+         <typeface name="Adobe Devanagari"/>
+      </typefaces>
+   </locale>
+</localeSet>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.4-c005 78.150055, 2013/08/07-22:58:47        ">
+   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+      <rdf:Description xmlns:xmp="http://ns.adobe.com/xap/1.0/" xmlns:pdf="http://ns.adobe.com/pdf/1.3/" xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/" xmlns:desc="http://ns.adobe.com/xfa/promoted-desc/" rdf:about="">
+         <xmp:MetadataDate>2020-11-30T03:03:16Z</xmp:MetadataDate>
+         <xmp:CreatorTool>Adobe LiveCycle Designer 11.0</xmp:CreatorTool>
+         <pdf:Producer>Adobe LiveCycle Designer 11.0</pdf:Producer>
+         <xmpMM:DocumentID>uuid:333f3c2d-6e70-43ed-8457-2f6c1c647148</xmpMM:DocumentID>
+         <desc:version rdf:parseType="Resource">
+            <rdf:value>11.0.1.20160812.1.925753.903801</rdf:value>
+            <desc:ref>/template/subform[1]</desc:ref>
+         </desc:version>
+      </rdf:Description>
+   </rdf:RDF>
+</x:xmpmeta></xdp:xdp>

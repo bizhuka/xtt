@@ -1,7 +1,180 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
 
-CLASS cl_main IMPLEMENTATION.
+CLASS lcl_main IMPLEMENTATION.
+  METHOD start_of_selection.
+    " Current example
+    DATA ls_screen_opt TYPE REF TO ts_screen_opt.
+    READ TABLE mt_screen_opt REFERENCE INTO ls_screen_opt
+     WITH TABLE KEY key = p_exa.
+
+    IF sy-subrc <> 0.
+      MESSAGE 'Please select example'(pse) TYPE 'S' DISPLAY LIKE 'E'.
+      RETURN.
+    ENDIF.
+
+    CASE abap_true.
+        " Download template
+      WHEN p_temp.
+        export_template( iv_file_name  = iv_file_name
+                         is_screen_opt = ls_screen_opt ).
+
+        " Go on for testing
+        CHECK mo_injection IS NOT INITIAL.
+
+      WHEN p_stru.
+        is_break_point_active( ).
+    ENDCASE.
+
+    " Call current example
+    DATA lo_xtt TYPE REF TO zcl_xtt.
+    " Usually 1 line like
+    " new zcl_xtt_excel_xlsx( new zcl_xtt_file_smw0( ) )->merge( )->download( ).
+    lo_xtt = call_example( ls_screen_opt ).
+
+    " Call respective method
+    CHECK p_repo = abap_true
+      AND lo_xtt IS NOT INITIAL.
+
+    CASE abap_true.
+      WHEN p_show.
+        lo_xtt->show( ).
+
+      WHEN p_send.
+        send_email( lo_xtt ).
+
+      WHEN p_appser.
+        lo_xtt->download( EXPORTING iv_open     = zcl_xtt=>mc_by-app_server
+                                    iv_zip      = p_zip
+                          CHANGING  cv_fullpath = p_path ).
+
+      WHEN p_dwnl.
+        IF p_open = abap_true.
+          lo_xtt->download(        " All parameters are optional
+           EXPORTING
+            iv_zip      = p_zip
+           CHANGING
+            cv_fullpath = p_path ).
+        ELSE.
+          lo_xtt->download(
+           EXPORTING
+            iv_open     = p_open " Could be ZCL_XTT=>MC_BY_OLE
+            iv_zip      = p_zip
+           CHANGING
+            cv_fullpath = p_path ).
+        ENDIF.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD call_example.
+    DATA lv_class_name TYPE string.
+    DATA lv_template   TYPE string.
+
+    " Current XTT class & template
+    lv_class_name = is_screen_opt->class_name.
+    lv_template   = is_screen_opt->template.
+
+    " Info about template & the main class itself
+    DATA lo_file TYPE REF TO zif_xtt_file.
+    CREATE OBJECT:
+     lo_file TYPE zcl_xtt_file_smw0
+      EXPORTING
+       iv_objid = lv_template,
+
+     ro_xtt TYPE (lv_class_name)
+      EXPORTING
+       io_file = lo_file.
+
+    " for test purpose
+    IF mo_injection IS NOT INITIAL.
+      mo_injection->prepare( iv_class_name = lv_class_name
+                             io_xtt        = ro_xtt ).
+    ENDIF.
+
+    " Call by name
+    DATA lv_meth  TYPE string.
+    DATA lv_break TYPE abap_bool.
+
+    CONCATENATE 'EXAMPLE_' is_screen_opt->key(2) INTO lv_meth.
+    CALL METHOD me->(lv_meth)
+      EXPORTING
+        io_xtt   = ro_xtt
+      IMPORTING
+        ev_break = lv_break.
+
+    " No result
+    CHECK lv_break = abap_true.
+    CLEAR ro_xtt.
+  ENDMETHOD.
+
+  METHOD send_email.
+    DATA lo_recipient  TYPE REF TO if_recipient_bcs.
+    DATA lt_recipient  TYPE rmps_recipient_bcs.
+    DATA lo_err        TYPE REF TO cx_address_bcs.
+    DATA lv_text       TYPE string.
+
+    " Add recipients
+    TRY.
+        IF p_user IS NOT INITIAL.
+          lo_recipient = cl_sapuser_bcs=>create( p_user ).
+          APPEND lo_recipient TO lt_recipient.
+        ENDIF.
+
+        IF p_email IS NOT INITIAL.
+          lo_recipient = cl_cam_address_bcs=>create_internet_address( p_email ).
+          APPEND lo_recipient TO lt_recipient.
+        ENDIF.
+      CATCH cx_address_bcs INTO lo_err.
+        lv_text = lo_err->if_message~get_text( ).
+        MESSAGE lv_text TYPE 'S' DISPLAY LIKE 'E'.
+    ENDTRY.
+
+    CHECK lt_recipient IS NOT INITIAL.
+    io_xtt->send(
+     it_recipients = lt_recipient
+     iv_subject    = p_title
+     iv_body       = p_text ).
+  ENDMETHOD.
+
+  METHOD export_template.
+    DATA lo_smw0      TYPE REF TO zif_xtt_file.
+    DATA lo_file      TYPE REF TO zcl_eui_file.
+    DATA lv_file_name TYPE string.
+    DATA lo_error     TYPE REF TO zcx_eui_exception.
+    DATA lv_content   TYPE xstring.
+
+    " SMW0 reader
+    CREATE OBJECT lo_smw0 TYPE zcl_xtt_file_smw0
+      EXPORTING
+        iv_objid = is_screen_opt->template.
+
+    " Get file content
+    lo_smw0->get_content(
+     IMPORTING
+       ev_as_xstring = lv_content ).
+
+    lv_file_name = iv_file_name.
+    IF lv_file_name IS INITIAL.
+      lv_file_name = lo_smw0->get_name( ).
+    ENDIF.
+
+    " Initilize
+    CREATE OBJECT lo_file
+      EXPORTING
+        iv_xstring = lv_content.
+
+    TRY.
+        lo_file->download( iv_full_path = lv_file_name ).
+
+        " Open template
+        IF iv_file_name IS INITIAL.
+          lo_file->open( ).
+        ENDIF.
+      CATCH zcx_eui_exception INTO lo_error.
+        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+    ENDTRY.
+  ENDMETHOD.
+
   METHOD constructor.
     DATA:
       lt_wwwdata    TYPE STANDARD TABLE OF wwwdata WITH DEFAULT KEY,
@@ -15,6 +188,12 @@ CLASS cl_main IMPLEMENTATION.
     FIELD-SYMBOLS:
       <ls_wwwdata>  LIKE LINE OF lt_wwwdata.
 
+    mo_injection = io_injection.
+    " Always the same random data
+    IF mo_injection IS NOT INITIAL.
+      mv_seed  = 777.
+    ENDIF.
+
     DEFINE add_to_list.
       APPEND INITIAL LINE TO lt_list REFERENCE INTO ls_list.
       CONCATENATE lv_grp '-' lv_number INTO ls_list->key.
@@ -22,12 +201,12 @@ CLASS cl_main IMPLEMENTATION.
 
       ls_list->text = &1.
       IF lv_desc IS NOT INITIAL.
-       CONCATENATE ls_list->text ` - ` lv_desc INTO ls_list->text.
+        CONCATENATE ls_list->text ` - ` lv_desc INTO ls_list->text.
       ENDIF.
     END-OF-DEFINITION.
 
     " Parameter settings for Web Reporting
-    SELECT DISTINCT objid text  "##TOO_MANY_ITAB_FIELDS
+    SELECT DISTINCT objid text  ##too_many_itab_fields
        INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata
     FROM wwwdata
     WHERE objid LIKE 'ZXXT_%'
@@ -77,18 +256,12 @@ CLASS cl_main IMPLEMENTATION.
 
       " Additional parameters
       CASE lv_grp.
-        WHEN 02.
+        WHEN 02 OR 05 OR 08 OR 11 OR 12 OR 13.
           ls_screen_opt-show_row_count = abap_true.
 
         WHEN 03.
           ls_screen_opt-show_row_count   = abap_true.
           ls_screen_opt-show_block_count = abap_true.
-
-        WHEN 05.
-          ls_screen_opt-show_row_count   = abap_true.
-
-        WHEN 08.
-          ls_screen_opt-show_row_count   = abap_true.
 
         WHEN 09.
           ls_screen_opt-show_row_count   = abap_true.
@@ -119,16 +292,13 @@ CLASS cl_main IMPLEMENTATION.
     INNER JOIN usr21 ON usr21~addrnumber = adr6~addrnumber AND usr21~persnumber = adr6~persnumber
     WHERE usr21~bname = sy-uname.                       "#EC CI_NOORDER
 
-    " 1010
-    cl_gui_frontend_services=>get_desktop_directory(
-     CHANGING
-       desktop_directory = p_r_path ).
-
-    " For live demo in https://bizhuka.github.io/xtt/
-    jekyll_export_all( it_list = lt_list ).
+    " Update screen
+    p_temp = abap_true.
+    p_repo = abap_false.
+    pbo( ).
   ENDMETHOD.
 
-  METHOD check_break_point_id.
+  METHOD is_break_point_active.
     DATA:
       lv_exp_tstamp   TYPE aab_id_act-exp_tstamp,
       lv_date         TYPE d,
@@ -271,126 +441,6 @@ CLASS cl_main IMPLEMENTATION.
     MESSAGE 'Please select valid template'(pst) TYPE 'E'.
   ENDMETHOD.
 
-  METHOD start_of_selection.
-    DATA:
-      ls_screen_opt TYPE REF TO ts_screen_opt,
-      lv_meth       TYPE string,
-      lo_recipient  TYPE REF TO if_recipient_bcs,
-      lt_recipient  TYPE rmps_recipient_bcs,
-      lo_err        TYPE REF TO cx_address_bcs,
-      lv_text       TYPE string,
-      lo_xtt        TYPE REF TO zcl_xtt.
-
-    " Current example
-    READ TABLE mt_screen_opt REFERENCE INTO ls_screen_opt
-     WITH TABLE KEY key = p_exa.
-
-    IF sy-subrc <> 0.
-      MESSAGE 'Please select example'(pse) TYPE 'S' DISPLAY LIKE 'E'.
-      RETURN.
-    ENDIF.
-
-    " Just show template
-    DATA lo_smw0      TYPE REF TO zif_xtt_file.
-    DATA lo_file      TYPE REF TO zcl_eui_file.
-    DATA lv_file_name TYPE string.
-    DATA lo_error     TYPE REF TO zcx_eui_exception.
-    DATA lv_content   TYPE xstring.
-
-    IF p_temp = abap_true.
-      " SMW0 reader
-      CREATE OBJECT lo_smw0 TYPE zcl_xtt_file_smw0
-        EXPORTING
-          iv_objid = ls_screen_opt->template.
-
-      " Get file content
-      lo_smw0->get_content(
-       IMPORTING
-         ev_as_xstring = lv_content ).
-
-      lv_file_name = iv_file_name.
-      IF lv_file_name IS INITIAL.
-        lv_file_name = lo_smw0->get_name( ).
-      ENDIF.
-
-      " Initilize
-      CREATE OBJECT lo_file
-        EXPORTING
-          iv_xstring = lv_content.
-
-      TRY.
-          lo_file->download( iv_full_path = lv_file_name ).
-
-          " Open template
-          IF iv_file_name IS INITIAL.
-            lo_file->open( ).
-          ENDIF.
-        CATCH zcx_eui_exception INTO lo_error.
-          MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
-      ENDTRY.
-
-      " Go on if export to jekyll
-      CHECK ms_cur_demo IS NOT INITIAL.
-    ENDIF.
-
-    " Get parameters for merge method
-    CONCATENATE 'EXAMPLE_' ls_screen_opt->key(2) INTO lv_meth.
-    CALL METHOD me->(lv_meth)
-      EXPORTING
-        iv_class_name = ls_screen_opt->class_name
-        iv_template   = ls_screen_opt->template
-      RECEIVING
-        ro_xtt        = lo_xtt.
-
-    " Call respective method
-    CHECK p_repo = abap_true
-      AND lo_xtt IS NOT INITIAL.
-
-    CASE 'X'.
-      WHEN p_dwnl.
-        IF p_open = abap_true.
-          lo_xtt->download(        " All parameters are optional
-           EXPORTING
-            iv_zip      = p_zip
-           CHANGING
-            cv_fullpath = p_path ).
-        ELSE.
-          lo_xtt->download(
-           EXPORTING
-            iv_open     = p_open " Could be ZCL_XTT=>MC_BY_OLE
-            iv_zip      = p_zip
-           CHANGING
-            cv_fullpath = p_path ).
-        ENDIF.
-
-      WHEN p_show.
-        lo_xtt->show( ).
-
-      WHEN p_send.
-        " Add recipients
-        TRY.
-            IF p_user IS NOT INITIAL.
-              lo_recipient = cl_sapuser_bcs=>create( p_user ).
-              APPEND lo_recipient TO lt_recipient.
-            ENDIF.
-
-            IF p_email IS NOT INITIAL.
-              lo_recipient = cl_cam_address_bcs=>create_internet_address( p_email ).
-              APPEND lo_recipient TO lt_recipient.
-            ENDIF.
-          CATCH cx_address_bcs INTO lo_err.
-            lv_text = lo_err->if_message~get_text( ).
-            MESSAGE lv_text TYPE 'S' DISPLAY LIKE 'E'.
-        ENDTRY.
-
-        CHECK lt_recipient IS NOT INITIAL.
-        lo_xtt->send(
-         it_recipients = lt_recipient
-         iv_subject    = p_title
-         iv_body       = p_text ).
-    ENDCASE.
-  ENDMETHOD.
-
   METHOD f4_full_path.
     DATA:
       lv_fullpath TYPE string,
@@ -446,9 +496,13 @@ CLASS cl_main IMPLEMENTATION.
     CLEAR et_table.
 
     " A,B,C,D chars
-    lo_rand_i = cl_abap_random_int=>create( min = 0 max = 3 ).
+    lo_rand_i = cl_abap_random_int=>create( seed = mv_seed
+                                            min  = 0
+                                            max  = 3 ).
     " SUMS
-    lo_rand_p = cl_abap_random_packed=>create( min = 0 max = 1000000 ).
+    lo_rand_p = cl_abap_random_packed=>create( seed = mv_seed
+                                               min  = 0
+                                               max  = 1000000 ).
     DO p_r_cnt TIMES.
       " Fill without sums
       CLEAR ls_no_sum.
@@ -491,7 +545,7 @@ CLASS cl_main IMPLEMENTATION.
         ENDIF.
 
         " Show with decimals
-        <lv_sum> = lo_rand_p->get_next( ). " / 100
+        <lv_sum> = lo_rand_p->get_next( ).                  " / 100
         <lv_sum> = <lv_sum> / 100.
       ENDDO.
     ENDDO.
@@ -507,96 +561,8 @@ CLASS cl_main IMPLEMENTATION.
   INCLUDE z_xtt_index_exa_08.
   INCLUDE z_xtt_index_exa_09.
   INCLUDE z_xtt_index_exa_10.
-
-  METHOD jekyll_export_all.
-    CHECK sy-datum(4) = '9999'.
-
-    DATA ls_list  TYPE REF TO vrm_value.
-    DATA lv_num   TYPE num2.
-    DATA lv_prev  TYPE num2.
-    DATA lv_text  TYPE string.
-    DATA lv_ext   TYPE string.
-    DATA lt_demo  TYPE tt_demo.
-    DATA ls_file  TYPE ts_file.
-
-    " Export data & template & report
-    SPLIT `X-X-X- ` AT `-` INTO p_stru
-                                p_temp
-                                p_repo
-                                p_open.
-    " All demo
-    LOOP AT it_list REFERENCE INTO ls_list WHERE key NP '*-00'.
-      " Extract file info
-      SPLIT ls_list->text AT ` - ` INTO lv_text ls_file-kind.
-
-      " Name & extension
-      SPLIT lv_text AT ` (` INTO lv_text lv_ext.
-      REPLACE FIRST OCCURRENCE OF `)` IN lv_ext WITH ``.
-
-      " 2 name
-      CONCATENATE ls_list->key `_T.` lv_ext INTO ls_file-template.
-      CONCATENATE ls_list->key `_R.` lv_ext INTO ls_file-report.
-
-      " Original format
-      REPLACE FIRST OCCURRENCE OF `.pdf` IN ls_file-template WITH `.xdp`. "#EC NOTEXT
-
-      " New demo
-      lv_num = ls_list->key(2).
-      IF lv_num <> lv_prev.
-        lv_prev = lv_num.
-        APPEND INITIAL LINE TO lt_demo REFERENCE INTO ms_cur_demo.
-        ms_cur_demo->id    = lv_num.
-        ms_cur_demo->label = lv_text.
-      ENDIF.
-
-      " Add file
-      APPEND ls_file TO ms_cur_demo->files.
-
-      " Set current example
-      p_exa = ls_list->key.
-      p_path = ls_file-report.
-      start_of_selection( iv_file_name = ls_file-template ).
-    ENDLOOP.
-
-    " Export file
-    DATA lv_file   TYPE string.
-    DATA lo_file   TYPE REF TO zcl_eui_file.
-    DATA lo_error  TYPE REF TO zcx_eui_exception.
-
-    TRY.
-        lv_file = zcl_eui_conv=>to_json( im_data = lt_demo
-                                         iv_pure = abap_true ).
-
-        CREATE OBJECT lo_file.
-        lo_file->import_from_string( lv_file ).
-        lo_file->download( iv_save_dialog = abap_true
-                           iv_full_path   = `xtt_demo.json` ). "#EC NOTEXT
-      CATCH zcx_eui_exception INTO lo_error.
-        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
-    ENDTRY.
-
-    " Restore
-    p_stru = p_temp = abap_false.
-  ENDMETHOD.
-
-  METHOD jekyll_add_json.
-    CHECK ms_cur_demo IS NOT INITIAL.
-    rv_go_on = abap_true.
-
-    " 1 time only
-    READ TABLE ms_cur_demo->merge TRANSPORTING NO FIELDS
-     WITH TABLE KEY key = iv_key.
-    CHECK sy-subrc <> 0.
-
-    DATA          ls_merge  TYPE ts_merge_param.
-    FIELD-SYMBOLS <l_value> TYPE any.
-    " № 1 - merge IV_BLOCK_NAME parameter
-    ls_merge-key = iv_key.
-
-    " № 2 - merge IS_BLOCK parameter
-    CREATE DATA ls_merge-val LIKE i_value.
-    ASSIGN ls_merge-val->* TO <l_value>.
-    <l_value> = i_value.
-    INSERT ls_merge INTO TABLE ms_cur_demo->merge.
-  ENDMETHOD.
+  INCLUDE z_xtt_index_exa_11.
+  INCLUDE z_xtt_index_exa_12.
+  INCLUDE z_xtt_index_exa_13.
+  INCLUDE z_xtt_index_exa_14.
 ENDCLASS.

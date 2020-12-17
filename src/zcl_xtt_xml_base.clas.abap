@@ -7,31 +7,6 @@ public section.
   type-pools ABAP .
   class ZCL_XTT_REPLACE_BLOCK definition load .
 
-  types:
-    BEGIN OF ts_text_match.
-    INCLUDE TYPE zcl_xtt_replace_block=>ts_tree_group.
-    types:
-    text  TYPE string,
-   END OF ts_text_match .
-  types:
-    tt_text_match TYPE SORTED TABLE OF ts_text_match WITH UNIQUE KEY level top if_where .
-  types:
-    BEGIN OF ts_replace,
-      from TYPE string,
-      to   TYPE string,
-    END OF ts_replace .
-  types:
-    tt_replace TYPE STANDARD TABLE OF ts_replace WITH DEFAULT KEY .
-  types:
-    BEGIN OF ts_xml_match,
-      tag TYPE STRING,
-      beg type i,
-      end type i,
-      cnt type i,
-    END OF ts_xml_match .
-  types:
-    tt_xml_match TYPE STANDARD TABLE OF ts_xml_match WITH DEFAULT KEY .
-
   methods CONSTRUCTOR
     importing
       !IO_FILE type ref to ZIF_XTT_FILE
@@ -42,26 +17,6 @@ public section.
       !IV_OLE_EXT_FORMAT type I optional
       !IV_SKIP_TAGS type ABAP_BOOL optional
       !IV_TABLE_PAGE_BREAK type STRING optional .
-  class-methods GET_TAG_MATCHES
-    importing
-      !IV_CONTEXT type STRING
-      !IV_TAG type CSEQUENCE
-      !IV_TAG_ADD type CSEQUENCE optional
-    exporting
-      !ET_MATCH type MATCH_RESULT_TAB
-      !ET_XML_MATCH type TT_XML_MATCH .
-
-  class-methods get_from_tag
-        IMPORTING
-          iv_beg_part TYPE csequence
-          iv_end_part TYPE csequence
-          iv_new_name TYPE csequence OPTIONAL
-        EXPORTING
-          ev_value0   TYPE any
-          ev_value1   TYPE any
-          ev_value2   TYPE any
-        CHANGING
-          cv_xml      TYPE string.
 
   methods DOWNLOAD
     redefinition .
@@ -71,64 +26,97 @@ public section.
     redefinition .
 protected section.
 
+  types:
+    BEGIN OF ts_bounds,
+      " All occurrences of
+      t_match     TYPE match_result_tab,
+
+      " tags info
+      first_match TYPE i,
+      last_match  TYPE i,
+      with_tag    TYPE abap_bool,
+
+      " Detect postion
+      pos_beg     TYPE i,
+      pos_end     TYPE i,
+      pos_cnt     TYPE i,
+
+      " Finally info from context
+      text_before TYPE string,
+      text_after  TYPE string,
+    END OF ts_bounds .
+
+  data MO_ZIP type ref to CL_ABAP_ZIP .
   data MV_OLE_EXT_FORMAT type I .
   data MV_BODY_TAG type STRING .
   data MV_ROW_TAG type STRING .
   data MV_FILE_CONTENT type STRING .
   data MV_VALUE type STRING .
   data MV_PREFIX type STRING .
-  data MO_ZIP type ref to CL_ABAP_ZIP .
 
-  methods SPLIT_BY_TAG
-    importing
-      !IV_TAG type CSEQUENCE
-      !IV_TAG_ADD type CSEQUENCE optional
-      !IV_BLOCK_NAME type CSEQUENCE
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL optional
-      !IV_FIELD_TYPE type CSEQUENCE optional
-    exporting
-      !ET_TEXT_MATCH type TT_TEXT_MATCH
-    changing
-      !CV_BEFORE type CSEQUENCE
-      !CV_AFTER type CSEQUENCE
-      !CV_MIDDLE type CSEQUENCE .
-  methods FIND_BOUNDS
+  methods BOUNDS_FORM_BODY
     importing
       !IV_CONTEXT type CSEQUENCE
-      !IV_TAG type CSEQUENCE
-      !IV_TAG_ADD type CSEQUENCE optional
-      !IV_BLOCK_NAME type CSEQUENCE optional
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL optional
-    exporting
-      !ET_MATCH type MATCH_RESULT_TAB
-      !EV_WITH_TAG type ABAP_BOOL
-      !EV_FIRST_MATCH type I
-      !EV_LAST_MATCH type I .
-  methods DO_MERGE
-    importing
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL default ABAP_FALSE
-      !IO_REPLACE_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
-    changing
-      !CV_CONTENT type STRING .
+      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL
+      !IV_BLOCK_NAME type CSEQUENCE
+      !IV_NO_BODY_WARNING type ABAP_BOOL default ABAP_TRUE
+    returning
+      value(RS_BOUNDS) type TS_BOUNDS .
+
   methods ON_MATCH_FOUND
-    for event MATCH_FOUND of ZCL_XTT_REPLACE_BLOCK
-    importing
-      !IV_CONTENT
-      !IS_FIELD
-      !IV_POS_BEG
-      !IV_POS_END .
-  class-methods REPLACE_1ST_FROM
-    importing
-      !IT_REPLACE type TT_REPLACE
-      !IV_FROM type I
-    changing
-      !CV_XML type STRING .
+    redefinition .
 private section.
 
   data MV_PATH_IN_ARC type STRING .
-  data MV_SKIP_TAGS type ABAP_BOOL .
-  data MV_IS_TABLE type ABAP_BOOL .
   data MV_IF_TABLE_PAGE_BREAK type STRING .
+
+  methods BOUNDS_FROM_ROW
+    importing
+      !IV_CONTEXT type CSEQUENCE
+      !IS_FIELD type ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
+    returning
+      value(RS_BOUNDS) type TS_BOUNDS .
+  methods BOUNDS_SPLIT
+    importing
+      !IV_NAME type CSEQUENCE
+    changing
+      !CS_BOUNDS type TS_BOUNDS
+      !CV_MIDDLE type CSEQUENCE .
+  methods DO_MERGE
+    importing
+      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL default ABAP_FALSE
+      !IV_TABIX type SYTABIX optional
+      !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
+      !IV_FORCE type ABAP_BOOL optional
+    changing
+      !CV_CONTENT type STRING .
+  methods MERGE_SUB_STRUCTURES
+    importing
+      !IR_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
+    changing
+      !CV_CONTENT type STRING .
+  methods MERGE_TABLES
+    importing
+      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL
+      !IR_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
+    changing
+      !CV_CONTENT type STRING .
+  methods MERGE_TREES
+    importing
+      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL
+      !IR_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
+    changing
+      !CV_CONTENT type STRING .
+  methods DELETE_LAST_PAGE_BREAK .
+  methods READ_SCOPES
+    importing
+      !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
+      !IV_TABIX type SYTABIX
+      !IV_FORCE type ABAP_BOOL
+    exporting
+      !EO_SCOPE type ref to ZCL_XTT_SCOPE
+    changing
+      !CV_CONTENT type STRING .
 ENDCLASS.
 
 
@@ -136,9 +124,124 @@ ENDCLASS.
 CLASS ZCL_XTT_XML_BASE IMPLEMENTATION.
 
 
+METHOD bounds_form_body.
+  CLEAR rs_bounds-with_tag.
+
+  rs_bounds-t_match = zcl_xtt_util=>get_tag_matches( iv_context = iv_context
+                                                     iv_tag     = mv_body_tag ).
+  " Wrong template?
+  IF rs_bounds-t_match[] IS INITIAL.
+    IF iv_no_body_warning = abap_true.
+      MESSAGE w008(zsy_xtt) WITH mv_body_tag INTO sy-msgli.
+      mo_logger->add( ).
+    ENDIF.
+
+    " Go on
+    RETURN.
+  ENDIF.
+
+  " First and last matches
+  rs_bounds-first_match = 1.
+  rs_bounds-last_match  = lines( rs_bounds-t_match ).
+ENDMETHOD.
+
+
+METHOD bounds_from_row.
+  rs_bounds-with_tag = abap_true.
+
+  DATA lv_find_str TYPE string.
+  CONCATENATE `\{` is_field-name `\b[^}]*\}`  INTO lv_find_str.
+
+  rs_bounds-t_match = zcl_xtt_util=>get_tag_matches( iv_context = iv_context
+                                                     iv_tag     = mv_row_tag
+                                                     iv_tag_add = lv_find_str ).
+  " Wrong template?
+  IF rs_bounds-t_match[] IS INITIAL.
+    MESSAGE w010(zsy_xtt) WITH mv_row_tag is_field-name INTO sy-msgli.
+    mo_logger->add( ).
+    RETURN.
+  ENDIF.
+
+  DATA lv_tabix   TYPE sytabix.
+  FIELD-SYMBOLS:
+    <ls_match>    LIKE LINE OF rs_bounds-t_match,
+    <ls_submatch> LIKE LINE OF <ls_match>-submatches.
+
+  " {iv_block_name*  -  CONCATENATE '{' iv_block_name '*' INTO lv_pattern.
+  LOOP AT rs_bounds-t_match ASSIGNING <ls_match>.
+    lv_tabix = sy-tabix.
+
+*    lv_text = iv_context+<ls_match>-offset(<ls_match>-length).
+*    CHECK lv_text CP lv_pattern.
+
+    " Only
+    READ TABLE <ls_match>-submatches ASSIGNING <ls_submatch> INDEX 3.
+    CHECK sy-subrc = 0
+      AND <ls_match>-offset = <ls_submatch>-offset
+      AND <ls_match>-length = <ls_submatch>-length.
+
+    rs_bounds-last_match = lv_tabix.
+    IF rs_bounds-first_match IS INITIAL.
+      rs_bounds-first_match = lv_tabix.
+    ENDIF.
+  ENDLOOP.
+
+  " Extend bounds for iv_tag
+  rs_bounds-first_match = rs_bounds-first_match - 1.
+  rs_bounds-last_match  = rs_bounds-last_match + 1.
+ENDMETHOD.
+
+
+METHOD bounds_split.
+  CLEAR: cs_bounds-pos_beg,
+         cs_bounds-pos_end,
+         cs_bounds-pos_cnt,
+         " Resulting fields
+         cs_bounds-text_before,
+         cs_bounds-text_after.
+
+  " 1 - Text before body
+  FIELD-SYMBOLS <ls_match>   LIKE LINE OF cs_bounds-t_match.
+  READ TABLE cs_bounds-t_match ASSIGNING <ls_match> INDEX cs_bounds-first_match.
+
+  " TODO silent mode ?
+  IF sy-subrc <> 0.
+    RETURN.
+  ENDIF.
+
+  IF cs_bounds-first_match >= cs_bounds-last_match.
+    MESSAGE e009(zsy_xtt) WITH iv_name INTO sy-msgli.
+    mo_logger->add( ).
+    RETURN.
+  ENDIF.
+
+  " Does need an open tag?
+  IF cs_bounds-with_tag = abap_true.
+    cs_bounds-pos_beg = <ls_match>-offset.
+  ELSE.
+    cs_bounds-pos_beg = <ls_match>-offset + <ls_match>-length.
+  ENDIF.
+  cs_bounds-text_before = cv_middle(cs_bounds-pos_beg).
+
+*************
+  " 2 - Text after body
+  READ TABLE cs_bounds-t_match ASSIGNING <ls_match> INDEX cs_bounds-last_match.
+
+  IF cs_bounds-with_tag = abap_true.
+    cs_bounds-pos_end = <ls_match>-offset + <ls_match>-length.
+  ELSE.
+    cs_bounds-pos_end = <ls_match>-offset.
+  ENDIF.
+  cs_bounds-text_after = cv_middle+cs_bounds-pos_end.
+
+*************
+  " 3 - Body
+  cs_bounds-pos_cnt = cs_bounds-pos_end - cs_bounds-pos_beg.
+  cv_middle = cv_middle+cs_bounds-pos_beg(cs_bounds-pos_cnt).
+ENDMETHOD.
+
+
 METHOD constructor.
-  DATA:
-    lv_value TYPE xstring.
   super->constructor(
    io_file    = io_file
    iv_ole_ext = iv_ole_ext  ).
@@ -153,19 +256,22 @@ METHOD constructor.
   " For download & show methods
   mv_ole_ext_format = iv_ole_ext_format.
 
-  " As text
-  IF mv_path_in_arc IS INITIAL.
-    io_file->get_content(
-    IMPORTING
-     ev_as_string = mv_file_content ).
-    RETURN.
-  ENDIF.
+  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+  TRY.
+      IF mv_path_in_arc IS INITIAL.
+        io_file->get_content( IMPORTING ev_as_string = mv_file_content ).
+        RETURN.
+      ENDIF.
+
+      DATA lv_value TYPE xstring.
+      io_file->get_content( IMPORTING ev_as_xstring = lv_value ).
+    CATCH zcx_eui_no_check INTO lo_no_check.
+      add_log_message( io_no_check = lo_no_check ).
+      RETURN.
+  ENDTRY.
 
   " Load zip archive from XSTRING
   CREATE OBJECT mo_zip.
-  io_file->get_content(
-   IMPORTING
-    ev_as_xstring = lv_value ).
   mo_zip->load( lv_value ).
 
   " Get content as a string from file
@@ -178,16 +284,36 @@ METHOD constructor.
 ENDMETHOD.
 
 
-METHOD download.
-  DATA:
-    lv_open   TYPE string,
-    lv_path   TYPE string,
-    lv_no_ext TYPE string.
+METHOD delete_last_page_break.
+  CHECK mv_if_table_page_break IS NOT INITIAL.
 
+  " Delete last page break
+  DATA lt_match TYPE match_result_tab.
+  FIND ALL OCCURRENCES OF mv_if_table_page_break IN mv_file_content RESULTS lt_match.
+  CHECK sy-subrc = 0.
+
+  " Get last OCCURRENCES OF page-break
+  DATA lv_len   TYPE i.
+  DATA ls_match TYPE REF TO match_result.
+
+  lv_len = lines( lt_match ).
+  READ TABLE lt_match REFERENCE INTO ls_match INDEX lv_len.
+  CHECK sy-subrc = 0.
+
+  " Delete last page break
+  lv_len = ls_match->offset + ls_match->length.
+  CONCATENATE
+   mv_file_content(ls_match->offset)
+   mv_file_content+lv_len INTO mv_file_content.
+ENDMETHOD.
+
+
+METHOD download.
   " If need saveAs
+  DATA lv_open TYPE string.
   lv_open = iv_open.
   IF iv_open IS NOT SUPPLIED AND mv_ole_ext IS NOT INITIAL AND mv_ole_ext_format IS NOT INITIAL.
-    lv_open = mc_by_ole.
+    lv_open = mc_by-ole.
   ENDIF.
 
   super->download(
@@ -200,11 +326,11 @@ METHOD download.
      cv_fullpath = cv_fullpath ).
 
   " If opened as OLE
-  IF lv_open <> mc_by_ole AND lv_open <> mc_by_ole_hide.
-    RETURN.
-  ENDIF.
+  CHECK lv_open CP 'OLE*'.
 
   " New file name
+  DATA lv_path   TYPE string.
+  DATA lv_no_ext TYPE string.
   zcl_eui_file=>split_file_path(
     EXPORTING
       iv_fullpath   = cv_fullpath
@@ -223,7 +349,7 @@ METHOD download.
       #1 = cv_fullpath
       #2 = mv_ole_ext_format.
 
-  IF lv_open = mc_by_ole_hide.
+  IF lv_open = mc_by-ole_hide.
     CALL METHOD OF cv_ole_app 'QUIT'.
     FREE OBJECT: cv_ole_doc, cv_ole_app.
   ENDIF.
@@ -231,289 +357,55 @@ ENDMETHOD.
 
 
 METHOD do_merge.
-  DATA:
-    lo_new_replace_block TYPE REF TO zcl_xtt_replace_block,
-    lr_field             TYPE REF TO zcl_xtt_replace_block=>ts_field,
-    lv_before            TYPE string,
-    lv_after             TYPE string,
-    lv_middle            TYPE string,
-    lv_find_str          TYPE string,
-    lv_clone             TYPE string,
-    lt_text_match        TYPE tt_text_match,
-    lo_tree_handler      TYPE REF TO lcl_tree_handler,
-    lr_tree              TYPE REF TO zcl_xtt_replace_block=>ts_tree.
-  FIELD-SYMBOLS:
-   <lt_table>            TYPE ANY TABLE.
-***************************************
-  " merge-1 @see ME->MATCH_FOUND
-  SET HANDLER on_match_found FOR io_replace_block ACTIVATION abap_true.
+  DATA lo_scope TYPE REF TO zcl_xtt_scope.
+  read_scopes( EXPORTING io_block = io_block
+                         iv_tabix = iv_tabix
+                         iv_force = iv_force
+               IMPORTING eo_scope = lo_scope
+               CHANGING  cv_content = cv_content ).
 
-  " @see match_found
   " What will search in template. At first '{ROOT-'
-  io_replace_block->find_match(
-   EXPORTING
-    iv_skip_tags   = mv_skip_tags
-   CHANGING
-    cv_content     = cv_content ).
-
-  " Turn off event handler
-  SET HANDLER on_match_found FOR io_replace_block ACTIVATION abap_false.
-***************************************
-  " merge-2 Structures and objects
-  LOOP AT io_replace_block->mt_fields REFERENCE INTO lr_field WHERE
-   typ = zcl_xtt_replace_block=>mc_type_struct OR typ = zcl_xtt_replace_block=>mc_type_object. "#EC CI_SORTSEQ
-
-    " No data ?
-    IF lr_field->typ = zcl_xtt_replace_block=>mc_type_struct.
-      CHECK lr_field->dref IS NOT INITIAL.
-    ENDIF.
-    IF lr_field->typ = zcl_xtt_replace_block=>mc_type_object.
-      CHECK lr_field->oref IS NOT INITIAL.
-    ENDIF.
-
-    " Based on nested structure
-    CREATE OBJECT lo_new_replace_block
-      EXPORTING
-        is_field = lr_field.
-
-    " Recursion if type is the same
-    CHECK lr_field->typ = zcl_xtt_replace_block=>mc_type_struct OR
-          lr_field->typ = zcl_xtt_replace_block=>mc_type_object.
-    do_merge(
-     EXPORTING
-        io_replace_block = lo_new_replace_block
-     CHANGING
-        cv_content       = cv_content ).
+  " Already found scopes
+  FIELD-SYMBOLS <ls_scope> LIKE LINE OF lo_scope->mt_scope.
+  LOOP AT lo_scope->mt_scope ASSIGNING <ls_scope>.
+    io_block->find_match( EXPORTING io_xtt     = me
+                                    is_scope   = <ls_scope>
+                          CHANGING  cv_content = cv_content ).
   ENDLOOP.
 
-***************************************
-  " merge-3 Array types
-  LOOP AT io_replace_block->mt_fields REFERENCE INTO lr_field WHERE typ = zcl_xtt_replace_block=>mc_type_table
-                                                                 OR typ = zcl_xtt_replace_block=>mc_type_tree. "#EC CI_SORTSEQ
-    " if root is a table
-    CLEAR:
-     lv_before,
-     lv_middle,
-     lv_after.
-
-    " Detect bounds
-    IF iv_first_level_is_table <> abap_true.
-      CONCATENATE `\{` lr_field->name `\b[^}]*\}` "
-        INTO lv_find_str.
-
-      " Divide to 3 parts
-      split_by_tag(
-       EXPORTING
-        iv_tag        = mv_row_tag
-        iv_tag_add    = lv_find_str
-        iv_block_name = lr_field->name
-        iv_field_type = lr_field->typ
-       IMPORTING
-        et_text_match = lt_text_match
-       CHANGING
-        cv_before     = lv_before
-        cv_middle     = cv_content
-        cv_after      = lv_after ).
-
-      " TODO silent mode? " No bounds found for top level R field
-      IF lv_before IS INITIAL AND lv_after IS INITIAL
-         " AND iv_first_level_is_table IS SUPPLIED.
-         AND lt_text_match[] IS INITIAL.
-        CONTINUE.
-      ENDIF.
-    ENDIF.
-
+  DATA lr_field TYPE REF TO zcl_xtt_replace_block=>ts_field.
+  LOOP AT io_block->mt_fields REFERENCE INTO lr_field.
     CASE lr_field->typ.
-**********************************************************************
-      WHEN zcl_xtt_replace_block=>mc_type_tree.
 
-        lr_tree ?= lr_field->dref.
-        CREATE OBJECT lo_tree_handler
-          EXPORTING
-            io_owner      = me
-            ir_tree       = lr_tree
-            iv_block_name = lr_field->name
-            it_text_match = lt_text_match.
-
-        lo_tree_handler->add_tree_data(
-         EXPORTING
-           ir_tree = lr_tree
-         CHANGING
-           cv_text = lv_before ).
-
-        " And set result
-        CONCATENATE lv_before
-                    lv_after INTO cv_content RESPECTING BLANKS.
-
-**********************************************************************
-      WHEN zcl_xtt_replace_block=>mc_type_table.
-        " CHECK cv_content IS NOT INITIAL.
-
-        lv_middle = cv_content.
-        " Replicate middle
-        ASSIGN lr_field->dref->* TO <lt_table>.
-        LOOP AT <lt_table> REFERENCE INTO lr_field->dref.
-          " Create merge description
-          CREATE OBJECT lo_new_replace_block
-            EXPORTING
-              is_field = lr_field.
-
-          " Recursion
-          lv_clone = lv_middle.
-          do_merge(
-           EXPORTING
-            io_replace_block = lo_new_replace_block
-           CHANGING
-            cv_content       = lv_clone ).
-
-          " Add
-          CONCATENATE lv_before lv_clone INTO lv_before RESPECTING BLANKS.
-        ENDLOOP.
-
-        " End
-        CONCATENATE lv_before lv_after INTO cv_content RESPECTING BLANKS.
+        " merge-2 Structures and objects
+      WHEN zcl_xtt_replace_block=>mc_type-struct OR zcl_xtt_replace_block=>mc_type-object.
+        merge_sub_structures( EXPORTING ir_field   = lr_field
+                              CHANGING  cv_content = cv_content ).
+        " merge-3 Array types
+      WHEN zcl_xtt_replace_block=>mc_type-table.
+        merge_tables( EXPORTING ir_field  = lr_field
+                                iv_first_level_is_table = iv_first_level_is_table
+                      CHANGING  cv_content              = cv_content ).
+        " merge-4 And trees
+      WHEN zcl_xtt_replace_block=>mc_type-tree.
+        merge_trees( EXPORTING ir_field                = lr_field
+                               iv_first_level_is_table = iv_first_level_is_table
+                     CHANGING  cv_content              = cv_content ).
     ENDCASE.
-
   ENDLOOP.
-ENDMETHOD.
-
-
-METHOD find_bounds.
-  DATA lv_tabix   TYPE sytabix.
-  FIELD-SYMBOLS:
-    <ls_match>    LIKE LINE OF et_match,
-    <ls_submatch> LIKE LINE OF <ls_match>-submatches.
-
-  get_tag_matches( EXPORTING iv_context = iv_context
-                             iv_tag     = iv_tag
-                             iv_tag_add = iv_tag_add
-                   IMPORTING et_match   = et_match ).
-*  " Wrong template
-*  IF et_match IS INITIAL.
-*    MESSAGE x001(zsy_xtt).
-*  ENDIF.
-
-  " TODO silent mode
-  CHECK et_match[] IS NOT INITIAL.
-
-  CASE iv_tag.
-    WHEN mv_body_tag.
-      " First and last matches
-      ev_first_match = 1.
-      ev_last_match  = lines( et_match ).
-      RETURN.
-
-    WHEN mv_row_tag.
-      ev_with_tag    = abap_true.
-      ev_first_match = 0.
-      ev_last_match  = 0.
-      " {iv_block_name*  -  CONCATENATE zcl_xtt_replace_block=>mc_char_block_begin iv_block_name '*' INTO lv_pattern.
-
-      LOOP AT et_match ASSIGNING <ls_match>.
-        lv_tabix = sy-tabix.
-
-*        lv_text = iv_context+<ls_match>-offset(<ls_match>-length).
-*        CHECK lv_text CP lv_pattern.
-
-        " Only
-        READ TABLE <ls_match>-submatches ASSIGNING <ls_submatch> INDEX 3.
-        CHECK sy-subrc = 0
-          AND <ls_match>-offset = <ls_submatch>-offset
-          AND <ls_match>-length = <ls_submatch>-length.
-
-        ev_last_match = lv_tabix.
-        IF ev_first_match IS INITIAL.
-          ev_first_match = lv_tabix.
-        ENDIF.
-      ENDLOOP.
-
-      " Extend bounds for iv_tag
-      ev_first_match = ev_first_match - 1.
-      ev_last_match  = ev_last_match + 1.
-  ENDCASE.
-ENDMETHOD.
-
-
-METHOD get_from_tag.
-  DATA lv_offset TYPE i.
-  DATA lv_index  TYPE num1.
-  DATA lv_cnt    TYPE i.
-  DATA lv_name   TYPE string.
-  FIELD-SYMBOLS <lv_value> TYPE any.
-
-  CLEAR ev_value0.
-  CLEAR ev_value1.
-  CLEAR ev_value2.
-
-  WHILE cv_xml+lv_offset CS iv_beg_part.
-    lv_offset = lv_offset + sy-fdpos + strlen( iv_beg_part ).
-
-    " Oops
-    IF cv_xml+lv_offset NS iv_end_part.
-      zcx_xtt_exception=>raise_dump( iv_message = `No ending tag` ).
-    ENDIF.
-    lv_cnt = sy-fdpos.
-
-    " Get value
-    DATA lv_value TYPE string.
-    lv_value  = cv_xml+lv_offset(lv_cnt).
-
-    IF iv_new_name IS NOT INITIAL.
-      CONCATENATE iv_new_name lv_index INTO lv_name.
-      REPLACE SECTION OFFSET lv_offset LENGTH lv_cnt OF cv_xml WITH lv_name.
-    ENDIF.
-
-    CONCATENATE 'EV_VALUE' lv_index INTO lv_name.
-    ASSIGN (lv_name) TO <lv_value>.
-    IF sy-subrc <> 0.
-      zcx_xtt_exception=>raise_dump( iv_message = `Error in logic` ).
-    ENDIF.
-
-    <lv_value> = lv_value.
-    lv_offset  = lv_offset + lv_cnt.
-
-    " Go on ?
-    lv_index   = lv_index  + 1.
-    CASE lv_index.
-      WHEN 1. IF ev_value1 IS NOT REQUESTED. RETURN. ENDIF.
-      WHEN 2. IF ev_value2 IS NOT REQUESTED. RETURN. ENDIF.
-    ENDCASE.
-  ENDWHILE.
 ENDMETHOD.
 
 
 METHOD get_raw.
-  DATA:
-    lr_content TYPE REF TO xstring,
-    lv_len     TYPE i,
-    lt_match   TYPE match_result_tab,
-    ls_match   TYPE REF TO match_result.
-
-  " for Word format only
-  DO 1 TIMES.
-    CHECK mv_is_table = abap_true
-      AND mv_if_table_page_break IS NOT INITIAL.
-
-    " Delete last page break
-    FIND ALL OCCURRENCES OF mv_if_table_page_break IN mv_file_content RESULTS lt_match.
-    CHECK sy-subrc = 0.
-
-    " Last OCCURRENCES OF page-break
-    lv_len = lines( lt_match ).
-    READ TABLE lt_match REFERENCE INTO ls_match INDEX lv_len.
-    CHECK sy-subrc = 0.
-
-    " Delete last page break
-    lv_len = ls_match->offset + ls_match->length.
-    CONCATENATE
-     mv_file_content(ls_match->offset)
-     mv_file_content+lv_len INTO mv_file_content.
-  ENDDO.
-
+  DATA lv_path TYPE string.
   IF mv_path_in_arc IS INITIAL.
     " Can convert XML or HTML result to pdf or attach to email for example
     rv_content = zcl_eui_conv=>string_to_xstring( mv_file_content ).
+    lv_path    = 'document.xml'. "#EC NOTEXT
   ELSE.
+    " 1-st process additional files
+    raise_raw_events( mo_zip ).
+
     " Replace XML file
     zcl_eui_conv=>xml_to_zip(
      io_zip  = mo_zip
@@ -525,145 +417,239 @@ METHOD get_raw.
   ENDIF.
 
   " Change content in special cases
+  DATA lr_content TYPE REF TO xstring.
   GET REFERENCE OF rv_content INTO lr_content.
   RAISE EVENT prepare_raw
    EXPORTING
+     iv_path    = lv_path
      ir_content = lr_content.
 ENDMETHOD.
 
 
-METHOD get_tag_matches.
-  CLEAR et_match.
-  CLEAR et_xml_match.
-
-  " Divide text by body tag. Usualy 2 matches. <body> and </body>
-  DATA lv_pattern TYPE string.
-  CONCATENATE `(<` iv_tag `\b[^>]*>)|(<\/` iv_tag `>)` INTO lv_pattern.
-
-  " Also find this part
-  IF iv_tag_add IS NOT INITIAL.
-    CONCATENATE lv_pattern `|(` iv_tag_add `)` INTO lv_pattern.
-  ENDIF.
-
-  FIND ALL OCCURRENCES OF REGEX lv_pattern IN iv_context RESULTS et_match RESPECTING CASE.
-
-**********************************************************************
-  " Return ready XML
-  CHECK et_xml_match IS REQUESTED
-    AND et_match IS NOT REQUESTED.
-
-  DATA ls_xml_match LIKE LINE OF et_xml_match.
-  FIELD-SYMBOLS <ls_match_beg> LIKE LINE OF et_match.
-  FIELD-SYMBOLS <ls_match_end> LIKE LINE OF et_match.
-
-  " Safe delete from the end
-  DATA lv_index TYPE i.
-  lv_index = lines( et_match ).
-
-  WHILE lv_index > 0.
-    READ TABLE et_match ASSIGNING <ls_match_end> INDEX lv_index.
-    lv_index = lv_index - 1.
-
-    READ TABLE et_match ASSIGNING <ls_match_beg> INDEX lv_index.
-    lv_index = lv_index - 1.
-
-    " Get tag from match
-    ls_xml_match-beg = <ls_match_beg>-offset.
-    ls_xml_match-end = <ls_match_end>-offset + <ls_match_end>-length.
-    ls_xml_match-cnt = ls_xml_match-end - ls_xml_match-beg.
-
-    " And whole string
-    ls_xml_match-tag = iv_context+ls_xml_match-beg(ls_xml_match-cnt).
-
-    " Ready line
-    APPEND ls_xml_match TO et_xml_match.
-  ENDWHILE.
-ENDMETHOD.
-
-
 METHOD merge.
-  DATA lt_extra_tab_opt TYPE zcl_xtt_replace_block=>tt_extra_tab_opt.
-
-  " Find in text TREE declarations
-  lcl_tree_handler=>find_extra(
-   CHANGING
-    ct_extra_tab_opt = lt_extra_tab_opt
-    cv_content       = mv_file_content  ).
-
-**********************************************************************
-  DATA:
-    lo_replace_block TYPE REF TO zcl_xtt_replace_block,
-    lv_typekind      TYPE abap_typekind,
-    lv_before        TYPE string,
-    lv_after         TYPE string.
-
-  " Prepare for replacement
-  CREATE OBJECT lo_replace_block
-    EXPORTING
-      is_block      = is_block
-      iv_block_name = iv_block_name.
-
-  " Create trees by declarations
-  lo_replace_block->extra_create_tree( lt_extra_tab_opt ).
-
   " Special case
-  DESCRIBE FIELD is_block TYPE lv_typekind.
-  IF lv_typekind = cl_abap_typedescr=>typekind_table.
-    mv_is_table = abap_true.
+  DATA lv_type_kind            TYPE abap_typekind.
+  DATA lv_first_level_is_table TYPE abap_bool.
+
+  DESCRIBE FIELD is_block TYPE lv_type_kind.
+  IF lv_type_kind = cl_abap_typedescr=>typekind_table.
+    lv_first_level_is_table = abap_true.
   ENDIF.
+
+  DATA ls_bounds TYPE ts_bounds.
+  ls_bounds = bounds_form_body( iv_context              = mv_file_content
+                                iv_first_level_is_table = lv_first_level_is_table
+                                iv_block_name           = iv_block_name ).
 
   " Divide to 3 parts
-  split_by_tag(
-   EXPORTING
-    iv_first_level_is_table = mv_is_table
-    iv_tag                  = mv_body_tag
-    iv_block_name           = iv_block_name
-   CHANGING
-    cv_before               = lv_before
-    cv_middle               = mv_file_content
-    cv_after                = lv_after ).
-
-***  " TODO silent mode?
-***  IF lv_before IS INITIAL AND lv_after IS INITIAL.
-***    RETURN.
-***  ENDIF.
+  bounds_split( EXPORTING iv_name   = iv_block_name
+                CHANGING  cs_bounds = ls_bounds
+                          cv_middle = mv_file_content ).
 
   " Update middle part (Body)
-  do_merge(
-   EXPORTING
-    iv_first_level_is_table = mv_is_table
-    io_replace_block        = lo_replace_block
-   CHANGING
-    cv_content              = mv_file_content ).
+  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+  TRY.
+      " Prepare for replacement
+      DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
+      CREATE OBJECT lo_replace_block
+        EXPORTING
+          is_block      = is_block
+          iv_block_name = iv_block_name.
+
+      do_merge(
+       EXPORTING
+        iv_first_level_is_table = lv_first_level_is_table
+        io_block                = lo_replace_block
+       CHANGING
+        cv_content              = mv_file_content ).
+    CATCH zcx_eui_no_check INTO lo_no_check.
+      add_log_message( io_no_check = lo_no_check ).
+  ENDTRY.
 
   " And just concatenate
-  CONCATENATE lv_before mv_file_content lv_after INTO mv_file_content RESPECTING BLANKS.
+  CONCATENATE ls_bounds-text_before
+              mv_file_content
+              ls_bounds-text_after INTO mv_file_content RESPECTING BLANKS.
+
+  " Move from get_raw
+  IF lv_first_level_is_table = abap_true.
+    delete_last_page_break( ).
+  ENDIF.
+
+  " 1 merge cache
+  zcl_xtt_scope=>clear_all( ).
 
   " For chain calls
   ro_xtt = me.
 ENDMETHOD.
 
 
-METHOD on_match_found.
-  FIELD-SYMBOLS:
-   <lv_content> TYPE string.
-  " Just skip
-  CHECK is_field->typ <> zcl_xtt_replace_block=>mc_type_tree.
+METHOD merge_sub_structures.
+  " No data ?
+  CASE ir_field->typ.
+    WHEN zcl_xtt_replace_block=>mc_type-struct.
+      CHECK ir_field->dref IS NOT INITIAL.
 
-  " Current document
-  ASSIGN iv_content->* TO <lv_content>.
+    WHEN zcl_xtt_replace_block=>mc_type-object.
+      CHECK ir_field->oref IS NOT INITIAL.
+  ENDCASE.
+
+  " Based on nested structure
+  DATA lo_new_replace_block TYPE REF TO zcl_xtt_replace_block.
+  CREATE OBJECT lo_new_replace_block
+    EXPORTING
+      is_field = ir_field.
+
+  do_merge( EXPORTING io_block   = lo_new_replace_block
+            CHANGING  cv_content = cv_content ).
+ENDMETHOD.
+
+
+METHOD merge_tables.                                     .
+  DATA ls_bounds TYPE ts_bounds.
+  CLEAR ls_bounds.
+
+  " Detect bounds
+  IF iv_first_level_is_table <> abap_true.
+    ls_bounds = bounds_from_row( iv_context = cv_content
+                                 is_field   = ir_field->* ).
+    " Divide to 3 parts
+    bounds_split( EXPORTING iv_name   = ir_field->name
+                  CHANGING  cs_bounds = ls_bounds
+                            cv_middle = cv_content " TODO always empty ???
+                 ).
+    " No proper bounds found
+    IF ls_bounds-text_before IS INITIAL AND ls_bounds-text_after IS INITIAL
+       " AND iv_first_level_is_table IS SUPPLIED.
+       .
+      MESSAGE w012(zsy_xtt) WITH 'table' ir_field->name INTO sy-msgli.
+      mo_logger->add( ).
+      RETURN.
+    ENDIF.
+  ENDIF.
+
+  " CHECK cv_content IS NOT INITIAL.
+  DATA lv_middle TYPE string.
+  lv_middle = cv_content.
+
+  " Replicate middle
+  FIELD-SYMBOLS <lt_table> TYPE ANY TABLE.
+  ASSIGN ir_field->dref->* TO <lt_table>.
+
+  LOOP AT <lt_table> REFERENCE INTO ir_field->dref.
+    DATA lv_tabix TYPE sytabix.
+    lv_tabix = sy-tabix.
+
+    DATA lv_first TYPE abap_bool.
+    IF lv_tabix = 1.
+      lv_first = abap_true.
+    ELSE.
+      lv_first = abap_false.
+    ENDIF.
+
+    " Create merge description
+    DATA lo_new_replace_block TYPE REF TO zcl_xtt_replace_block.
+    IF lo_new_replace_block IS INITIAL OR lo_new_replace_block->reuse_check( ir_field ) <> abap_true.
+      CREATE OBJECT lo_new_replace_block
+        EXPORTING
+          is_field = ir_field.
+    ENDIF.
+
+    " Recursion
+    DATA lv_clone TYPE string.
+    lv_clone = lv_middle.
+
+    do_merge( EXPORTING io_block   = lo_new_replace_block
+                        iv_tabix   = lv_tabix
+                        iv_force   = lv_first
+              CHANGING  cv_content = lv_clone ).
+
+    " Add
+    CONCATENATE ls_bounds-text_before lv_clone INTO ls_bounds-text_before RESPECTING BLANKS.
+  ENDLOOP.
+
+  " End
+  CONCATENATE ls_bounds-text_before ls_bounds-text_after INTO cv_content RESPECTING BLANKS.
+ENDMETHOD.
+
+
+METHOD merge_trees.                                                              .
+  DATA ls_bounds TYPE ts_bounds.
+  CLEAR ls_bounds.
+
+  " Detect bounds
+  IF iv_first_level_is_table <> abap_true.
+    ls_bounds = bounds_from_row( iv_context = cv_content
+                                 is_field   = ir_field->* ).
+    " Divide to 3 parts
+    bounds_split( EXPORTING iv_name   = ir_field->name
+                  CHANGING  cs_bounds = ls_bounds
+                            cv_middle = cv_content " TODO always empty ???
+                ).
+    " For trees
+    DATA lo_tree_handler TYPE REF TO lcl_tree_handler.
+    CREATE OBJECT lo_tree_handler
+      EXPORTING
+        io_xtt        = me
+        iv_block_name = ir_field->name.
+
+    " Has match in a template
+    DATA lv_has_text TYPE abap_bool.
+    lv_has_text = lo_tree_handler->fill_text_match( iv_tr_id  = ir_field->name
+                                                    iv_middle = cv_content
+                                                    is_bounds = ls_bounds
+                                                    ir_field  = ir_field ).
+    " No proper bounds found
+    IF ls_bounds-text_before IS INITIAL AND ls_bounds-text_after IS INITIAL
+       " AND iv_first_level_is_table IS SUPPLIED.
+       AND lv_has_text <> abap_true. " lt_text_match[] IS INITIAL.
+      MESSAGE w012(zsy_xtt) WITH 'tree' ir_field->name INTO sy-msgli.
+      mo_logger->add( ).
+      RETURN.
+    ENDIF.
+  ENDIF.
+
+  DATA lr_tree TYPE REF TO zcl_xtt_replace_block=>ts_tree.
+  lr_tree ?= ir_field->dref.
+
+  lo_tree_handler->add_tree_data(
+   EXPORTING
+     io_owner = me
+     ir_tree  = lr_tree
+     iv_tabix = 0
+   CHANGING
+     cv_text  = ls_bounds-text_before ).
+
+  " And set result
+  CONCATENATE ls_bounds-text_before
+              ls_bounds-text_after INTO cv_content RESPECTING BLANKS.
+ENDMETHOD.
+
+
+METHOD on_match_found.
+  " Just skip
+  CHECK is_field->typ <> zcl_xtt_replace_block=>mc_type-tree.
 
   " Try to get value as a string
   IF mv_value IS INITIAL.
     mv_value = zcl_xtt_replace_block=>get_as_string( is_field = is_field ).
   ENDIF.
 
+
   " Write new value
   iv_pos_end = iv_pos_end + 1.
-  CONCATENATE
-    <lv_content>(iv_pos_beg)
-       mv_prefix mv_value
-    <lv_content>+iv_pos_end INTO <lv_content> RESPECTING BLANKS.
+
+  DATA l_len TYPE i.
+  l_len = strlen( cv_content ).
+  IF iv_pos_end > l_len.
+    MESSAGE e020(zsy_xtt) WITH is_field->name INTO sy-msgli.
+    add_log_message( iv_syst = abap_true ).
+  ELSE.
+    CONCATENATE
+      cv_content(iv_pos_beg)
+         mv_prefix mv_value
+      cv_content+iv_pos_end INTO cv_content RESPECTING BLANKS.
+  ENDIF.
 
   " Used in sub classes
   CLEAR:
@@ -672,143 +658,21 @@ METHOD on_match_found.
 ENDMETHOD.
 
 
-METHOD replace_1st_from.
-  DATA lv_offset TYPE i.
-  DATA lv_len    TYPE i.
-  FIELD-SYMBOLS <ls_replace> LIKE LINE OF it_replace.
-
-  LOOP AT it_replace ASSIGNING <ls_replace>.
-    FIND FIRST OCCURRENCE OF <ls_replace>-from IN SECTION OFFSET iv_from OF cv_xml
-                                                    MATCH OFFSET lv_offset.
-    CHECK sy-subrc = 0.
-
-    " Replcae with value
-    lv_len = strlen( <ls_replace>-from ).
-    REPLACE SECTION OFFSET lv_offset LENGTH lv_len OF cv_xml WITH <ls_replace>-to.
-  ENDLOOP.
-ENDMETHOD.
-
-
-METHOD split_by_tag.
-  DATA:
-    lt_match       TYPE match_result_tab,
-    lv_first_match TYPE i,
-    lv_last_match  TYPE i,
-    lv_with_tag    TYPE abap_bool,
-    lv_beg         TYPE i,
-    lv_end         TYPE i,
-    lv_off         TYPE i,
-    lv_text        TYPE string,
-    ls_row_off     TYPE zcl_xtt_replace_block=>ts_row_offset,
-    lt_row_off     TYPE zcl_xtt_replace_block=>tt_row_offset,
-    lv_tabix       TYPE sytabix,
-    lv_from        TYPE sytabix,
-    lv_minus       TYPE i,
-    ls_text_match  LIKE LINE OF et_text_match.
-  FIELD-SYMBOLS:
-    <ls_match>    LIKE LINE OF lt_match,
-    <ls_submatch> LIKE LINE OF <ls_match>-submatches,
-    <ls_row_off>  LIKE ls_row_off,
-    <ls_row_off2> LIKE ls_row_off.
-
-*************
-  find_bounds(
-   EXPORTING
-    iv_context              = cv_middle
-    iv_tag                  = iv_tag
-    iv_tag_add              = iv_tag_add
-    iv_first_level_is_table = iv_first_level_is_table
-    iv_block_name           = iv_block_name
-   IMPORTING
-    et_match                = lt_match
-    ev_with_tag             = lv_with_tag
-    ev_first_match          = lv_first_match
-    ev_last_match           = lv_last_match ).
-
-*************
-  " 1 - Text before body
-  READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_first_match.
-
-  " TODO silent mode ?
-  IF sy-subrc <> 0.
-    RETURN.
+METHOD read_scopes.
+  " Position holder
+  DATA lv_new   TYPE abap_bool.
+  zcl_xtt_scope=>get_instance( EXPORTING io_block    = io_block
+                                         iv_force    = iv_force
+                               IMPORTING eo_instance = eo_scope
+                                         ev_new      = lv_new ).
+  IF lv_new = abap_true.
+    eo_scope->get_scopes( EXPORTING io_xtt     = me
+                          CHANGING  cv_content = cv_content ).
   ENDIF.
 
-  " Does need an open tag?
-  IF lv_with_tag = abap_true.
-    lv_beg = <ls_match>-offset.
-  ELSE.
-    lv_beg = <ls_match>-offset + <ls_match>-length.
-  ENDIF.
-  cv_before = cv_middle(lv_beg).
-*************
-  " 2 - Text after body
-  READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_last_match.
-
-  IF lv_with_tag = abap_true.
-    lv_end = <ls_match>-offset + <ls_match>-length.
-  ELSE.
-    lv_end = <ls_match>-offset.
-  ENDIF.
-  cv_after = cv_middle+lv_end.
-*************
-  " 3 - Body
-  lv_end = lv_end - lv_beg.
-  cv_middle = cv_middle+lv_beg(lv_end).
-
-**********************************************************************
-  " For trees
-**********************************************************************
-  CHECK iv_field_type = zcl_xtt_replace_block=>mc_type_tree
-    AND et_text_match IS REQUESTED.
-
-  " Offset
-  lv_minus = lv_beg.
-  LOOP AT lt_match ASSIGNING <ls_match>.
-    lv_tabix = sy-tabix.
-    READ TABLE <ls_match>-submatches ASSIGNING <ls_submatch> INDEX 3.
-    CHECK sy-subrc = 0
-      AND <ls_match>-offset = <ls_submatch>-offset
-      AND <ls_match>-length = <ls_submatch>-length.
-
-    " Get whole match
-    lv_off  = <ls_match>-offset - lv_beg - 1.
-    lv_text = cv_middle+lv_off(<ls_match>-length).
-
-    " Read from texts
-    zcl_xtt_replace_block=>tree_detect_options(
-     EXPORTING
-       iv_text       = lv_text
-       iv_pos        = lv_tabix
-     CHANGING
-       cs_row_offset = ls_row_off
-       ct_row_offset = lt_row_off ).
-  ENDLOOP.
-
-  " Check overlaps
-  LOOP AT lt_row_off ASSIGNING <ls_row_off>.
-    lv_from = sy-tabix + 1.
-    LOOP AT lt_row_off ASSIGNING <ls_row_off2> FROM lv_from WHERE
-       ( first <= <ls_row_off>-last AND first >= <ls_row_off>-first ) OR
-       ( last  <= <ls_row_off>-last AND last  >= <ls_row_off>-first ).
-      MESSAGE x001(zsy_xtt).
-    ENDLOOP.
-  ENDLOOP.
-
-  " And add
-  LOOP AT lt_row_off ASSIGNING <ls_row_off>.
-    lv_beg = <ls_row_off>-first - 1.
-    READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_beg.
-    lv_beg = <ls_match>-offset - lv_minus.
-
-    lv_end = <ls_row_off>-last + 1.
-    READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_end.
-    lv_end = <ls_match>-offset + <ls_match>-length - lv_beg - lv_minus.
-
-    " And add
-    MOVE-CORRESPONDING <ls_row_off> TO ls_text_match.
-    ls_text_match-text  = cv_middle+lv_beg(lv_end).
-    INSERT ls_text_match INTO TABLE et_text_match.
-  ENDLOOP.
+  eo_scope->calc_cond_matches( io_xtt   = me
+                               io_block = io_block
+                               iv_tabix = iv_tabix
+                               iv_init  = lv_new ).
 ENDMETHOD.
 ENDCLASS.

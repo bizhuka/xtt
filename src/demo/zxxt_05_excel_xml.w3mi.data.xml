@@ -7,17 +7,17 @@
  xmlns:html="http://www.w3.org/TR/REC-html40">
  <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
   <Author>Molda_B</Author>
-  <LastAuthor>Біржан Молдабаев</LastAuthor>
+  <LastAuthor>Moldabayev, Birzhan</LastAuthor>
   <Created>2018-02-01T11:25:13Z</Created>
-  <LastSaved>2019-04-05T16:27:07Z</LastSaved>
+  <LastSaved>2020-05-11T02:52:01Z</LastSaved>
   <Version>16.00</Version>
  </DocumentProperties>
  <OfficeDocumentSettings xmlns="urn:schemas-microsoft-com:office:office">
   <AllowPNG/>
  </OfficeDocumentSettings>
  <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
-  <WindowHeight>14100</WindowHeight>
-  <WindowWidth>28800</WindowWidth>
+  <WindowHeight>6495</WindowHeight>
+  <WindowWidth>14370</WindowWidth>
   <WindowTopX>0</WindowTopX>
   <WindowTopY>0</WindowTopY>
   <ProtectStructure>False</ProtectStructure>
@@ -33,7 +33,7 @@
    <NumberFormat/>
    <Protection/>
   </Style>
-  <Style ss:ID="m293446896">
+  <Style ss:ID="m341970128">
    <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="2"/>
@@ -42,7 +42,7 @@
    </Borders>
    <Interior/>
   </Style>
-  <Style ss:ID="m293446936">
+  <Style ss:ID="m341970168">
    <Alignment ss:Horizontal="Left" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
@@ -50,7 +50,7 @@
    </Borders>
    <Interior ss:Color="#C6E0B4" ss:Pattern="Solid"/>
   </Style>
-  <Style ss:ID="m293446956">
+  <Style ss:ID="m341970188">
    <Alignment ss:Horizontal="Left" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
@@ -58,7 +58,7 @@
    </Borders>
    <Interior ss:Color="#C6E0B4" ss:Pattern="Solid"/>
   </Style>
-  <Style ss:ID="m293446976">
+  <Style ss:ID="m341970208">
    <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
@@ -67,7 +67,7 @@
    <Interior ss:Color="#C6E0B4" ss:Pattern="Solid"/>
    <NumberFormat ss:Format="Standard"/>
   </Style>
-  <Style ss:ID="m293446996">
+  <Style ss:ID="m341970228">
    <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
@@ -126,6 +126,7 @@
   <Style ss:ID="s75">
    <Alignment ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="2"/>
    </Borders>
    <Font ss:FontName="Calibri" x:CharSet="204" x:Family="Swiss" ss:Size="11"
@@ -134,18 +135,23 @@
   </Style>
   <Style ss:ID="s76">
    <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:WrapText="1"/>
-   <Borders/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
+   </Borders>
    <Interior ss:Color="#EDEDED" ss:Pattern="Solid"/>
   </Style>
   <Style ss:ID="s77">
    <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:WrapText="1"/>
-   <Borders/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
+   </Borders>
    <Interior ss:Color="#EDEDED" ss:Pattern="Solid"/>
    <NumberFormat ss:Format="Standard"/>
   </Style>
   <Style ss:ID="s78">
    <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2"/>
     <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="2"/>
    </Borders>
    <Interior ss:Color="#EDEDED" ss:Pattern="Solid"/>
@@ -262,13 +268,6 @@
     ss:Color="#FF0000"/>
   </Style>
   <Style ss:ID="s111">
-   <Alignment ss:Horizontal="Right" ss:Vertical="Bottom"/>
-   <NumberFormat ss:Format="Standard"/>
-  </Style>
-  <Style ss:ID="s112">
-   <NumberFormat ss:Format="Standard"/>
-  </Style>
-  <Style ss:ID="s113">
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
@@ -277,7 +276,11 @@
    </Borders>
    <Interior ss:Color="#7B7B7B" ss:Pattern="Solid"/>
   </Style>
-  <Style ss:ID="s114">
+  <Style ss:ID="s112">
+   <Borders/>
+   <Interior/>
+  </Style>
+  <Style ss:ID="s113">
    <Alignment ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
@@ -286,7 +289,7 @@
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
    </Borders>
   </Style>
-  <Style ss:ID="s115">
+  <Style ss:ID="s114">
    <Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
@@ -295,7 +298,7 @@
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
    </Borders>
   </Style>
-  <Style ss:ID="s116">
+  <Style ss:ID="s115">
    <Alignment ss:Horizontal="Right" ss:Vertical="Center" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
@@ -305,12 +308,19 @@
    </Borders>
    <NumberFormat ss:Format="Standard"/>
   </Style>
+  <Style ss:ID="s116">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Bottom"/>
+   <NumberFormat ss:Format="Standard"/>
+  </Style>
+  <Style ss:ID="s117">
+   <NumberFormat ss:Format="Standard"/>
+  </Style>
  </Styles>
- <Worksheet ss:Name="Sheet1">
+ <Worksheet ss:Name="Different format for levels">
   <Table ss:ExpandedColumnCount="8" ss:ExpandedRowCount="13" x:FullColumns="1"
    x:FullRows="1" ss:DefaultRowHeight="15">
    <Column ss:AutoFitWidth="0" ss:Width="108.75"/>
-   <Column ss:AutoFitWidth="0" ss:Width="123"/>
+   <Column ss:AutoFitWidth="0" ss:Width="223.5"/>
    <Column ss:AutoFitWidth="0" ss:Width="241.5"/>
    <Column ss:AutoFitWidth="0" ss:Width="219.75"/>
    <Column ss:AutoFitWidth="0" ss:Width="175.5" ss:Span="2"/>
@@ -321,7 +331,7 @@
        xmlns="http://www.w3.org/TR/REC-html40"><B><Font html:Face="Tahoma"
          x:CharSet="204" x:Family="Swiss" html:Size="9" html:Color="#000000">Attention:</Font></B><Font
         html:Face="Tahoma" x:CharSet="204" x:Family="Swiss" html:Size="9"
-        html:Color="#000000">&#10;Put text anywhere in sheet&#10;Or use in code zcl_xtt_replace_block=&gt;</Font><B><Font
+        html:Color="#000000">&#10;Just type anywhere&#10;Or use in code zcl_xtt_replace_block=&gt;</Font><B><Font
          html:Face="Tahoma" x:CharSet="204" x:Family="Swiss" html:Size="9"
          html:Color="#000000">tree_create</Font></B><Font html:Face="Tahoma"
         x:CharSet="204" x:Family="Swiss" html:Size="9" html:Color="#000000">&#10;</Font><B><Font
@@ -341,14 +351,14 @@
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="24.75">
     <Cell ss:StyleID="s66"><Data ss:Type="String">{R-T;level=0;top=}</Data></Cell>
-    <Cell ss:Index="3" ss:MergeAcross="3" ss:StyleID="m293446896"><Data
+    <Cell ss:Index="3" ss:MergeAcross="3" ss:StyleID="m341970128"><Data
       ss:Type="String" x:Ticked="1">&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;&#45;-</Data></Cell>
     <Cell ss:StyleID="s73"/>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="24.75">
     <Cell ss:StyleID="s74"><Data ss:Type="String">{R-T;level=0;top=}</Data></Cell>
     <Cell ss:Index="3" ss:StyleID="s75"><Data ss:Type="String">Average for SUM1 &amp; SUM2</Data></Cell>
-    <Cell ss:StyleID="s76"><Data ss:Type="String">Groups count {R-T-CH_COUNT}</Data></Cell>
+    <Cell ss:StyleID="s76"><Data ss:Type="String">Groups count {R-T-CAPTION;func=COUNT} (level=0)</Data></Cell>
     <Cell ss:StyleID="s77"><Data ss:Type="String">{R-T-SUM1;func=AVG}</Data></Cell>
     <Cell ss:StyleID="s78"><Data ss:Type="String">{R-T-SUM2;func=AVG}</Data></Cell>
    </Row>
@@ -356,17 +366,20 @@
     <Cell ss:StyleID="s79"><Data ss:Type="String">{R-T;level=1;top=X}</Data></Cell>
     <Cell ss:StyleID="s80"><Data ss:Type="String">DEFAULT header (WHEN OTHERS)</Data></Cell>
     <Cell ss:StyleID="s81"><Data ss:Type="String">Group {R-T-GROUP;func=FIRST}</Data></Cell>
-    <Cell ss:StyleID="s81"><Data ss:Type="String">COUNT = {R-T-CH_COUNT;func=COUNT}</Data></Cell>
+    <Cell ss:StyleID="s81"><Data ss:Type="String">COUNT = {R-T-CAPTION;func=COUNT}</Data><Comment
+      ss:Author="Moldabayev, Birzhan"><ss:Data
+       xmlns="http://www.w3.org/TR/REC-html40"><B><Font html:Face="Tahoma"
+         x:CharSet="204" x:Family="Swiss" html:Size="9" html:Color="#000000">1 formula for level=1</Font></B></ss:Data></Comment></Cell>
     <Cell ss:StyleID="s82"/>
     <Cell ss:StyleID="s83"/>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="15.75">
     <Cell ss:StyleID="s84"><Data ss:Type="String">{R-T;level=1;top=X;show_if=ROW-GROUP eq 'GRP B'}</Data></Cell>
     <Cell ss:MergeDown="1" ss:StyleID="s86"><Data ss:Type="String">Header for GROUP 'B' 2 rows</Data></Cell>
-    <Cell ss:MergeDown="1" ss:StyleID="m293446936"><Data ss:Type="String">Group {R-T-GROUP} </Data></Cell>
-    <Cell ss:MergeDown="1" ss:StyleID="m293446956"><Data ss:Type="String">COUNT= {R-T-CH_COUNT}</Data></Cell>
-    <Cell ss:MergeDown="1" ss:StyleID="m293446976"/>
-    <Cell ss:MergeDown="1" ss:StyleID="m293446996"/>
+    <Cell ss:MergeDown="1" ss:StyleID="m341970168"><Data ss:Type="String">Group {R-T-GROUP} </Data></Cell>
+    <Cell ss:MergeDown="1" ss:StyleID="m341970188"><Data ss:Type="String">COUNT= {R-T-CAPTION}</Data></Cell>
+    <Cell ss:MergeDown="1" ss:StyleID="m341970208"/>
+    <Cell ss:MergeDown="1" ss:StyleID="m341970228"/>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="15.75">
     <Cell ss:StyleID="s84"><Data ss:Type="String">{R-T;level=1;top=X;show_if=ROW-GROUP eq 'GRP B'}</Data></Cell>
@@ -375,7 +388,7 @@
     <Cell ss:StyleID="s84"><Data ss:Type="String">{R-T;level=1;top=X;show_if=( row-GROUP = 'C' OR ROW-group cp '*C' ) AND ROW-GROUP &lt;&gt; 'Z' }</Data></Cell>
     <Cell ss:StyleID="s104"><Data ss:Type="String">Complex where with ()</Data></Cell>
     <Cell ss:StyleID="s105"><Data ss:Type="String">Group {R-T-GROUP} </Data></Cell>
-    <Cell ss:StyleID="s105"><Data ss:Type="String">COUNT= {R-T-CH_COUNT}</Data></Cell>
+    <Cell ss:StyleID="s105"><Data ss:Type="String">COUNT= {R-T-CAPTION}</Data></Cell>
     <Cell ss:StyleID="s106"/>
     <Cell ss:StyleID="s107"/>
    </Row>
@@ -385,24 +398,25 @@
     <Cell ss:StyleID="s110"/>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="15.75">
+    <Cell ss:StyleID="s111"><Data ss:Type="String">{R-T;level=2;top=X}</Data></Cell>
+    <Cell ss:StyleID="s112"><Data ss:Type="String">The last level is hid</Data></Cell>
+    <Cell ss:StyleID="s113"><Data ss:Type="String">{R-T-CAPTION}</Data></Cell>
+    <Cell ss:StyleID="s114"><Data ss:Type="String">{R-T-GROUP}</Data></Cell>
+    <Cell ss:StyleID="s115"><Data ss:Type="String">{R-T-SUM1}</Data></Cell>
+    <Cell ss:StyleID="s115"><Data ss:Type="String">{R-T-SUM1}</Data></Cell>
+   </Row>
+   <Row ss:AutoFitHeight="0" ss:Height="15.75">
     <Cell ss:StyleID="s79"><Data ss:Type="String">{R-T;level=1;top=}</Data></Cell>
     <Cell><Data ss:Type="String">Footer is the same</Data></Cell>
     <Cell><Data ss:Type="String">End of {R-T-GROUP} sum for SUM1 &amp; SUM2</Data></Cell>
-    <Cell><Data ss:Type="String">Sub items count {R-T-CH_COUNT;func=COUNT}</Data></Cell>
-    <Cell ss:StyleID="s111"><Data ss:Type="String">{R-T-SUM1;func=SUM}</Data></Cell>
-    <Cell ss:StyleID="s111"><Data ss:Type="String">{R-T-SUM2;func=SUM}</Data></Cell>
+    <Cell><Data ss:Type="String">Sub items count {R-T-CAPTION}</Data></Cell>
+    <Cell ss:StyleID="s116"><Data ss:Type="String">{R-T-SUM1;func=SUM}</Data></Cell>
+    <Cell ss:StyleID="s116"><Data ss:Type="String">{R-T-SUM2;func=SUM}</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="15.75">
     <Cell ss:StyleID="s108"><Data ss:Type="String">{R-T;level=1;top=}</Data></Cell>
-    <Cell ss:Index="5" ss:StyleID="s112"/>
-    <Cell ss:StyleID="s112"/>
-   </Row>
-   <Row ss:AutoFitHeight="0" ss:Height="15.75" ss:Hidden="1">
-    <Cell ss:StyleID="s113"><Data ss:Type="String">{R-T;level=2;top=X}</Data></Cell>
-    <Cell ss:Index="3" ss:StyleID="s114"><Data ss:Type="String">{R-T-CAPTION}</Data></Cell>
-    <Cell ss:StyleID="s115"><Data ss:Type="String">{R-T-GROUP}</Data></Cell>
-    <Cell ss:StyleID="s116"><Data ss:Type="String">{R-T-SUM1}</Data></Cell>
-    <Cell ss:StyleID="s116"><Data ss:Type="String">{R-T-SUM1}</Data></Cell>
+    <Cell ss:Index="5" ss:StyleID="s117"/>
+    <Cell ss:StyleID="s117"/>
    </Row>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
@@ -424,7 +438,7 @@
    <Panes>
     <Pane>
      <Number>3</Number>
-     <ActiveCol>4</ActiveCol>
+     <ActiveCol>1</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>

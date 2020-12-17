@@ -13,7 +13,7 @@ public section.
       !IO_FILE type ref to ZIF_XTT_FILE .
   class-methods GET_IMAGE_TAG
     importing
-      !IO_COMP_CELL type ref to ZCL_XTT_COMP_CELL
+      !IO_IMAGE type ref to ZCL_XTT_IMAGE
       !IV_INLINE type ABAP_BOOL optional
     exporting
       !EV_BINDATA type STRING
@@ -61,17 +61,17 @@ METHOD constructor.
   CHECK lv_comments IS NOT INITIAL.
 
   " All matches of `<w:comment></w:comment>`
-  DATA lt_xml_match TYPE tt_xml_match.
+  DATA lt_xml_match TYPE zcl_xtt_util=>tt_xml_match.
   FIELD-SYMBOLS <ls_xml_match> LIKE LINE OF lt_xml_match.
 
-  zcl_xtt_xml_base=>get_tag_matches( EXPORTING iv_context   = lv_comments
-                                               iv_tag       = 'w:comment' "#EC NOTEXT
-                                     IMPORTING et_xml_match = lt_xml_match ).
+  lt_xml_match = zcl_xtt_util=>get_xml_matches( iv_context   = lv_comments
+                                                iv_tag       = 'w:comment' "#EC NOTEXT
+                                               ).
   " Safe delete from the end
   LOOP AT lt_xml_match ASSIGNING <ls_xml_match>.
     " Find XTT anchor
     DATA lv_xtt_name TYPE string.
-    zcl_xtt_xml_base=>get_from_tag(
+    zcl_xtt_util=>get_from_tag(
       EXPORTING
         iv_beg_part = `<w:t>{`                              "#EC NOTEXT
         iv_end_part = `}</w:t>`                             "#EC NOTEXT
@@ -82,7 +82,7 @@ METHOD constructor.
     CHECK lv_xtt_name IS NOT INITIAL.
 
     DATA lv_word_id TYPE string.
-    zcl_xtt_xml_base=>get_from_tag(
+    zcl_xtt_util=>get_from_tag(
       EXPORTING
         iv_beg_part = `w:id="`                              "#EC NOTEXT
         iv_end_part = `"`                                   "#EC NOTEXT
@@ -102,7 +102,7 @@ METHOD constructor.
     lv_pos_beg = sy-fdpos.
 
     " What to change
-    DATA lt_replace TYPE tt_replace.
+    DATA lt_replace TYPE zcl_xtt_util=>tt_replace.
     CLEAR lt_replace.
     FIELD-SYMBOLS <ls_replace> LIKE LINE OF lt_replace.
 
@@ -130,9 +130,9 @@ METHOD constructor.
     <ls_replace>-from = ` id="`.                            "#EC NOTEXT
     CONCATENATE         ` anchor_xtt_alt="{` lv_xtt_name `}" id="` INTO <ls_replace>-to. "#EC NOTEXT
 
-    replace_1st_from( EXPORTING it_replace = lt_replace
-                                iv_from    = lv_pos_beg
-                      CHANGING  cv_xml     = mv_file_content ).
+    zcl_xtt_util=>replace_1st_from( EXPORTING it_replace = lt_replace
+                                              iv_from    = lv_pos_beg
+                                    CHANGING  cv_xml     = mv_file_content ).
   ENDLOOP.
 ENDMETHOD.
 
@@ -148,9 +148,9 @@ METHOD get_image_tag.
   DATA lv_height TYPE p.
 
   " To points
-  IF io_comp_cell->mv_width IS NOT INITIAL AND io_comp_cell->mv_height IS NOT INITIAL.
-    lv_width  = io_comp_cell->mv_width  / 12700.
-    lv_height = io_comp_cell->mv_height / 12700.
+  IF io_image->mv_width IS NOT INITIAL AND io_image->mv_height IS NOT INITIAL.
+    lv_width  = io_image->mv_width  / 12700.
+    lv_height = io_image->mv_height / 12700.
 
     int_to_text lv_width.
     int_to_text lv_height.
@@ -174,16 +174,16 @@ METHOD get_image_tag.
 
   IF iv_inline = abap_true.
     CONCATENATE `wordml://777`                              "#EC NOTEXT
-     io_comp_cell->mv_index_txt
-     io_comp_cell->mv_ext INTO ev_name.
+     io_image->mv_index_txt
+     io_image->mv_ext INTO ev_name.
 
-    ev_bindata = cl_http_utility=>encode_x_base64( io_comp_cell->mv_image ).
+    ev_bindata = cl_http_utility=>encode_x_base64( io_image->mv_image ).
     CONCATENATE `<w:binData w:name="` ev_name `" xml:space="preserve">`
      ev_bindata `</w:binData>` INTO ev_bindata.
 
     CONCATENATE `<v:imagedata src="` ev_name `"/>` INTO lv_value2.
   ELSE.
-    CONCATENATE `<v:imagedata r:id="_rImgId` io_comp_cell->mv_index_txt `"/>` INTO lv_value2.
+    CONCATENATE `<v:imagedata r:id="_P` io_image->mv_index_txt `"/>` INTO lv_value2.
   ENDIF.
 
   " Final merge
@@ -240,17 +240,14 @@ METHOD on_match_found.
   DATA lv_skip TYPE abap_bool.
 
   DO 1 TIMES.
-    CHECK is_field->typ = zcl_xtt_replace_block=>mc_type_comp_cell
+    CHECK is_field->typ = zcl_xtt_replace_block=>mc_type-image
       AND is_field->oref IS NOT INITIAL.
 
     " Transform ref
-    DATA lo_comp_cell TYPE REF TO zcl_xtt_comp_cell.
-    lo_comp_cell ?= is_field->oref.
+    DATA lo_image TYPE REF TO zcl_xtt_image.
+    lo_image ?= is_field->oref.
 
 **********************************************************************
-    " As ordinary string
-    FIELD-SYMBOLS <lv_content> TYPE string.
-    ASSIGN iv_content->* TO <lv_content>.
 
     " Is image based ?
     DATA lv_id_in_alter_text TYPE abap_bool.
@@ -259,27 +256,23 @@ METHOD on_match_found.
     lv_alt_pos = iv_pos_beg - 5.
 
     " Yes image id {R-T-IMG} in alternative text
-    IF iv_pos_beg > 0 AND strlen( <lv_content> ) > iv_pos_beg AND <lv_content>+lv_alt_pos(5) = `alt="`.
+    IF iv_pos_beg > 0 AND strlen( cv_content ) > iv_pos_beg AND cv_content+lv_alt_pos(5) = `alt="`.
       lv_id_in_alter_text = abap_true.
     ENDIF.
 
     " Create tag (just insert as new value)
     IF lv_id_in_alter_text <> abap_true.
-      get_image_tag( EXPORTING io_comp_cell = lo_comp_cell
+      get_image_tag( EXPORTING io_image = lo_image
                      IMPORTING ev_tag       = mv_value ).
     ELSE.
       " Change image ID only
-      DATA lt_replace TYPE tt_replace.
-      FIELD-SYMBOLS <ls_replace> LIKE LINE OF lt_replace.
-
-      APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
-      <ls_replace>-from = `<v:imagedata r:id="`.
-      CONCATENATE         `<v:imagedata r:id="_rImgId` lo_comp_cell->mv_index_txt
-                          `" old_id="` INTO <ls_replace>-to.
-
-      replace_1st_from( EXPORTING it_replace = lt_replace
-                                  iv_from    = iv_pos_beg
-                        CHANGING  cv_xml     = <lv_content> ).
+      DATA lv_to TYPE string.
+      CONCATENATE `<v:imagedata r:id="_P` lo_image->mv_index_txt `"` INTO lv_to.
+      zcl_xtt_util=>replace_1st( EXPORTING iv_from     = `<v:imagedata r:id="\b[^"]*"`
+                                           iv_to       = lv_to
+                                           iv_pos      = iv_pos_beg
+                                           iv_keep_len = abap_true
+                                 CHANGING  cv_xml      = cv_content ).
 
       " Do not change IV_CONTENT any more
       lv_skip = abap_true.
@@ -289,7 +282,7 @@ METHOD on_match_found.
     DATA lv_file_name TYPE string.
     DATA lv_mime_text TYPE string.
     DATA lv_rewrite   TYPE abap_bool.
-    lo_comp_cell->save_in_archive( EXPORTING io_zip       = mo_zip
+    lo_image->save_in_archive( EXPORTING io_zip       = mo_zip
                                              iv_prefix    = 'word/media/' "#EC NOTEXT
                                    IMPORTING ev_file_name = lv_file_name
                                              ev_mime_text = lv_mime_text
@@ -319,8 +312,8 @@ METHOD on_match_found.
 
     DATA lv_value TYPE string.
     CONCATENATE
-      `<Relationship Id="_rImgId`
-      lo_comp_cell->mv_index_txt
+      `<Relationship Id="_P`
+      lo_image->mv_index_txt
       `" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/`
       lv_file_name `"/>` INTO lv_value.
     CONCATENATE mv_drawing_rel(lv_from_rel) lv_value `</Relationships>` INTO mv_drawing_rel.
@@ -330,9 +323,11 @@ METHOD on_match_found.
   CHECK lv_skip <> abap_true.
 
   super->on_match_found(
-    iv_content = iv_content
+   EXPORTING
     is_field   = is_field
     iv_pos_beg = iv_pos_beg
-    iv_pos_end = iv_pos_end ).
+    iv_pos_end = iv_pos_end
+   CHANGING
+    cv_content = cv_content ).
 ENDMETHOD.
 ENDCLASS.

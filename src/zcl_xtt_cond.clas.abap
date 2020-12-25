@@ -7,6 +7,9 @@ public section.
 
   data MV_ROOT_TYPE type STRING .
 
+  methods CONSTRUCTOR
+    importing
+      !IO_XTT type ref to ZCL_XTT .
   class-methods UNESCAPE
     importing
       !IV_TEXT type STRING
@@ -43,6 +46,7 @@ private section.
   types:
     tt_match TYPE SORTED TABLE OF ts_match WITH UNIQUE KEY cid .
 
+  data MO_XTT type ref to ZCL_XTT .
   data MT_ABAP_CODE type STRINGTAB .
   data MT_MATCH type TT_MATCH .
   data MV_PROG type PROGRAMM .
@@ -143,9 +147,15 @@ METHOD calc_matches.
 ENDMETHOD.
 
 
+METHOD constructor.
+  mo_xtt = io_xtt.
+ENDMETHOD.
+
+
 METHOD get_type.
   DATA ls_field_ext TYPE zcl_xtt_replace_block=>ts_field_ext.
-  ls_field_ext =  zcl_xtt_replace_block=>_get_field_ext( is_block      = is_data
+  ls_field_ext =  zcl_xtt_replace_block=>_get_field_ext( io_xtt        = mo_xtt
+                                                         is_block      = is_data
                                                          iv_block_name = iv_suffix ).
 
   DATA lo_type LIKE ls_field_ext-desc.

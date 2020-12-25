@@ -6,7 +6,7 @@ SELECTION-SCREEN BEGIN OF BLOCK bl_example WITH FRAME TITLE TEXT-exa.
 PARAMETERS:
   " What example to launch
   p_exa   TYPE char5 AS LISTBOX VISIBLE LENGTH 80 OBLIGATORY MODIF ID exa USER-COMMAND update_scr
-   DEFAULT '13-01'
+   DEFAULT '02-01'
   ,
 
   " Row count
@@ -28,7 +28,7 @@ SELECTION-SCREEN END OF   BLOCK bl_example.
 SELECTION-SCREEN BEGIN OF BLOCK bl_action WITH FRAME TITLE TEXT-res.
 PARAMETERS:
   p_temp RADIOBUTTON GROUP res MODIF ID res USER-COMMAND update_scr,
-  p_repo RADIOBUTTON GROUP res MODIF ID res, " DEFAULT 'X',
+  p_repo RADIOBUTTON GROUP res MODIF ID res,
   p_stru RADIOBUTTON GROUP res MODIF ID res.
 SELECTION-SCREEN END OF   BLOCK bl_action.
 
@@ -36,9 +36,9 @@ SELECTION-SCREEN END OF   BLOCK bl_action.
 SELECTION-SCREEN BEGIN OF BLOCK bl_method WITH FRAME TITLE TEXT-met.
 * download method
 PARAMETERS:
-  p_dwnl RADIOBUTTON GROUP meth MODIF ID met USER-COMMAND update_scr DEFAULT 'X',
-  p_path TYPE text255 MODIF ID dwn,
-  p_open AS CHECKBOX  MODIF ID dwn DEFAULT 'X',
+  p_dwnl   RADIOBUTTON GROUP meth MODIF ID met USER-COMMAND update_scr DEFAULT 'X',
+  p_path   TYPE text255 MODIF ID dwn,
+  p_open   AS CHECKBOX  MODIF ID dwn DEFAULT 'X',
   " download to app server
   p_appser NO-DISPLAY. " AS CHECKBOX .
 SELECTION-SCREEN SKIP 1.

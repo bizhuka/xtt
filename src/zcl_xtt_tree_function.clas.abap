@@ -44,6 +44,7 @@ protected section.
 
   data MV_BLOCK_NAME type STRING .
   data MT_ROW_OFFSET type TT_ROW_OFFSET .
+  data MO_XTT type ref to ZCL_XTT .
 
   methods GENERATE_PROG
     importing
@@ -71,7 +72,6 @@ private section.
 
   data MT_FUNC type TT_FUNC .
   data MV_CHECK_PROG type PROGRAMM .
-  data MO_XTT type ref to ZCL_XTT .
 
   methods CATCH_PREPARE_TREE
     for event PREPARE_TREE of ZCL_XTT_REPLACE_BLOCK
@@ -360,7 +360,9 @@ METHOD generate_prog.
 
   " Code holder
   DATA lo_cond TYPE REF TO zcl_xtt_cond.
-  CREATE OBJECT lo_cond.
+  CREATE OBJECT lo_cond
+    EXPORTING
+      io_xtt = mo_xtt.
 
   " add TYPE TS_ROW
   lo_cond->get_type( EXPORTING is_data = ir_tree->data

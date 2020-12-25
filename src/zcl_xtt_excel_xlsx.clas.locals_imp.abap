@@ -494,6 +494,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     DATA lo_new_replace_block TYPE REF TO zcl_xtt_replace_block.
     CREATE OBJECT lo_new_replace_block
       EXPORTING
+        io_xtt   = mo_xlsx
         is_field = ir_field.
 
     " Recursion
@@ -557,10 +558,11 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     lr_field2->* = ir_field->*.
 
     DATA lt_copy LIKE ct_cells.
+    " Index for hashed table
+    DATA lv_tabix TYPE sytabix.
+    lv_tabix = 0.
     LOOP AT <lt_items> REFERENCE INTO lr_field2->dref.
-      DATA lv_tabix TYPE sytabix.
-      lv_tabix = sy-tabix.
-
+      lv_tabix  = lv_tabix + 1.
       lt_copy[] = it_cells_mid[].
 
       DATA lv_first TYPE abap_bool.
@@ -575,6 +577,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       IF lo_new_replace_block IS INITIAL OR lo_new_replace_block->reuse_check( lr_field2 ) <> abap_true.
         CREATE OBJECT lo_new_replace_block
           EXPORTING
+            io_xtt   = mo_xlsx
             is_field = lr_field2.
       ENDIF.
 
@@ -882,6 +885,7 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     " Create merge description
     CREATE OBJECT lo_replace_block
       EXPORTING
+        io_xtt        = mo_xtt
         is_block      = <ls_data>
         iv_block_name = mv_block_name.
 

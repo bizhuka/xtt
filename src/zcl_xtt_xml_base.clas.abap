@@ -453,6 +453,7 @@ METHOD merge.
       DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
       CREATE OBJECT lo_replace_block
         EXPORTING
+          io_xtt        = me
           is_block      = is_block
           iv_block_name = iv_block_name.
 
@@ -498,6 +499,7 @@ METHOD merge_sub_structures.
   DATA lo_new_replace_block TYPE REF TO zcl_xtt_replace_block.
   CREATE OBJECT lo_new_replace_block
     EXPORTING
+      io_xtt   = me
       is_field = ir_field.
 
   do_merge( EXPORTING io_block   = lo_new_replace_block
@@ -536,9 +538,11 @@ METHOD merge_tables.                                     .
   FIELD-SYMBOLS <lt_table> TYPE ANY TABLE.
   ASSIGN ir_field->dref->* TO <lt_table>.
 
+  " Index for hashed table
+  DATA lv_tabix TYPE sytabix.
+  lv_tabix = 0.
   LOOP AT <lt_table> REFERENCE INTO ir_field->dref.
-    DATA lv_tabix TYPE sytabix.
-    lv_tabix = sy-tabix.
+    lv_tabix = lv_tabix + 1.
 
     DATA lv_first TYPE abap_bool.
     IF lv_tabix = 1.
@@ -552,6 +556,7 @@ METHOD merge_tables.                                     .
     IF lo_new_replace_block IS INITIAL OR lo_new_replace_block->reuse_check( ir_field ) <> abap_true.
       CREATE OBJECT lo_new_replace_block
         EXPORTING
+          io_xtt   = me
           is_field = ir_field.
     ENDIF.
 

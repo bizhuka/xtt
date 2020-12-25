@@ -150,6 +150,7 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     " Create merge description
     CREATE OBJECT lo_replace_block
       EXPORTING
+        io_xtt        = mo_xtt
         is_block      = <ls_data>
         iv_block_name = mv_block_name.
 

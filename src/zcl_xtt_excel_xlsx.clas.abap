@@ -1789,6 +1789,7 @@ METHOD merge.
         " Prepare for replacement
         CREATE OBJECT lo_replace_block
           EXPORTING
+            io_xtt        = me
             is_block      = is_block
             iv_block_name = iv_block_name.
 

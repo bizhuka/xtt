@@ -1,15 +1,15 @@
-CLASS zcl_xtt_replace_block DEFINITION
-  PUBLIC
-  FINAL
-  CREATE PUBLIC
+class ZCL_XTT_REPLACE_BLOCK definition
+  public
+  final
+  create public
 
-  GLOBAL FRIENDS zcl_xtt_cond .
+  global friends ZCL_XTT_COND .
 
-  PUBLIC SECTION.
-    TYPE-POOLS abap .
+public section.
+  type-pools ABAP .
 
-    TYPES:
-      BEGIN OF ts_field,
+  types:
+    BEGIN OF ts_field,
         name    TYPE string,        " Name in template
         typ     TYPE string,        " Type of data
         dref    TYPE REF TO data,   " Value for replacement
@@ -17,43 +17,43 @@ CLASS zcl_xtt_replace_block DEFINITION
         fl_id   TYPE string,
         fl_stat TYPE abap_bool,
       END OF ts_field .
-    TYPES:
-      BEGIN OF ts_field_ext.
+  types:
+    BEGIN OF ts_field_ext.
         INCLUDE TYPE ts_field AS fld.
       TYPES:
         rb_level TYPE i,
         rb_id    TYPE string,
         desc     TYPE REF TO cl_abap_typedescr,
       END OF ts_field_ext .
-    TYPES:
-      tt_field TYPE SORTED TABLE OF ts_field WITH UNIQUE KEY name .
-    TYPES:
-      BEGIN OF ts_tree_attr,
+  types:
+    tt_field TYPE SORTED TABLE OF ts_field WITH UNIQUE KEY name .
+  types:
+    BEGIN OF ts_tree_attr,
         name TYPE string,
         attr TYPE REF TO data, " OR REF TO
       END OF ts_tree_attr .
-    TYPES:
-      tt_tree_attr TYPE HASHED TABLE OF ts_tree_attr WITH UNIQUE KEY name .
-    TYPES:
-      BEGIN OF ts_tree,
+  types:
+    tt_tree_attr TYPE HASHED TABLE OF ts_tree_attr WITH UNIQUE KEY name .
+  types:
+    BEGIN OF ts_tree,
         level     TYPE i,             " From 0
         sub_nodes TYPE tt_tree_attr,
         data      TYPE REF TO data,
       END OF ts_tree .
-    TYPES:
-      tt_tree TYPE STANDARD TABLE OF REF TO ts_tree WITH DEFAULT KEY .
-    TYPES:
-      tt_std_ref_data TYPE STANDARD TABLE OF REF TO data .
+  types:
+    tt_tree TYPE STANDARD TABLE OF REF TO ts_tree WITH DEFAULT KEY .
+  types:
+    tt_std_ref_data TYPE STANDARD TABLE OF REF TO data .
 
-    CONSTANTS:
-      BEGIN OF mc_block,
+  constants:
+    BEGIN OF mc_block,
         open       TYPE char1 VALUE '{',
         close      TYPE char1 VALUE '}',
         name_delim TYPE char1 VALUE '-',
         opt_delim  TYPE char1 VALUE ';',
       END OF mc_block .
-    CONSTANTS:
-      BEGIN OF mc_type,
+  constants:
+    BEGIN OF mc_type,
         struct   TYPE string VALUE 'struct',
         object   TYPE string VALUE 'object',
         table    TYPE string VALUE 'table',
@@ -70,60 +70,61 @@ CLASS zcl_xtt_replace_block DEFINITION
         image    TYPE string VALUE 'image',
         block    TYPE string VALUE 'block',
       END OF mc_type .
-    DATA mt_fields TYPE tt_field .
-    DATA ms_ext TYPE ts_field_ext READ-ONLY .
+  data MT_FIELDS type TT_FIELD .
+  data MS_EXT type TS_FIELD_EXT read-only .
 
-    CLASS-EVENTS prepare_tree
-      EXPORTING
-        VALUE(ir_tree) TYPE REF TO ts_tree
-        VALUE(ir_data) TYPE REF TO data
-        VALUE(ir_sub_data) TYPE REF TO data OPTIONAL
-        VALUE(it_sub_data_ref) TYPE tt_std_ref_data OPTIONAL .
+  class-events PREPARE_TREE
+    exporting
+      value(IR_TREE) type ref to TS_TREE
+      value(IR_DATA) type ref to DATA
+      value(IR_SUB_DATA) type ref to DATA optional
+      value(IT_SUB_DATA_REF) type TT_STD_REF_DATA optional .
 
-    METHODS constructor
-      IMPORTING
-        !is_block      TYPE any OPTIONAL
-        !iv_block_name TYPE string OPTIONAL
-        !is_field      TYPE REF TO ts_field OPTIONAL .
-    METHODS reuse_check
-      IMPORTING
-        !ir_field    TYPE REF TO ts_field
-      RETURNING
-        VALUE(rv_ok) TYPE abap_bool .
-    METHODS find_match
-      IMPORTING
-        !io_xtt     TYPE REF TO zcl_xtt
-        !is_scope   TYPE zcl_xtt_scope=>ts_scope
-      CHANGING
-        !cv_content TYPE string .
-    CLASS-METHODS get_as_string
-      IMPORTING
-        !is_field        TYPE REF TO ts_field
-      RETURNING
-        VALUE(rv_result) TYPE string .
-    CLASS-METHODS tree_create
-      IMPORTING
-        !it_table      TYPE REF TO data
-        !iv_fields     TYPE csequence
-      RETURNING
-        VALUE(rr_root) TYPE REF TO ts_tree .
-    CLASS-METHODS tree_create_relat
-      IMPORTING
-        !it_table      TYPE REF TO data
-        !iv_node_key   TYPE csequence
-        !iv_relat_key  TYPE csequence
-      RETURNING
-        VALUE(rr_root) TYPE REF TO data
-      EXCEPTIONS
-        ex_loop_ref
-        ex_key_dupl .
-    CLASS-METHODS tree_raise_prepare
-      IMPORTING
-        !ir_tree  TYPE REF TO ts_tree
-        !iv_level TYPE i .
-    METHODS set_id
-      IMPORTING
-        !iv_id TYPE string .
+  methods CONSTRUCTOR
+    importing
+      !IO_XTT type ref to ZCL_XTT
+      !IS_BLOCK type ANY optional
+      !IV_BLOCK_NAME type STRING optional
+      !IS_FIELD type ref to TS_FIELD optional .
+  methods REUSE_CHECK
+    importing
+      !IR_FIELD type ref to TS_FIELD
+    returning
+      value(RV_OK) type ABAP_BOOL .
+  methods FIND_MATCH
+    importing
+      !IO_XTT type ref to ZCL_XTT
+      !IS_SCOPE type ZCL_XTT_SCOPE=>TS_SCOPE
+    changing
+      !CV_CONTENT type STRING .
+  class-methods GET_AS_STRING
+    importing
+      !IS_FIELD type ref to TS_FIELD
+    returning
+      value(RV_RESULT) type STRING .
+  class-methods TREE_CREATE
+    importing
+      !IT_TABLE type ref to DATA
+      !IV_FIELDS type CSEQUENCE
+    returning
+      value(RR_ROOT) type ref to TS_TREE .
+  class-methods TREE_CREATE_RELAT
+    importing
+      !IT_TABLE type ref to DATA
+      !IV_NODE_KEY type CSEQUENCE
+      !IV_RELAT_KEY type CSEQUENCE
+    returning
+      value(RR_ROOT) type ref to DATA
+    exceptions
+      EX_LOOP_REF
+      EX_KEY_DUPL .
+  class-methods TREE_RAISE_PREPARE
+    importing
+      !IR_TREE type ref to TS_TREE
+      !IV_LEVEL type I .
+  methods SET_ID
+    importing
+      !IV_ID type STRING .
   PROTECTED SECTION.
 private section.
 
@@ -131,6 +132,7 @@ private section.
 
   class-methods _GET_FIELD_EXT
     importing
+      !IO_XTT type ref to ZCL_XTT
       !IS_BLOCK type ANY
       !IV_BLOCK_NAME type STRING
       !IS_FIELD type ref to TS_FIELD optional
@@ -144,7 +146,8 @@ CLASS ZCL_XTT_REPLACE_BLOCK IMPLEMENTATION.
 
 
 METHOD constructor.
-  ms_ext = _get_field_ext( is_block      = is_block
+  ms_ext = _get_field_ext( io_xtt        = io_xtt
+                           is_block      = is_block
                            iv_block_name = iv_block_name
                            is_field      = is_field ).
 
@@ -171,7 +174,8 @@ METHOD constructor.
         CONCATENATE ms_ext-name mc_block-name_delim <ls_comp>-name INTO ls_sub_field-name.
 
         " Add sub field
-        ls_sub_field = _get_field_ext( is_block      = <fs_sub_fld>
+        ls_sub_field = _get_field_ext( io_xtt        = io_xtt
+                                       is_block      = <fs_sub_fld>
                                        iv_block_name = ls_sub_field-name ).
         CHECK ls_sub_field-desc IS NOT INITIAL.
         ls_sub_field-fl_stat = abap_true.
@@ -186,17 +190,43 @@ METHOD constructor.
       " Object processed as a structure ↑↑↑
     WHEN mc_type-object.
       DATA lo_odesc TYPE REF TO cl_abap_objectdescr.
-      FIELD-SYMBOLS <ls_attr>  TYPE abap_attrdescr.
+      DATA lo_cdesc TYPE REF TO cl_abap_classdescr.
 
-      lo_odesc ?= ms_ext-desc.
+      " Can read private & protected ?
+      DATA lv_public_only TYPE abap_bool.
+      lv_public_only = abap_true.
+
+      TRY.
+          " Is class ?
+          lo_cdesc ?= ms_ext-desc.
+          lo_odesc = lo_cdesc.
+
+          DATA lt_friends TYPE abap_frndtypes_tab.
+          lt_friends = lo_cdesc->get_friend_types( ).
+          READ TABLE lt_friends TRANSPORTING NO FIELDS
+           WITH KEY table_line->absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK'.
+          IF sy-subrc = 0.
+            CLEAR lv_public_only.
+          ENDIF.
+        CATCH cx_sy_move_cast_error.
+          " Is interface ?
+          lo_odesc ?= ms_ext-desc.
+      ENDTRY.
+
       " Add every field
-      LOOP AT lo_odesc->attributes ASSIGNING <ls_attr> WHERE visibility = cl_abap_objectdescr=>public.
+      FIELD-SYMBOLS <ls_attr>  TYPE abap_attrdescr.
+      LOOP AT lo_odesc->attributes ASSIGNING <ls_attr>.
+        IF lv_public_only = abap_true.
+          CHECK <ls_attr>-visibility = cl_abap_objectdescr=>public.
+        ENDIF.
+
         " Name and data
         ASSIGN ms_ext-oref->(<ls_attr>-name) TO <fs_sub_fld>.
         CONCATENATE ms_ext-name mc_block-name_delim <ls_attr>-name INTO ls_sub_field-name.
 
         " Add sub field
-        ls_sub_field = _get_field_ext( is_block      = <fs_sub_fld>
+        ls_sub_field = _get_field_ext( io_xtt        = io_xtt
+                                       is_block      = <fs_sub_fld>
                                        iv_block_name = ls_sub_field-name ).
         CHECK ls_sub_field-desc IS NOT INITIAL.
         ls_sub_field-fl_stat = abap_true.
@@ -763,8 +793,15 @@ METHOD _get_field_ext.
     IF rs_field_ext-desc->type_kind = cl_abap_typedescr=>typekind_dref.
       DATA lv_ref TYPE REF TO data.
       lv_ref ?= <fs_block>.
-      rs_field_ext-desc = cl_abap_typedescr=>describe_by_data_ref( lv_ref ).
 
+      " Oops
+      IF lv_ref IS INITIAL.
+        MESSAGE w004(zsy_xtt) WITH rs_field_ext-name INTO sy-msgli.
+        io_xtt->add_log_message( iv_syst = abap_true ).
+        RETURN.
+      ENDIF.
+
+      rs_field_ext-desc = cl_abap_typedescr=>describe_by_data_ref( lv_ref ).
       ASSIGN lv_ref->* TO <fs_block>.
       rs_field_ext-dref = lv_ref.
       CONTINUE.
@@ -847,13 +884,12 @@ METHOD _get_field_ext.
   " Result
   GET REFERENCE OF <fs_block> INTO rs_field_ext-dref.
 
-  " Skip ?
-  IF rs_field_ext-desc IS INITIAL.
-    IF rs_field_ext-name IS INITIAL AND is_field IS NOT INITIAL.
-      rs_field_ext-name = is_field->name.
-    ENDIF.
-    MESSAGE e004(zsy_xtt) WITH rs_field_ext-name INTO sy-msgli.
-    zcx_eui_no_check=>raise_sys_error( ).
+  " Oops
+  CHECK rs_field_ext-desc IS INITIAL.
+  IF rs_field_ext-name IS INITIAL AND is_field IS NOT INITIAL.
+    rs_field_ext-name = is_field->name.
   ENDIF.
+  MESSAGE w004(zsy_xtt) WITH rs_field_ext-name INTO sy-msgli.
+  io_xtt->add_log_message( iv_syst = abap_true ).
 ENDMETHOD.
 ENDCLASS.

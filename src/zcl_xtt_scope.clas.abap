@@ -88,8 +88,8 @@ private section.
       !IV_OFFSET type I
       !IO_XTT type ref to ZCL_XTT
       !IV_CONTENT type STRING
-    changing
-      !CS_SCOPE type TS_SCOPE .
+    returning
+      value(RR_SCOPE) type ref to TS_SCOPE .
   methods _INLINE_TREE
     importing
       !IO_XTT type ref to ZCL_XTT
@@ -101,6 +101,15 @@ private section.
       !IS_SCOPE type TS_SCOPE
     changing
       !CV_CONTENT type STRING .
+  methods _FILL_T_PAIR
+    importing
+      !IV_WHOLE_FIELD type STRING
+      !IR_SCOPE type ref to TS_SCOPE .
+  methods _IS_LEVEL_NORM
+    importing
+      !IR_SCOPE type ref to TS_SCOPE
+    returning
+      value(RV_OK) type ABAP_BOOL .
 ENDCLASS.
 
 
@@ -145,7 +154,9 @@ METHOD calc_cond_matches.
 
     " No need
     CHECK lt_cond_scope IS NOT INITIAL.
-    CREATE OBJECT mo_cond.
+    CREATE OBJECT mo_cond
+      EXPORTING
+        io_xtt = io_xtt.
   ENDIF.
 
   " Delegate call
@@ -211,25 +222,24 @@ METHOD get_scopes.
     READ TABLE lt_find_res ASSIGNING <ls_find_res> INDEX lv_index.
     lv_index = lv_index - 1.
 
-    DATA ls_scope TYPE ts_scope.
-    _get_scope( EXPORTING io_xtt     = io_xtt
-                          iv_offset  = <ls_find_res>-offset
-                          iv_content = cv_content
-                CHANGING  cs_scope   = ls_scope ).
-    CHECK ls_scope-end IS NOT INITIAL.
+    DATA lr_scope TYPE REF TO ts_scope.
+    lr_scope = _get_scope( io_xtt     = io_xtt
+                           iv_offset  = <ls_find_res>-offset
+                           iv_content = cv_content ).
+    CHECK lr_scope->end IS NOT INITIAL.
 
     " delete from template
     IF _inline_tree( io_xtt   = io_xtt
-                     is_scope = ls_scope ) = abap_true.
+                     is_scope = lr_scope->* ) = abap_true.
       ev_inline_tree = abap_true.
-      _fill_with_blanks( EXPORTING is_scope   = ls_scope
+      _fill_with_blanks( EXPORTING is_scope   = lr_scope->*
                          CHANGING  cv_content = cv_content ).
       CONTINUE.
     ENDIF.
 
     " Fill result
-    ls_scope-index = iv_index.
-    APPEND ls_scope TO mt_scope.
+    lr_scope->index = iv_index.
+    APPEND lr_scope->* TO mt_scope.
   ENDWHILE.
 ENDMETHOD.
 
@@ -244,86 +254,11 @@ METHOD is_by_column.
 ENDMETHOD.
 
 
-METHOD _fill_with_blanks.
-  DATA: lv_len TYPE i, lv_blanks TYPE string.
-
-  lv_len    = is_scope-end - is_scope-beg + 1.
-  lv_blanks = zcl_xtt_util=>repeat( val = ` `
-                                    occ = lv_len ).
-  REPLACE SECTION OFFSET is_scope-beg LENGTH lv_len OF cv_content WITH lv_blanks.
-ENDMETHOD.
-
-
-METHOD _get_scope.
-  CLEAR cs_scope.
-
-  " 1 try
-  cs_scope-beg  = iv_offset.
-  FIND FIRST OCCURRENCE OF '}'
-       IN SECTION OFFSET cs_scope-beg OF iv_content
-       MATCH OFFSET cs_scope-end.
-  CHECK sy-subrc = 0.
-
-  " Read tech name
-  DATA: l_whole_field TYPE string, l_beg TYPE i, l_cnt TYPE i.
-  l_beg         = cs_scope-beg + 1.
-  l_cnt         = cs_scope-end - cs_scope-beg - 1.
-  l_whole_field = iv_content+l_beg(l_cnt).
-
-  " Get field bounds till `;` or `}`
-  DATA lv_end TYPE i.
-  FIND FIRST OCCURRENCE OF ';'
-       IN SECTION OFFSET cs_scope-beg OF iv_content
-       MATCH OFFSET lv_end.
-  IF sy-subrc <> 0 OR lv_end > cs_scope-end.
-    lv_end = cs_scope-end.
-  ENDIF.
-
-  " New name
-  l_cnt          = lv_end - cs_scope-beg - 1.
-  cs_scope-field = iv_content+l_beg(l_cnt).
-
-  " Ingone option of grandchildren {R-T-FIELD}
-  FIND ALL OCCURRENCES OF '-' IN cs_scope-field MATCH COUNT cs_scope-sc_level.
-
-  " Child proccess
-  DEFINE is_level_norm.
-    IF mo_block->ms_ext-rb_level + 1 < cs_scope-sc_level.
-        CLEAR cs_scope-end.
-        RETURN.
-      ENDIF.
-  END-OF-DEFINITION.
-  is_level_norm.
-
-  " Make unique name
-  IF mo_block->ms_ext-name = cs_scope-field.
-    cs_scope-field = l_whole_field.
-  ENDIF.
-
-  " Extend name
-  _get_scope_field( EXPORTING iv_content     = iv_content
-                    CHANGING  cs_scope       = cs_scope
-                              cv_whole_field = l_whole_field ).
-
-  " Delete all rubbish between
-  DO 1 TIMES.
-    CHECK io_xtt->mv_skip_tags = abap_true.
-
-    REPLACE ALL OCCURRENCES OF REGEX '<[^\>]+>' IN l_whole_field WITH ''.
-    CHECK sy-subrc = 0.
-
-    " Add warning
-    l_cnt = l_cnt - strlen( l_whole_field ).
-    MESSAGE w013(zsy_xtt) WITH l_cnt l_whole_field INTO sy-msgli.
-    io_xtt->add_log_message( iv_syst = abap_true ).
-
-    " Also clear the name
-    REPLACE ALL OCCURRENCES OF REGEX '<[^\>]+>' IN cs_scope-field WITH ''.
-  ENDDO.
-
-  " All field options
+METHOD _fill_t_pair.
   DATA: lt_params TYPE stringtab.
-  l_whole_field = zcl_xtt_cond=>unescape( l_whole_field ).
+
+  DATA l_whole_field LIKE iv_whole_field.
+  l_whole_field = zcl_xtt_cond=>unescape( iv_whole_field ).
   SPLIT l_whole_field AT ';' INTO TABLE lt_params.
 
   " Always name of field in first part
@@ -342,11 +277,98 @@ METHOD _get_scope.
         ENDIF.
     ENDCASE.
 
-    INSERT ls_pair INTO TABLE cs_scope-t_pair.
+    INSERT ls_pair INTO TABLE ir_scope->t_pair.
   ENDLOOP.
 
-  cs_scope-sc_level  = cs_scope-sc_level + lv_next * lv_curr_coef.
-  is_level_norm.
+  " Change level
+  ir_scope->sc_level  = ir_scope->sc_level + lv_next * lv_curr_coef.
+ENDMETHOD.
+
+
+METHOD _fill_with_blanks.
+  DATA: lv_len TYPE i, lv_blanks TYPE string.
+
+  lv_len    = is_scope-end - is_scope-beg + 1.
+  lv_blanks = zcl_xtt_util=>repeat( val = ` `
+                                    occ = lv_len ).
+  REPLACE SECTION OFFSET is_scope-beg LENGTH lv_len OF cv_content WITH lv_blanks.
+ENDMETHOD.
+
+
+METHOD _get_scope.
+  CREATE DATA rr_scope.
+
+  " 1 try
+  rr_scope->beg  = iv_offset.
+  FIND FIRST OCCURRENCE OF '}'
+       IN SECTION OFFSET rr_scope->beg OF iv_content
+       MATCH OFFSET rr_scope->end.
+  CHECK sy-subrc = 0.
+
+  " Read tech name
+  DATA: l_whole_field TYPE string, l_beg TYPE i, l_cnt TYPE i.
+  l_beg         = rr_scope->beg + 1.
+  l_cnt         = rr_scope->end - rr_scope->beg - 1.
+  l_whole_field = iv_content+l_beg(l_cnt).
+
+  " Get field bounds till `;` or `}`
+  DATA lv_end TYPE i.
+  FIND FIRST OCCURRENCE OF ';' IN SECTION OFFSET rr_scope->beg OF iv_content
+       MATCH OFFSET lv_end.
+  IF sy-subrc <> 0 OR lv_end > rr_scope->end.
+    lv_end = rr_scope->end.
+  ENDIF.
+
+  " New name
+  l_cnt          = lv_end - rr_scope->beg - 1.
+  rr_scope->field = iv_content+l_beg(l_cnt).
+
+  " Ingone option of grandchildren {R-T-FIELD}
+  IF io_xtt->mv_skip_tags <> abap_true.
+    FIND ALL OCCURRENCES OF '-' IN rr_scope->field MATCH COUNT rr_scope->sc_level.
+    CHECK _is_level_norm( rr_scope ) = abap_true.
+  ENDIF.
+
+  " Make unique name
+  IF mo_block->ms_ext-name = rr_scope->field.
+    rr_scope->field = l_whole_field.
+  ENDIF.
+
+  " Extend name
+  _get_scope_field( EXPORTING iv_content     = iv_content
+                    CHANGING  cs_scope       = rr_scope->*
+                              cv_whole_field = l_whole_field ).
+
+  " Delete all rubbish between
+  IF io_xtt->mv_skip_tags = abap_true.
+    REPLACE ALL OCCURRENCES OF REGEX '<[^\>]+>' IN l_whole_field WITH ''.
+    " Add warning
+    IF sy-subrc = 0.
+      l_cnt = l_cnt - strlen( l_whole_field ).
+      MESSAGE w013(zsy_xtt) WITH l_cnt l_whole_field INTO sy-msgli.
+      io_xtt->add_log_message( iv_syst = abap_true ).
+
+      " Also clear the name
+      REPLACE ALL OCCURRENCES OF REGEX '<[^\>]+>' IN rr_scope->field WITH ''.
+    ENDIF.
+
+    " Ingone option of grandchildren {R-T-FIELD}
+    DATA lv_name TYPE string.
+    lv_name = rr_scope->field.
+    FIND FIRST OCCURRENCE OF ';' IN lv_name MATCH OFFSET lv_end.
+    IF sy-subrc = 0.
+      lv_name = lv_name(lv_end).
+    ENDIF.
+
+    FIND ALL OCCURRENCES OF '-' IN lv_name MATCH COUNT rr_scope->sc_level.
+    CHECK _is_level_norm( rr_scope ) = abap_true.
+  ENDIF.
+
+  " All field options
+  _fill_t_pair( iv_whole_field = l_whole_field
+                ir_scope       = rr_scope ).
+
+  _is_level_norm( rr_scope ).
 ENDMETHOD.
 
 
@@ -470,5 +492,15 @@ METHOD _inline_tree.
   <ls_field>-dref = mo_block->tree_create(
    it_table      = <ls_field>-dref
    iv_fields     = lv_group1 ).
+ENDMETHOD.
+
+
+METHOD _is_level_norm.
+  IF mo_block->ms_ext-rb_level + 1 < ir_scope->sc_level.
+    CLEAR ir_scope->end.
+    RETURN.
+  ENDIF.
+
+  rv_ok = abap_true.
 ENDMETHOD.
 ENDCLASS.

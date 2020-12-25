@@ -108,7 +108,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZSY_XTT</ARBGB>
      <MSGNR>016</MSGNR>
-     <TEXT>Filed &apos;&amp;1&apos; declared several times</TEXT>
+     <TEXT>Field &apos;&amp;1&apos; declared several times</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -189,7 +189,7 @@
     <item>
      <SPRSL>R</SPRSL>
      <MSGNR>002</MSGNR>
-     <TEXT>Неизвестный тип &amp;1</TEXT>
+     <TEXT>Неизвестный тип &amp;1 для &apos;&amp;2&apos;</TEXT>
     </item>
     <item>
      <SPRSL>R</SPRSL>
@@ -205,6 +205,106 @@
      <SPRSL>R</SPRSL>
      <MSGNR>005</MSGNR>
      <TEXT>Неправильный индекс колонки &amp;1</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>006</MSGNR>
+     <TEXT>Слишком длинная формула &amp;1&amp;2</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>007</MSGNR>
+     <TEXT>Не удалось найти файл &apos;&amp;1&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>008</MSGNR>
+     <TEXT>В шаблоне нет тега BODY &quot;&amp;1&quot;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>009</MSGNR>
+     <TEXT>Неправильные границы для &apos;&amp;1&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>010</MSGNR>
+     <TEXT>Нет тега строки &apos;&amp;1&apos; для &apos;&amp;2&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>011</MSGNR>
+     <TEXT>Пересечение границ в &apos;&amp;1&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>012</MSGNR>
+     <TEXT>Нет совпадений &quot;&amp;1&quot; в шаблоне &amp;2</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>013</MSGNR>
+     <TEXT>&amp;1 символов было пропущено в блоке &apos;&amp;2&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>014</MSGNR>
+     <TEXT>Неявный тип &apos;mask&apos; в поле &apos;&amp;1&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>015</MSGNR>
+     <TEXT>Неизвестная функция &apos;&amp;1&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>016</MSGNR>
+     <TEXT>Поле &apos;&amp; 1&apos; объявлено несколько раз</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>017</MSGNR>
+     <TEXT>Ключ: &apos;&amp;1&apos; неизвестен</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>018</MSGNR>
+     <TEXT>Поле &apos;&amp;1&apos; не является таблицей!</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>019</MSGNR>
+     <TEXT>Серьезная ошибка в области &apos;&amp;1&apos; (scope)</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>020</MSGNR>
+     <TEXT>Ошибка смещения в поле &apos;&amp;1&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>021</MSGNR>
+     <TEXT>Поле &apos;&amp;1&apos; уже объявлено в коде. Использовать другое имя</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>022</MSGNR>
+     <TEXT>Нет поля &apos;&amp;1&apos; в структуре &amp;2</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>023</MSGNR>
+     <TEXT>Неправильное смещение &amp;1 в &apos;&amp;2&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>024</MSGNR>
+     <TEXT>Ошибка в выражении &apos;;COND =&apos; рядом с &apos;&amp;1&apos;</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>025</MSGNR>
+     <TEXT>Во время вычисления cond &apos;&amp;1&apos; обнаружено исключение</TEXT>
     </item>
    </T100_TEXTS>
   </asx:values>

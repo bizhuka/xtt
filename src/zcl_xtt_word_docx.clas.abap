@@ -22,7 +22,11 @@ public section.
 
   methods GET_RAW
     redefinition .
+  methods MERGE
+    redefinition .
 protected section.
+
+  data MO_ZIP type ref to CL_ABAP_ZIP .
 
   methods ON_MATCH_FOUND
     redefinition .
@@ -33,6 +37,13 @@ private section.
 
   data MV_DRAWING_REL type STRING .
   data MT_REQUIRED type TT_REQUIRED .
+
+  methods _CHANGE_HEADER_FOOTER
+    importing
+      !IS_BLOCK type ANY
+      !IV_BLOCK_NAME type CSEQUENCE .
+  methods _FIND_IMAGE_TEMPLATES .
+  methods _CHECK_DRAWING_REL .
 ENDCLASS.
 
 
@@ -45,95 +56,29 @@ METHOD constructor.
    io_file             = io_file
    iv_body_tag         = 'w:body'                           "#EC NOTEXT
    iv_row_tag          = 'w:tr'                             "#EC NOTEXT
-   iv_path_in_arc      = 'word/document.xml'                "#EC NOTEXT
+   iv_path             = 'word/document.xml'                "#EC NOTEXT
    iv_skip_tags        = abap_true
    iv_table_page_break = mc_table_page_break ).
 
-**********************************************************************
-  " Get comments
-  DATA lv_comments TYPE string.
-  zcl_eui_conv=>xml_from_zip(
-   EXPORTING
-    io_zip   = mo_zip
-    iv_name  = 'word/comments.xml'                          "#EC NOTEXT
-   IMPORTING
-    ev_sdoc  = lv_comments ).
-  CHECK lv_comments IS NOT INITIAL.
+  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+  TRY.
+      DATA lv_value TYPE xstring.
+      io_file->get_content( IMPORTING ev_as_xstring = lv_value ).
+    CATCH zcx_eui_no_check INTO lo_no_check.
+      add_log_message( io_exception = lo_no_check ).
+      RETURN.
+  ENDTRY.
 
-  " All matches of `<w:comment></w:comment>`
-  DATA lt_xml_match TYPE zcl_xtt_util=>tt_xml_match.
-  FIELD-SYMBOLS <ls_xml_match> LIKE LINE OF lt_xml_match.
+  " Load zip archive from XSTRING
+  CREATE OBJECT mo_zip.
+  mo_zip->load( lv_value ).
 
-  lt_xml_match = zcl_xtt_util=>get_xml_matches( iv_context   = lv_comments
-                                                iv_tag       = 'w:comment' "#EC NOTEXT
-                                               ).
-  " Safe delete from the end
-  LOOP AT lt_xml_match ASSIGNING <ls_xml_match>.
-    " Find XTT anchor
-    DATA lv_xtt_name TYPE string.
-    zcl_xtt_util=>get_from_tag(
-      EXPORTING
-        iv_beg_part = `<w:t>{`                              "#EC NOTEXT
-        iv_end_part = `}</w:t>`                             "#EC NOTEXT
-      IMPORTING
-        ev_value0   = lv_xtt_name
-      CHANGING
-        cv_xml      = <ls_xml_match>-tag ).
-    CHECK lv_xtt_name IS NOT INITIAL.
+  " Get content as a string from file
+  zcl_eui_conv=>xml_from_zip( EXPORTING io_zip   = mo_zip
+                                        iv_name  = mv_path
+                              IMPORTING ev_sdoc  = mv_file_content ).
 
-    DATA lv_word_id TYPE string.
-    zcl_xtt_util=>get_from_tag(
-      EXPORTING
-        iv_beg_part = `w:id="`                              "#EC NOTEXT
-        iv_end_part = `"`                                   "#EC NOTEXT
-      IMPORTING
-        ev_value0   = lv_word_id
-      CHANGING
-        cv_xml      = <ls_xml_match>-tag ).
-    CHECK lv_word_id IS NOT INITIAL.
-
-    " Change main document
-    DATA lv_xml_part TYPE string.
-    CONCATENATE `<w:commentRangeStart w:id="` lv_word_id `"` INTO lv_xml_part. "#EC NOTEXT
-    CHECK mv_file_content CS lv_xml_part.
-
-    " Where to start searach
-    DATA lv_pos_beg TYPE i.
-    lv_pos_beg = sy-fdpos.
-
-    " What to change
-    DATA lt_replace TYPE zcl_xtt_util=>tt_replace.
-    CLEAR lt_replace.
-    FIELD-SYMBOLS <ls_replace> LIKE LINE OF lt_replace.
-
-    " Commnet Start
-    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
-    <ls_replace>-from = lv_xml_part.
-    <ls_replace>-to   = `<!--`.
-    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
-    <ls_replace>-from = `/>`.
-    <ls_replace>-to   = `-->`.
-
-    " Comment End
-    CONCATENATE `<w:commentRangeEnd w:id="` lv_word_id `"` INTO lv_xml_part.
-    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
-    <ls_replace>-from = lv_xml_part.
-    <ls_replace>-to   = `<!--`.
-
-    CONCATENATE `<w:commentReference w:id="` lv_word_id `"/></w:r>` INTO lv_xml_part.
-    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
-    <ls_replace>-from = lv_xml_part.
-    <ls_replace>-to   = `-->`.
-
-    " Paste to any id `<v:shape id="` or any other
-    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
-    <ls_replace>-from = ` id="`.                            "#EC NOTEXT
-    CONCATENATE         ` anchor_xtt_alt="{` lv_xtt_name `}" id="` INTO <ls_replace>-to. "#EC NOTEXT
-
-    zcl_xtt_util=>replace_1st_from( EXPORTING it_replace = lt_replace
-                                              iv_from    = lv_pos_beg
-                                    CHANGING  cv_xml     = mv_file_content ).
-  ENDLOOP.
+  _find_image_templates( ).
 ENDMETHOD.
 
 
@@ -198,41 +143,43 @@ ENDMETHOD.
 
 
 METHOD get_raw.
-  DO 1 TIMES.
-    CHECK mv_drawing_rel IS NOT INITIAL.
+  " 1-st process additional files
+  raise_raw_events( mo_zip ).
 
-    zcl_eui_conv=>xml_to_zip(
-     io_zip     = mo_zip
-     iv_name    = 'word/_rels/document.xml.rels'            "#EC NOTEXT
-     iv_sdoc    = mv_drawing_rel ).
+  " Raise from parent method
+  super->get_raw( ). " rv_content
 
-    " Change files info
-    DATA lv_content_xml TYPE string.
-    zcl_eui_conv=>xml_from_zip(
-     EXPORTING io_zip     = mo_zip
-               iv_name    = '[Content_Types].xml'           "#EC NOTEXT
-     IMPORTING ev_sdoc    = lv_content_xml ).
+**********************************************************************
+  " Raise evant with whole archive
 
-    " Add 1 by one
-    DATA lv_req_text TYPE string.
-    DATA lv_len      TYPE i.
-    LOOP AT mt_required INTO lv_req_text.
-      CHECK lv_content_xml NS lv_req_text.
+  " for images
+  _check_drawing_rel( ).
 
-      lv_len = strlen( lv_content_xml ) - strlen( `</Types>` ).
-      CONCATENATE lv_content_xml(lv_len) lv_req_text `</Types>` INTO lv_content_xml.
-    ENDLOOP.
+  " Replace XML file
+  zcl_eui_conv=>xml_to_zip(
+   io_zip  = mo_zip
+   iv_name = mv_path
+   iv_sdoc = mv_file_content ).
 
-    " And add
-    zcl_eui_conv=>xml_to_zip(
-     io_zip     = mo_zip
-     iv_name    = '[Content_Types].xml'                     "#EC NOTEXT
-     iv_sdoc    = lv_content_xml ).
+  " ZIP archive as xstring
+  rv_content = mo_zip->save( ).
 
-  ENDDO.
+  " Change content in special cases
+  DATA lr_content TYPE REF TO xstring.
+  GET REFERENCE OF rv_content INTO lr_content.
+  RAISE EVENT prepare_raw
+   EXPORTING
+     iv_path    = '' " <--- whole archive
+     ir_content = lr_content.
+ENDMETHOD.
 
-  " And parent method
-  rv_content = super->get_raw( ).
+
+METHOD merge.
+  ro_xtt = super->merge( is_block      = is_block
+                         iv_block_name = iv_block_name ).
+
+  _change_header_footer( is_block      = is_block
+                         iv_block_name = iv_block_name ).
 ENDMETHOD.
 
 
@@ -329,5 +276,182 @@ METHOD on_match_found.
     iv_pos_end = iv_pos_end
    CHANGING
     cv_content = cv_content ).
+ENDMETHOD.
+
+
+METHOD _change_header_footer.
+  DATA lv_prefix TYPE string.
+  CONCATENATE `{` iv_block_name INTO lv_prefix.
+
+  FIELD-SYMBOLS <ls_file> LIKE LINE OF mo_zip->files.
+  LOOP AT mo_zip->files ASSIGNING <ls_file> WHERE name CP 'word/header*.xml'
+                                               OR name CP 'word/footer*.xml'.
+    DATA lv_path TYPE string.
+    lv_path = <ls_file>-name.
+
+    " Get content as a string from file
+    DATA lv_content TYPE string.
+    zcl_eui_conv=>xml_from_zip( EXPORTING io_zip   = mo_zip
+                                          iv_name  = lv_path
+                                IMPORTING ev_sdoc  = lv_content ).
+    CHECK lv_content CS lv_prefix.
+
+    " Kind of ZCL_XTT_HTML=>FORMAT( )
+    DATA lo_file TYPE REF TO zif_xtt_file.
+    CREATE OBJECT lo_file TYPE zcl_xtt_file_raw
+      EXPORTING
+        iv_name   = 'dummy'
+        iv_string = lv_content.
+
+    DATA lo_html TYPE REF TO zcl_xtt.
+    CREATE OBJECT lo_html TYPE zcl_xtt_html
+      EXPORTING
+        io_file = lo_file.
+
+    " No need to show
+    lo_html->_logger->skip( iv_msgid = 'ZSY_XTT' iv_msgno = 010 iv_msgty = 'W' ).
+    lo_html->_logger->skip( iv_msgid = 'ZSY_XTT' iv_msgno = 012 iv_msgty = 'W' ).
+
+    " Work as DOCX
+    lo_html->mv_skip_tags = me->mv_skip_tags.
+
+    " Pass data
+    lo_html->merge( is_block      = is_block
+                    iv_block_name = iv_block_name ).
+
+    DATA lx_content TYPE xstring.
+    lx_content = lo_html->get_raw( ).
+
+    " Write back
+    zcl_eui_conv=>xml_to_zip( io_zip  = mo_zip
+                              iv_name = lv_path
+                              iv_xdoc = lx_content ).
+
+    " Add all logs
+    DATA lt_msg TYPE sfb_t_bal_s_msg.
+    lt_msg = lo_html->_logger->get_messages( ).
+    _logger->add_batch( lt_msg ).
+  ENDLOOP.
+ENDMETHOD.
+
+
+METHOD _check_drawing_rel.
+  CHECK mv_drawing_rel IS NOT INITIAL.
+
+  zcl_eui_conv=>xml_to_zip(
+   io_zip     = mo_zip
+   iv_name    = 'word/_rels/document.xml.rels'              "#EC NOTEXT
+   iv_sdoc    = mv_drawing_rel ).
+
+  " Change files info
+  DATA lv_content_xml TYPE string.
+  zcl_eui_conv=>xml_from_zip(
+   EXPORTING io_zip     = mo_zip
+             iv_name    = '[Content_Types].xml'             "#EC NOTEXT
+   IMPORTING ev_sdoc    = lv_content_xml ).
+
+  " Add 1 by one
+  DATA lv_req_text TYPE string.
+  DATA lv_len      TYPE i.
+  LOOP AT mt_required INTO lv_req_text.
+    CHECK lv_content_xml NS lv_req_text.
+
+    lv_len = strlen( lv_content_xml ) - strlen( `</Types>` ).
+    CONCATENATE lv_content_xml(lv_len) lv_req_text `</Types>` INTO lv_content_xml.
+  ENDLOOP.
+
+  " And add
+  zcl_eui_conv=>xml_to_zip(
+   io_zip     = mo_zip
+   iv_name    = '[Content_Types].xml'                       "#EC NOTEXT
+   iv_sdoc    = lv_content_xml ).
+ENDMETHOD.
+
+
+METHOD _find_image_templates.
+  " Get comments
+  DATA lv_comments TYPE string.
+  zcl_eui_conv=>xml_from_zip(
+   EXPORTING
+    io_zip   = mo_zip
+    iv_name  = 'word/comments.xml'                          "#EC NOTEXT
+   IMPORTING
+    ev_sdoc  = lv_comments ).
+  CHECK lv_comments IS NOT INITIAL.
+
+  " All matches of `<w:comment></w:comment>`
+  DATA lt_xml_match TYPE zcl_xtt_util=>tt_xml_match.
+  FIELD-SYMBOLS <ls_xml_match> LIKE LINE OF lt_xml_match.
+
+  lt_xml_match = zcl_xtt_util=>get_xml_matches( iv_context   = lv_comments
+                                                iv_tag       = 'w:comment' "#EC NOTEXT
+                                               ).
+  " Safe delete from the end
+  LOOP AT lt_xml_match ASSIGNING <ls_xml_match>.
+    " Find XTT anchor
+    DATA lv_xtt_name TYPE string.
+    zcl_xtt_util=>get_from_tag(
+      EXPORTING
+        iv_beg_part = `<w:t>{`                              "#EC NOTEXT
+        iv_end_part = `}</w:t>`                             "#EC NOTEXT
+      IMPORTING
+        ev_value0   = lv_xtt_name
+      CHANGING
+        cv_xml      = <ls_xml_match>-tag ).
+    CHECK lv_xtt_name IS NOT INITIAL.
+
+    DATA lv_word_id TYPE string.
+    zcl_xtt_util=>get_from_tag(
+      EXPORTING
+        iv_beg_part = `w:id="`                              "#EC NOTEXT
+        iv_end_part = `"`                                   "#EC NOTEXT
+      IMPORTING
+        ev_value0   = lv_word_id
+      CHANGING
+        cv_xml      = <ls_xml_match>-tag ).
+    CHECK lv_word_id IS NOT INITIAL.
+
+    " Change main document
+    DATA lv_xml_part TYPE string.
+    CONCATENATE `<w:commentRangeStart w:id="` lv_word_id `"` INTO lv_xml_part. "#EC NOTEXT
+    CHECK mv_file_content CS lv_xml_part.
+
+    " Where to start searach
+    DATA lv_pos_beg TYPE i.
+    lv_pos_beg = sy-fdpos.
+
+    " What to change
+    DATA lt_replace TYPE zcl_xtt_util=>tt_replace.
+    CLEAR lt_replace.
+    FIELD-SYMBOLS <ls_replace> LIKE LINE OF lt_replace.
+
+    " Commnet Start
+    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
+    <ls_replace>-from = lv_xml_part.
+    <ls_replace>-to   = `<!--`.
+    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
+    <ls_replace>-from = `/>`.
+    <ls_replace>-to   = `-->`.
+
+    " Comment End
+    CONCATENATE `<w:commentRangeEnd w:id="` lv_word_id `"` INTO lv_xml_part.
+    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
+    <ls_replace>-from = lv_xml_part.
+    <ls_replace>-to   = `<!--`.
+
+    CONCATENATE `<w:commentReference w:id="` lv_word_id `"/></w:r>` INTO lv_xml_part.
+    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
+    <ls_replace>-from = lv_xml_part.
+    <ls_replace>-to   = `-->`.
+
+    " Paste to any id `<v:shape id="` or any other
+    APPEND INITIAL LINE TO lt_replace ASSIGNING <ls_replace>.
+    <ls_replace>-from = ` id="`.                            "#EC NOTEXT
+    CONCATENATE         ` anchor_xtt_alt="{` lv_xtt_name `}" id="` INTO <ls_replace>-to. "#EC NOTEXT
+
+    zcl_xtt_util=>replace_1st_from( EXPORTING it_replace = lt_replace
+                                              iv_from    = lv_pos_beg
+                                    CHANGING  cv_xml     = mv_file_content ).
+  ENDLOOP.
 ENDMETHOD.
 ENDCLASS.

@@ -78,14 +78,14 @@ public section.
     importing
       !IV_SYST type ABAP_BOOL optional
       !IV_TEXT type CSEQUENCE optional
-      !IO_NO_CHECK type ref to ZCX_EUI_NO_CHECK optional
+      !IO_EXCEPTION type ref to CX_ROOT optional
       !IV_MSGTY type SYMSGTY optional .
 protected section.
 
   data MV_FILE_NAME type STRING .
   data MV_OLE_EXT type STRING .
-  data MO_LOGGER type ref to ZCL_EUI_LOGGER .
   data MV_SKIP_TAGS type ABAP_BOOL .
+  data _LOGGER type ref to ZCL_EUI_LOGGER .
 
   methods RAISE_RAW_EVENTS
     importing
@@ -114,22 +114,32 @@ CLASS ZCL_XTT IMPLEMENTATION.
 
 METHOD add_log_message.
   IF iv_syst = abap_true.
-    mo_logger->add( iv_msgty = iv_msgty ).
+    _logger->add( iv_msgty = iv_msgty ).
     RETURN.
   ELSEIF iv_text IS NOT INITIAL.
-    mo_logger->add_text( iv_text  = iv_text
-                         iv_msgty = iv_msgty ).
+    _logger->add_text( iv_text  = iv_text
+                       iv_msgty = iv_msgty ).
     RETURN.
   ENDIF.
 
-  CHECK io_no_check IS NOT INITIAL.
-  IF io_no_check->ms_msg IS NOT INITIAL.
-    mo_logger->add( is_msg   = io_no_check->ms_msg
-                    iv_msgty = iv_msgty ).
-  ELSE.
-    mo_logger->add_exception( io_exception = io_no_check
-                              iv_msgty     = iv_msgty ).
-  ENDIF.
+  CHECK io_exception IS NOT INITIAL.
+  TRY.
+      DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+      lo_no_check ?= io_exception.
+
+      " Based on message class ?
+      IF lo_no_check->ms_msg IS NOT INITIAL.
+        _logger->add( is_msg   = lo_no_check->ms_msg
+                      iv_msgty = iv_msgty ).
+        RETURN.
+      ENDIF.
+    CATCH cx_sy_move_cast_error. "#EC NO_HANDLER
+  ENDTRY.
+
+  " Ordinary exception
+  _logger->add_exception( io_exception = io_exception
+                          iv_msgty     = iv_msgty ).
+
 ENDMETHOD.
 
 
@@ -146,7 +156,7 @@ METHOD constructor.
   TRY.
       mv_file_name = io_file->get_name( ).
     CATCH zcx_eui_no_check INTO lo_no_check.
-      add_log_message( io_no_check = lo_no_check ).
+      add_log_message( io_exception = lo_no_check ).
   ENDTRY.
 ENDMETHOD.
 
@@ -168,7 +178,7 @@ METHOD download.
       DATA lv_content   TYPE xstring.
       lv_content = get_raw( ).
     CATCH zcx_eui_no_check INTO lo_no_check.
-      add_log_message( io_no_check = lo_no_check ).
+      add_log_message( io_exception = lo_no_check ).
   ENDTRY.
 
   " Use existing path
@@ -266,13 +276,13 @@ METHOD download.
            cv_ole_app = cv_ole_app
            cv_ole_doc = cv_ole_doc ).
       CATCH zcx_eui_exception INTO lo_eui_error.
-        mo_logger->add_exception( io_exception = lo_eui_error ).
+        add_log_message( io_exception = lo_eui_error ).
         MESSAGE lo_eui_error TYPE 'S' DISPLAY LIKE 'E'.
     ENDTRY.
   ENDDO.
 
   " And finally show logs
-  mo_logger->show_as_button( iv_write_message = `Please read logs for finding issues` ).
+  _logger->show_as_button( iv_write_message = 'Please read logs for finding issues'(prl) ).
 ENDMETHOD.
 
 
@@ -410,7 +420,6 @@ METHOD show.
   DATA lv_content   TYPE xstring.
   DATA lv_file_name TYPE string.
   DATA lo_eui_file  TYPE REF TO zcl_eui_file.
-  DATA lv_name      TYPE string.
   DATA lo_error     TYPE REF TO zcx_eui_exception.
 
   lv_content = get_raw( ).
@@ -455,7 +464,7 @@ METHOD _init_logger.
     lv_msg_types = zcl_eui_logger=>mc_msg_types-all.
   ENDIF.
 
-  CREATE OBJECT mo_logger
+  CREATE OBJECT _logger
     EXPORTING
       iv_msg_types = lv_msg_types
       iv_unique    = abap_true.

@@ -37,6 +37,6 @@ METHOD example_02.
   ENDIF.
 
   " Paste data
-  io_xtt->merge( is_block      = ls_root " IN DDIC is faster ? -> CORRESPONDING zsxtt_example_02( )
+  io_xtt->merge( is_block      = ls_root
                  iv_block_name = 'R' ).
 ENDMETHOD.

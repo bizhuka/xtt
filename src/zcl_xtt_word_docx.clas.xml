@@ -24,6 +24,12 @@
      <LANGU>E</LANGU>
      <DESCRIPT>Page break for table</DESCRIPT>
     </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_WORD_DOCX</CLSNAME>
+     <CMPNAME>MO_ZIP</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Zip Utility</DESCRIPT>
+    </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>
  </asx:abap>

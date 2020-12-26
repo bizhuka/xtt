@@ -35,7 +35,7 @@ CLASS lcl_test IMPLEMENTATION.
     cut->merge( is_block      = me
                 iv_block_name = 'R' ).
 
-    zcl_xtt_util=>check_log_message( io_logger   = cut->mo_logger
+    zcl_xtt_util=>check_log_message( io_logger   = cut->_logger
                                      iv_messages = iv_messages ).
   ENDMETHOD.
 

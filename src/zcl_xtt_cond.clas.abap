@@ -134,8 +134,8 @@ METHOD calc_matches.
         MESSAGE w025(zsy_xtt) WITH <ls_match>-cond INTO sy-msgli.
         io_xtt->add_log_message( iv_syst = abap_true ).
         " tech info
-        io_xtt->add_log_message( io_no_check = lo_error
-                                 iv_msgty    = 'W' ).
+        io_xtt->add_log_message( io_exception = lo_error
+                                 iv_msgty     = 'W' ).
     ENDTRY.
 
     INSERT ls_field INTO TABLE io_block->mt_fields.

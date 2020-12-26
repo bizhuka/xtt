@@ -15,9 +15,9 @@ public section.
       !IV_OLE_EXT_FORMAT type I default 51 .
 protected section.
 
-  methods BOUNDS_FORM_BODY
-    redefinition .
   methods ON_MATCH_FOUND
+    redefinition .
+  methods BOUNDS_FORM_BODY
     redefinition .
 private section.
 *"* private components of class ZCL_XTT_EXCEL_XML

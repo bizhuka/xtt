@@ -21,9 +21,6 @@ public section.
   methods SEND
     redefinition .
 protected section.
-
-  methods BOUNDS_FORM_BODY
-    redefinition .
 private section.
 
   data MV_AS_EMAIL_BODY type ABAP_BOOL .
@@ -34,15 +31,6 @@ ENDCLASS.
 CLASS ZCL_XTT_HTML IMPLEMENTATION.
 
 
-METHOD bounds_form_body.
-  rs_bounds = super->bounds_form_body(
-   iv_context              = iv_context
-   iv_first_level_is_table = iv_first_level_is_table
-   iv_block_name           = iv_block_name
-   iv_no_body_warning      = abap_false ).
-ENDMETHOD.
-
-
 METHOD constructor.
   super->constructor(
    io_file        = io_file
@@ -51,6 +39,11 @@ METHOD constructor.
 
   " Template as email body
   mv_as_email_body = iv_as_email_body.
+
+  " Skip MESSAGE w008(zsy_xtt).
+  _logger->skip( iv_msgid = 'ZSY_XTT'
+                 iv_msgno = 008
+                 iv_msgty = 'W' ).
 ENDMETHOD.
 
 
@@ -61,13 +54,17 @@ METHOD format.
   ENDIF.
 
   "  NEW zcl_xtt_html( NEW zcl_xtt_file_raw( iv_name = 'dummy' iv_string = iv_template )
-  DATA lo_xtt  TYPE REF TO zcl_xtt.
+
   DATA lo_file TYPE REF TO zif_xtt_file.
-  CREATE OBJECT: lo_file TYPE zcl_xtt_file_raw EXPORTING
-                           iv_name   = 'dummy'
-                           iv_string = iv_template,
-                 lo_xtt TYPE zcl_xtt_html EXPORTING
-                           io_file = lo_file.
+  CREATE OBJECT lo_file TYPE zcl_xtt_file_raw
+    EXPORTING
+      iv_name   = 'dummy'
+      iv_string = iv_template.
+
+  DATA lo_html TYPE REF TO zcl_xtt_html.
+  CREATE OBJECT lo_html
+    EXPORTING
+      io_file = lo_file.
 
   FIELD-SYMBOLS <ls_root> TYPE any.
   IF is_root IS SUPPLIED.
@@ -81,10 +78,12 @@ METHOD format.
   ENDIF.
 
   " Pass data to the tamplate
-  lo_xtt->merge( <ls_root> ).
+  lo_html->merge( is_block      = <ls_root>
+                  " iv_block_name = 'R'
+                ).
 
   DATA lv_text TYPE xstring.
-  lv_text = lo_xtt->get_raw( ).
+  lv_text = lo_html->get_raw( ).
 
   " Convert
   rv_text = zcl_eui_conv=>xstring_to_string( lv_text ).

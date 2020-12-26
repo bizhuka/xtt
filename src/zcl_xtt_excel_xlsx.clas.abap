@@ -682,7 +682,7 @@ METHOD constructor.
       DATA l_x_value TYPE xstring.
       io_file->get_content( IMPORTING ev_as_xstring = l_x_value ).
     CATCH zcx_eui_no_check INTO lo_no_check.
-      add_log_message( io_no_check = lo_no_check ).
+      add_log_message( io_exception = lo_no_check ).
       RETURN.
   ENDTRY.
 
@@ -700,8 +700,8 @@ METHOD constructor.
    IMPORTING
     eo_xmldoc  = lo_workbook ).
   IF lo_workbook IS INITIAL.
-    mo_logger->add_text( iv_text  = `The xlsx archive is broken` "#EC NOTEXT
-                         iv_msgty = 'E' ).
+    add_log_message( iv_text  = `The xlsx archive is broken` "#EC NOTEXT
+                     iv_msgty = 'E' ).
     CLEAR mo_zip.
     RETURN.
   ENDIF.
@@ -1797,7 +1797,7 @@ METHOD merge.
         mo_sheet->merge( EXPORTING io_block = lo_replace_block
                          CHANGING  ct_cells = mo_sheet->mt_cells ).
       CATCH zcx_eui_no_check INTO lo_no_check.
-        add_log_message( io_no_check = lo_no_check ).
+        add_log_message( io_exception = lo_no_check ).
     ENDTRY.
 
     " 1 sheet cache

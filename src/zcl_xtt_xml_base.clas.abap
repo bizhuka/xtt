@@ -12,7 +12,7 @@ public section.
       !IO_FILE type ref to ZIF_XTT_FILE
       !IV_BODY_TAG type CSEQUENCE
       !IV_ROW_TAG type CSEQUENCE
-      !IV_PATH_IN_ARC type CSEQUENCE optional
+      !IV_PATH type CSEQUENCE default 'document.xml'
       !IV_OLE_EXT type STRING optional
       !IV_OLE_EXT_FORMAT type I optional
       !IV_SKIP_TAGS type ABAP_BOOL optional
@@ -46,20 +46,19 @@ protected section.
       text_after  TYPE string,
     END OF ts_bounds .
 
-  data MO_ZIP type ref to CL_ABAP_ZIP .
-  data MV_OLE_EXT_FORMAT type I .
   data MV_BODY_TAG type STRING .
   data MV_ROW_TAG type STRING .
+  data MV_OLE_EXT_FORMAT type I .
   data MV_FILE_CONTENT type STRING .
   data MV_VALUE type STRING .
   data MV_PREFIX type STRING .
+  data MV_PATH type STRING .
 
   methods BOUNDS_FORM_BODY
     importing
       !IV_CONTEXT type CSEQUENCE
       !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL
       !IV_BLOCK_NAME type CSEQUENCE
-      !IV_NO_BODY_WARNING type ABAP_BOOL default ABAP_TRUE
     returning
       value(RS_BOUNDS) type TS_BOUNDS .
 
@@ -67,7 +66,6 @@ protected section.
     redefinition .
 private section.
 
-  data MV_PATH_IN_ARC type STRING .
   data MV_IF_TABLE_PAGE_BREAK type STRING .
 
   methods BOUNDS_FROM_ROW
@@ -131,10 +129,8 @@ METHOD bounds_form_body.
                                                      iv_tag     = mv_body_tag ).
   " Wrong template?
   IF rs_bounds-t_match[] IS INITIAL.
-    IF iv_no_body_warning = abap_true.
-      MESSAGE w008(zsy_xtt) WITH mv_body_tag INTO sy-msgli.
-      mo_logger->add( ).
-    ENDIF.
+    MESSAGE w008(zsy_xtt) WITH mv_body_tag INTO sy-msgli.
+    add_log_message( iv_syst = abap_true ).
 
     " Go on
     RETURN.
@@ -158,7 +154,7 @@ METHOD bounds_from_row.
   " Wrong template?
   IF rs_bounds-t_match[] IS INITIAL.
     MESSAGE w010(zsy_xtt) WITH mv_row_tag is_field-name INTO sy-msgli.
-    mo_logger->add( ).
+    add_log_message( iv_syst = abap_true ).
     RETURN.
   ENDIF.
 
@@ -211,7 +207,7 @@ METHOD bounds_split.
 
   IF cs_bounds-first_match >= cs_bounds-last_match.
     MESSAGE e009(zsy_xtt) WITH iv_name INTO sy-msgli.
-    mo_logger->add( ).
+    add_log_message( iv_syst = abap_true ).
     RETURN.
   ENDIF.
 
@@ -249,7 +245,7 @@ METHOD constructor.
   " For regex
   mv_body_tag            = iv_body_tag.
   mv_row_tag             = iv_row_tag.
-  mv_path_in_arc         = iv_path_in_arc.
+  mv_path                = iv_path.
   mv_skip_tags           = iv_skip_tags.
   mv_if_table_page_break = iv_table_page_break.
 
@@ -258,29 +254,13 @@ METHOD constructor.
 
   DATA lo_no_check TYPE REF TO zcx_eui_no_check.
   TRY.
-      IF mv_path_in_arc IS INITIAL.
-        io_file->get_content( IMPORTING ev_as_string = mv_file_content ).
-        RETURN.
-      ENDIF.
+      " Is archive ?
+      CHECK mv_path NS '/'.
 
-      DATA lv_value TYPE xstring.
-      io_file->get_content( IMPORTING ev_as_xstring = lv_value ).
+      io_file->get_content( IMPORTING ev_as_string = mv_file_content ).
     CATCH zcx_eui_no_check INTO lo_no_check.
-      add_log_message( io_no_check = lo_no_check ).
-      RETURN.
+      add_log_message( io_exception = lo_no_check ).
   ENDTRY.
-
-  " Load zip archive from XSTRING
-  CREATE OBJECT mo_zip.
-  mo_zip->load( lv_value ).
-
-  " Get content as a string from file
-  zcl_eui_conv=>xml_from_zip(
-   EXPORTING
-    io_zip   = mo_zip
-    iv_name  = mv_path_in_arc
-   IMPORTING
-    ev_sdoc  = mv_file_content ).
 ENDMETHOD.
 
 
@@ -397,31 +377,15 @@ ENDMETHOD.
 
 
 METHOD get_raw.
-  DATA lv_path TYPE string.
-  IF mv_path_in_arc IS INITIAL.
-    " Can convert XML or HTML result to pdf or attach to email for example
-    rv_content = zcl_eui_conv=>string_to_xstring( mv_file_content ).
-    lv_path    = 'document.xml'. "#EC NOTEXT
-  ELSE.
-    " 1-st process additional files
-    raise_raw_events( mo_zip ).
-
-    " Replace XML file
-    zcl_eui_conv=>xml_to_zip(
-     io_zip  = mo_zip
-     iv_name = mv_path_in_arc
-     iv_sdoc = mv_file_content ).
-
-    " ZIP archive as xstring
-    rv_content = mo_zip->save( ).
-  ENDIF.
+  " Can convert XML or HTML result to pdf or attach to email for example
+  rv_content = zcl_eui_conv=>string_to_xstring( mv_file_content ).
 
   " Change content in special cases
   DATA lr_content TYPE REF TO xstring.
   GET REFERENCE OF rv_content INTO lr_content.
   RAISE EVENT prepare_raw
    EXPORTING
-     iv_path    = lv_path
+     iv_path    = mv_path
      ir_content = lr_content.
 ENDMETHOD.
 
@@ -464,7 +428,7 @@ METHOD merge.
        CHANGING
         cv_content              = mv_file_content ).
     CATCH zcx_eui_no_check INTO lo_no_check.
-      add_log_message( io_no_check = lo_no_check ).
+      add_log_message( io_exception = lo_no_check ).
   ENDTRY.
 
   " And just concatenate
@@ -525,7 +489,7 @@ METHOD merge_tables.                                     .
        " AND iv_first_level_is_table IS SUPPLIED.
        .
       MESSAGE w012(zsy_xtt) WITH 'table' ir_field->name INTO sy-msgli.
-      mo_logger->add( ).
+      add_log_message( iv_syst = abap_true ).
       RETURN.
     ENDIF.
   ENDIF.
@@ -609,7 +573,7 @@ METHOD merge_trees.                                                             
        " AND iv_first_level_is_table IS SUPPLIED.
        AND lv_has_text <> abap_true. " lt_text_match[] IS INITIAL.
       MESSAGE w012(zsy_xtt) WITH 'tree' ir_field->name INTO sy-msgli.
-      mo_logger->add( ).
+      add_log_message( iv_syst = abap_true ).
       RETURN.
     ENDIF.
   ENDIF.
@@ -639,7 +603,6 @@ METHOD on_match_found.
   IF mv_value IS INITIAL.
     mv_value = zcl_xtt_replace_block=>get_as_string( is_field = is_field ).
   ENDIF.
-
 
   " Write new value
   iv_pos_end = iv_pos_end + 1.

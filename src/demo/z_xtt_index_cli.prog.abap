@@ -293,8 +293,6 @@ CLASS lcl_main IMPLEMENTATION.
     WHERE usr21~bname = sy-uname.                       "#EC CI_NOORDER
 
     " Update screen
-    p_temp = abap_true.
-    p_repo = abap_false.
     pbo( ).
   ENDMETHOD.
 
@@ -401,27 +399,27 @@ CLASS lcl_main IMPLEMENTATION.
     ENDIF.
 
     _visible '*P_R_CNT*'.
-    IF ls_screen_opt-show_row_count <> abap_true.
+    IF ls_screen_opt-show_row_count <> abap_true OR lv_hide = abap_true.
       _hide.
     ENDIF.
 
     _visible '*P_C_CNT*'.
-    IF ls_screen_opt-show_colum_count <> abap_true.
+    IF ls_screen_opt-show_colum_count <> abap_true OR lv_hide = abap_true.
       _hide.
     ENDIF.
 
     _visible '*P_B_CNT*'.
-    IF ls_screen_opt-show_block_count <> abap_true.
+    IF ls_screen_opt-show_block_count <> abap_true OR lv_hide = abap_true.
       _hide.
     ENDIF.
 
     _visible '*P_ZIP*'.
-    IF ls_screen_opt-show_zip <> abap_true.
+    IF ls_screen_opt-show_zip <> abap_true OR lv_hide = abap_true.
       _hide.
     ENDIF.
 
     _visible '*P_SIZE*'.
-    IF ls_screen_opt-show_size <> abap_true.
+    IF ls_screen_opt-show_size <> abap_true OR lv_hide = abap_true.
       _hide.
     ENDIF.
 

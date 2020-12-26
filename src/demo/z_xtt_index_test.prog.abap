@@ -159,7 +159,9 @@ CLASS lcl_test IMPLEMENTATION.
     " For data exporting
     CASE iv_class_name.
       WHEN 'ZCL_XTT_WORD_DOCX'.
-        io_xtt->add_raw_event( 'word/document.xml' ).
+        " io_xtt->add_raw_event( 'word/document.xml' ).
+        io_xtt->add_raw_event( 'word/header1.xml' ).
+        io_xtt->add_raw_event( 'word/footer1.xml' ).
 
       WHEN 'ZCL_XTT_EXCEL_XLSX'.
         io_xtt->add_raw_event( 'xl/workbook.xml' ).

@@ -1779,6 +1779,10 @@ ENDMETHOD.
 
 
 METHOD merge.
+  " For chain calls
+  ro_xtt = super->merge( is_block      = is_block
+                         iv_block_name = iv_block_name ).
+  " Oops
   CHECK mo_zip IS NOT INITIAL.
 
   " Update each sheet
@@ -1803,9 +1807,6 @@ METHOD merge.
     " 1 sheet cache
     zcl_xtt_scope=>clear_all( ).
   ENDLOOP.
-
-  " For chain calls
-  ro_xtt = me.
 ENDMETHOD.
 
 

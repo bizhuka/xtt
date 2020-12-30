@@ -59,6 +59,12 @@
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>MO_DEBUG</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Export|Import report info</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>MT_RAW_EVENT</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Additional paths in archive</DESCRIPT>

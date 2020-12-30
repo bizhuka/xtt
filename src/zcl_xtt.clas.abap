@@ -40,7 +40,6 @@ public section.
       !IO_FILE type ref to ZIF_XTT_FILE
       !IV_OLE_EXT type STRING optional .
   methods MERGE
-  abstract
     importing
       !IS_BLOCK type ANY
       !IV_BLOCK_NAME type CSEQUENCE default `R`
@@ -103,6 +102,7 @@ private section.
 *"* private components of class ZCL_XTT
 *"* do not include other source files here!!!
   data MT_RAW_EVENT type STRINGTAB .
+  data MO_DEBUG type ref to ZCL_XTT_DEBUG .
 
   methods _INIT_LOGGER .
 ENDCLASS.
@@ -158,6 +158,17 @@ METHOD constructor.
     CATCH zcx_eui_no_check INTO lo_no_check.
       add_log_message( io_exception = lo_no_check ).
   ENDTRY.
+
+  " Export MERGE ?
+  DATA lv_debug TYPE abap_bool VALUE abap_false.
+  DATA lv_cprog TYPE sycprog.
+
+  lv_cprog = sy-cprog.
+  PERFORM in_debug IN PROGRAM ('Z_XTT_DEBUG') IF FOUND USING    lv_cprog
+                                                       CHANGING lv_debug.
+  CHECK lv_debug = abap_true.
+  CREATE OBJECT mo_debug.
+  mo_debug->save_template( io_file ).
 ENDMETHOD.
 
 
@@ -283,6 +294,17 @@ METHOD download.
 
   " And finally show logs
   _logger->show_as_button( iv_write_message = 'Please read logs for finding issues'(prl) ).
+ENDMETHOD.
+
+
+METHOD merge.
+  " For chain calls
+  ro_xtt = me.
+
+  " Delegate to another class
+  CHECK mo_debug IS NOT INITIAL.
+  mo_debug->save_merge( is_block      = is_block
+                        iv_block_name = iv_block_name ).
 ENDMETHOD.
 
 

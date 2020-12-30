@@ -391,6 +391,10 @@ ENDMETHOD.
 
 
 METHOD merge.
+  " For chain calls
+  ro_xtt = super->merge( is_block      = is_block
+                         iv_block_name = iv_block_name ).
+
   " Special case
   DATA lv_type_kind            TYPE abap_typekind.
   DATA lv_first_level_is_table TYPE abap_bool.
@@ -443,9 +447,6 @@ METHOD merge.
 
   " 1 merge cache
   zcl_xtt_scope=>clear_all( ).
-
-  " For chain calls
-  ro_xtt = me.
 ENDMETHOD.
 
 
@@ -535,6 +536,10 @@ METHOD merge_tables.                                     .
 
     " Add
     CONCATENATE ls_bounds-text_before lv_clone INTO ls_bounds-text_before RESPECTING BLANKS.
+
+    " 1 merge cache
+    CHECK iv_first_level_is_table = abap_true.
+    zcl_xtt_scope=>clear_all( ).
   ENDLOOP.
 
   " End

@@ -84,7 +84,7 @@ public section.
     importing
       !IO_XTT type ref to ZCL_XTT
       !IS_BLOCK type ANY optional
-      !IV_BLOCK_NAME type STRING optional
+      !IV_BLOCK_NAME type CSEQUENCE optional
       !IS_FIELD type ref to TS_FIELD optional .
   methods REUSE_CHECK
     importing
@@ -134,7 +134,7 @@ private section.
     importing
       !IO_XTT type ref to ZCL_XTT
       !IS_BLOCK type ANY
-      !IV_BLOCK_NAME type STRING
+      !IV_BLOCK_NAME type CSEQUENCE
       !IS_FIELD type ref to TS_FIELD optional
     returning
       value(RS_FIELD_EXT) type TS_FIELD_EXT .

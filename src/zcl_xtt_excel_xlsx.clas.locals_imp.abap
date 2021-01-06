@@ -65,16 +65,20 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       " Always 2 cells
       DATA ls_cell_beg TYPE REF TO ts_ex_cell.
       DATA ls_cell_end TYPE REF TO ts_ex_cell.
+      DATA lv_subrc    TYPE sysubrc.
       READ TABLE ls_area->a_cells REFERENCE INTO ls_cell_beg INDEX 1.
+      lv_subrc = sy-subrc.
       READ TABLE ls_area->a_cells REFERENCE INTO ls_cell_end INDEX 2.
 
       " Get ref to existing or ls_cell_beg cell
-      DATA ls_cell TYPE REF TO ts_ex_cell.
-      ls_cell = find_cell( ls_cell_beg->* ).
+      IF sy-subrc = 0 AND lv_subrc = 0.
+        DATA ls_cell TYPE REF TO ts_ex_cell.
+        ls_cell = find_cell( ls_cell_beg->* ).
 
-      " Fill dx
-      ls_cell->c_merge_row_dx = ls_cell_end->c_row     - ls_cell_beg->c_row.
-      ls_cell->c_merge_col_dx = ls_cell_end->c_col_ind - ls_cell_beg->c_col_ind.
+        " Fill dx
+        ls_cell->c_merge_row_dx = ls_cell_end->c_row     - ls_cell_beg->c_row.
+        ls_cell->c_merge_col_dx = ls_cell_end->c_col_ind - ls_cell_beg->c_col_ind.
+      ENDIF.
 
       " Next
       lo_merge_cell ?= lo_merge_cell->get_next( ).

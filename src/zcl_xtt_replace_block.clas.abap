@@ -464,7 +464,7 @@ METHOD reuse_check.
   check_subrc.
 
   " No dynamic fields
-  DELETE mt_fields WHERE fl_stat <> abap_true. "#EC CI_SORTSEQ
+  DELETE mt_fields WHERE fl_stat <> abap_true.          "#EC CI_SORTSEQ
 
   " Check by existing items
   DATA lr_field TYPE REF TO ts_field.
@@ -486,6 +486,17 @@ METHOD reuse_check.
     check_subrc.
 
     IF lr_field->oref IS INITIAL.
+      " Is ref to ref ->*->* ?
+      DO.
+        DATA lv_kind TYPE abap_typekind.
+        DESCRIBE FIELD <lv_src> TYPE lv_kind.
+        IF lv_kind <> cl_abap_typedescr=>typekind_dref.
+          EXIT.
+        ENDIF.
+        ASSIGN <lv_src>->* TO <lv_src>.
+      ENDDO.
+
+      " Update with new value
       GET REFERENCE OF <lv_src> INTO lr_field->dref.
       CONTINUE.
     ENDIF.

@@ -61,7 +61,8 @@ private section.
     importing
       !IO_SHEET type ref to LCL_EX_SHEET
       !IO_NODE type ref to IF_IXML_ELEMENT
-      !IT_SHARED_STRINGS type STRINGTAB .
+      !IT_SHARED_STRINGS type STRINGTAB
+      !IV_ROW type I .
   class-methods CELL_WRITE_NEW_ROW
     importing
       !IS_CELL type ref to TS_EX_CELL
@@ -334,11 +335,16 @@ METHOD cell_read_xml.
         l_ind   TYPE i.
   DATA  lo_xtt_error TYPE REF TO zcx_xtt_exception.
 
-  " Insert new one
-  APPEND INITIAL LINE TO io_sheet->mt_cells REFERENCE INTO ls_cell.
-
   " Transform coordinates
   l_val = io_node->get_attribute( 'r' ).
+  IF l_val IS INITIAL.
+    MESSAGE w026(zsy_xtt) WITH iv_row INTO sy-msgli.
+    io_sheet->mo_xlsx->add_log_message( iv_syst = abap_true ).
+    RETURN.
+  ENDIF.
+
+  " Insert new one
+  APPEND INITIAL LINE TO io_sheet->mt_cells REFERENCE INTO ls_cell.
   cell_init(
    iv_coordinate = l_val
    is_cell       = ls_cell ).
@@ -1953,7 +1959,8 @@ METHOD row_read_xml.
     WHILE lo_cell IS BOUND.
       cell_read_xml( io_sheet           = io_sheet
                      io_node            = lo_cell
-                     it_shared_strings  = it_shared_strings ).
+                     it_shared_strings  = it_shared_strings
+                     iv_row             = ls_row-r ).
       " Next cell
       lo_cell ?= lo_cell->get_next( ).
     ENDWHILE.

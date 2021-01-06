@@ -164,6 +164,12 @@
      <MSGNR>025</MSGNR>
      <TEXT>An exception was caught during cond calculation &apos;&amp;1&apos;</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>026</MSGNR>
+     <TEXT>Cell in &apos;&amp;1&apos; row is corrupted</TEXT>
+    </T100>
    </T100>
    <I18N_LANGS>
     <LANGU>R</LANGU>
@@ -305,6 +311,11 @@
      <SPRSL>R</SPRSL>
      <MSGNR>025</MSGNR>
      <TEXT>Во время вычисления cond &apos;&amp;1&apos; обнаружено исключение</TEXT>
+    </item>
+    <item>
+     <SPRSL>R</SPRSL>
+     <MSGNR>026</MSGNR>
+     <TEXT>Ячейка в строке &apos;&amp;1&apos; повреждена</TEXT>
     </item>
    </T100_TEXTS>
   </asx:values>

@@ -490,7 +490,7 @@ METHOD reuse_check.
       DO.
         DATA lv_kind TYPE abap_typekind.
         DESCRIBE FIELD <lv_src> TYPE lv_kind.
-        IF lv_kind <> cl_abap_typedescr=>typekind_dref.
+        IF lv_kind <> cl_abap_typedescr=>typekind_dref OR <lv_src> IS INITIAL.
           EXIT.
         ENDIF.
         ASSIGN <lv_src>->* TO <lv_src>.

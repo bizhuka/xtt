@@ -7,6 +7,8 @@ class ZCL_XTT_REPLACE_BLOCK definition
 
 public section.
   type-pools ABAP .
+  class ZCL_XTT definition load .
+  class ZCL_XTT_SCOPE definition load .
 
   types:
     BEGIN OF ts_field,
@@ -138,6 +140,13 @@ private section.
       !IS_FIELD type ref to TS_FIELD optional
     returning
       value(RS_FIELD_EXT) type TS_FIELD_EXT .
+  class-methods _CHECK_OFFEST
+    importing
+      !IO_XTT type ref to ZCL_XTT
+      !IS_SCOPE type ZCL_XTT_SCOPE=>TS_SCOPE
+      !IV_CONTENT type STRING
+    returning
+      value(RV_OFFSET) type I .
 ENDCLASS.
 
 
@@ -256,6 +265,11 @@ ENDMETHOD.
 
 
 METHOD find_match.
+  DATA lv_off TYPE i.
+  lv_off = _check_offest( io_xtt     = io_xtt
+                          is_scope   = is_scope
+                          iv_content = cv_content ).
+  CHECK lv_off > 0.
 
   " Replace by fields
   DATA lr_field TYPE REF TO ts_field.
@@ -271,17 +285,11 @@ METHOD find_match.
      lr_field->typ = mc_type-table.
 
     " Markers for block's range (tables only). Can specify block's end(start) explicitly
-    IF ms_ext-rb_level >= is_scope-sc_level AND ms_ext-typ <> mc_type-tree. " is_scope-field = ms_ext-name.
-      DATA: lv_len TYPE i, lv_off TYPE i.
-      lv_len = strlen( cv_content ).
-      lv_off = is_scope-end + 1.
-      IF lv_len >= lv_off.
-        CONCATENATE cv_content(is_scope-beg) cv_content+lv_off INTO cv_content RESPECTING BLANKS.
-      ELSE.
-        MESSAGE e023(zsy_xtt) WITH lv_off lr_field->name INTO sy-msgli.
-        io_xtt->add_log_message( iv_syst = abap_true ).
-      ENDIF.
-    ENDIF.
+    DO 1 TIMES.
+      CHECK ms_ext-rb_level >= is_scope-sc_level AND ms_ext-typ <> mc_type-tree. " is_scope-field = ms_ext-name.
+
+      CONCATENATE cv_content(is_scope-beg) cv_content+lv_off INTO cv_content RESPECTING BLANKS.
+    ENDDO.
 
     " Go on
     RETURN.
@@ -771,6 +779,29 @@ ENDMETHOD.
        ir_sub_data     = lr_table
        it_sub_data_ref = lr_table_ref.
   ENDMETHOD.
+
+
+METHOD _check_offest.
+  DATA: lv_len TYPE i, lv_off LIKE rv_offset.
+  lv_len = strlen( iv_content ).
+  lv_off = is_scope-end + 1.
+
+  IF lv_off > lv_len.
+    MESSAGE e020(zsy_xtt) WITH lv_off is_scope-field INTO sy-msgli.
+    io_xtt->add_log_message( iv_syst = abap_true ).
+    RETURN.
+  ENDIF.
+
+  IF iv_content+is_scope-beg(1) <> '{' OR
+     iv_content+is_scope-end(1) <> '}'.
+    MESSAGE e023(zsy_xtt) WITH is_scope-field INTO sy-msgli.
+    io_xtt->add_log_message( iv_syst = abap_true ).
+    RETURN.
+  ENDIF.
+
+  " Result
+  rv_offset = lv_off.
+ENDMETHOD.
 
 
 METHOD _get_field_ext.

@@ -54,10 +54,10 @@ protected section.
   data MV_PREFIX type STRING .
   data MV_PATH type STRING .
 
-  methods BOUNDS_FORM_BODY
+  methods BOUNDS_FROM_BODY
     importing
       !IV_CONTEXT type CSEQUENCE
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL
+      !IV_ROOT_IS_TABLE type ABAP_BOOL
       !IV_BLOCK_NAME type CSEQUENCE
     returning
       value(RS_BOUNDS) type TS_BOUNDS .
@@ -82,7 +82,7 @@ private section.
       !CV_MIDDLE type CSEQUENCE .
   methods DO_MERGE
     importing
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL default ABAP_FALSE
+      !IV_ROOT_IS_TABLE type ABAP_BOOL default ABAP_FALSE
       !IV_TABIX type SYTABIX optional
       !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
       !IV_FORCE type ABAP_BOOL optional
@@ -95,13 +95,13 @@ private section.
       !CV_CONTENT type STRING .
   methods MERGE_TABLES
     importing
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL
+      !IV_ROOT_IS_TABLE type ABAP_BOOL
       !IR_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
     changing
       !CV_CONTENT type STRING .
   methods MERGE_TREES
     importing
-      !IV_FIRST_LEVEL_IS_TABLE type ABAP_BOOL
+      !IV_ROOT_IS_TABLE type ABAP_BOOL
       !IR_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
     changing
       !CV_CONTENT type STRING .
@@ -122,7 +122,7 @@ ENDCLASS.
 CLASS ZCL_XTT_XML_BASE IMPLEMENTATION.
 
 
-METHOD bounds_form_body.
+METHOD bounds_from_body.
   CLEAR rs_bounds-with_tag.
 
   rs_bounds-t_match = zcl_xtt_util=>get_tag_matches( iv_context = iv_context
@@ -363,14 +363,14 @@ METHOD do_merge.
                               CHANGING  cv_content = cv_content ).
         " merge-3 Array types
       WHEN zcl_xtt_replace_block=>mc_type-table.
-        merge_tables( EXPORTING ir_field  = lr_field
-                                iv_first_level_is_table = iv_first_level_is_table
-                      CHANGING  cv_content              = cv_content ).
+        merge_tables( EXPORTING ir_field         = lr_field
+                                iv_root_is_table = iv_root_is_table
+                      CHANGING  cv_content       = cv_content ).
         " merge-4 And trees
       WHEN zcl_xtt_replace_block=>mc_type-tree.
-        merge_trees( EXPORTING ir_field                = lr_field
-                               iv_first_level_is_table = iv_first_level_is_table
-                     CHANGING  cv_content              = cv_content ).
+        merge_trees( EXPORTING ir_field         = lr_field
+                               iv_root_is_table = iv_root_is_table
+                     CHANGING  cv_content       = cv_content ).
     ENDCASE.
   ENDLOOP.
 ENDMETHOD.
@@ -396,18 +396,13 @@ METHOD merge.
                          iv_block_name = iv_block_name ).
 
   " Special case
-  DATA lv_type_kind            TYPE abap_typekind.
-  DATA lv_first_level_is_table TYPE abap_bool.
-
-  DESCRIBE FIELD is_block TYPE lv_type_kind.
-  IF lv_type_kind = cl_abap_typedescr=>typekind_table.
-    lv_first_level_is_table = abap_true.
-  ENDIF.
+  DATA lv_root_is_table TYPE abap_bool.
+  lv_root_is_table = zcl_xtt_util=>is_table( is_block ).
 
   DATA ls_bounds TYPE ts_bounds.
-  ls_bounds = bounds_form_body( iv_context              = mv_file_content
-                                iv_first_level_is_table = lv_first_level_is_table
-                                iv_block_name           = iv_block_name ).
+  ls_bounds = bounds_from_body( iv_context       = mv_file_content
+                                iv_root_is_table = lv_root_is_table
+                                iv_block_name    = iv_block_name ).
 
   " Divide to 3 parts
   bounds_split( EXPORTING iv_name   = iv_block_name
@@ -427,10 +422,10 @@ METHOD merge.
 
       do_merge(
        EXPORTING
-        iv_first_level_is_table = lv_first_level_is_table
-        io_block                = lo_replace_block
+        iv_root_is_table = lv_root_is_table
+        io_block         = lo_replace_block
        CHANGING
-        cv_content              = mv_file_content ).
+        cv_content       = mv_file_content ).
     CATCH zcx_eui_no_check INTO lo_no_check.
       add_log_message( io_exception = lo_no_check ).
   ENDTRY.
@@ -441,12 +436,9 @@ METHOD merge.
               ls_bounds-text_after INTO mv_file_content RESPECTING BLANKS.
 
   " Move from get_raw
-  IF lv_first_level_is_table = abap_true.
+  IF lv_root_is_table = abap_true.
     delete_last_page_break( ).
   ENDIF.
-
-  " 1 merge cache
-  zcl_xtt_scope=>clear_all( ).
 ENDMETHOD.
 
 
@@ -477,7 +469,7 @@ METHOD merge_tables.                                     .
   CLEAR ls_bounds.
 
   " Detect bounds
-  IF iv_first_level_is_table <> abap_true.
+  IF iv_root_is_table <> abap_true.
     ls_bounds = bounds_from_row( iv_context = cv_content
                                  is_field   = ir_field->* ).
     " Divide to 3 parts
@@ -487,7 +479,7 @@ METHOD merge_tables.                                     .
                  ).
     " No proper bounds found
     IF ls_bounds-text_before IS INITIAL AND ls_bounds-text_after IS INITIAL
-       " AND iv_first_level_is_table IS SUPPLIED.
+       " AND iv_root_is_table IS SUPPLIED.
        .
       MESSAGE w012(zsy_xtt) WITH 'table' ir_field->name INTO sy-msgli.
       add_log_message( iv_syst = abap_true ).
@@ -537,9 +529,9 @@ METHOD merge_tables.                                     .
     " Add
     CONCATENATE ls_bounds-text_before lv_clone INTO ls_bounds-text_before RESPECTING BLANKS.
 
-    " 1 merge cache
-    CHECK iv_first_level_is_table = abap_true.
-    zcl_xtt_scope=>clear_all( ).
+    " 1 merge cache " TODO TEST speed
+    CHECK iv_root_is_table = abap_true.
+    CLEAR _scopes[]. "clear_all( ).
   ENDLOOP.
 
   " End
@@ -552,7 +544,7 @@ METHOD merge_trees.                                                             
   CLEAR ls_bounds.
 
   " Detect bounds
-  IF iv_first_level_is_table <> abap_true.
+  IF iv_root_is_table <> abap_true.
     ls_bounds = bounds_from_row( iv_context = cv_content
                                  is_field   = ir_field->* ).
     " Divide to 3 parts
@@ -575,7 +567,7 @@ METHOD merge_trees.                                                             
                                                     ir_field  = ir_field ).
     " No proper bounds found
     IF ls_bounds-text_before IS INITIAL AND ls_bounds-text_after IS INITIAL
-       " AND iv_first_level_is_table IS SUPPLIED.
+       " AND iv_root_is_table IS SUPPLIED.
        AND lv_has_text <> abap_true. " lt_text_match[] IS INITIAL.
       MESSAGE w012(zsy_xtt) WITH 'tree' ir_field->name INTO sy-msgli.
       add_log_message( iv_syst = abap_true ).
@@ -611,18 +603,10 @@ METHOD on_match_found.
 
   " Write new value
   iv_pos_end = iv_pos_end + 1.
-
-  DATA l_len TYPE i.
-  l_len = strlen( cv_content ).
-  IF iv_pos_end > l_len.
-    MESSAGE e020(zsy_xtt) WITH is_field->name INTO sy-msgli.
-    add_log_message( iv_syst = abap_true ).
-  ELSE.
-    CONCATENATE
-      cv_content(iv_pos_beg)
-         mv_prefix mv_value
-      cv_content+iv_pos_end INTO cv_content RESPECTING BLANKS.
-  ENDIF.
+  CONCATENATE
+    cv_content(iv_pos_beg)
+       mv_prefix mv_value
+    cv_content+iv_pos_end INTO cv_content RESPECTING BLANKS.
 
   " Used in sub classes
   CLEAR:
@@ -633,11 +617,11 @@ ENDMETHOD.
 
 METHOD read_scopes.
   " Position holder
-  DATA lv_new   TYPE abap_bool.
-  zcl_xtt_scope=>get_instance( EXPORTING io_block    = io_block
-                                         iv_force    = iv_force
-                               IMPORTING eo_instance = eo_scope
-                                         ev_new      = lv_new ).
+  DATA lv_new TYPE abap_bool.
+  _get_scope( EXPORTING io_block = io_block
+                        iv_force = iv_force
+              IMPORTING eo_scope = eo_scope
+                        ev_new   = lv_new ).
   IF lv_new = abap_true.
     eo_scope->get_scopes( EXPORTING io_xtt     = me
                           CHANGING  cv_content = cv_content ).

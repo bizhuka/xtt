@@ -50,7 +50,7 @@ CLASS lcl_test IMPLEMENTATION.
         io_injection = me.
 
     " Folders for report
-    p_r_path = 'D:\Users\MoldaB\Desktop\arc\xtt-image\'.
+    p_r_path = 'C:\Users\MoldaB\Desktop\arc\xtt-image\'.
 
     " Export data & template & report
     SPLIT `X-X-X-X- ` AT `-` INTO p_stru
@@ -218,7 +218,7 @@ CLASS lcl_test IMPLEMENTATION.
 
     DATA lv_path TYPE string.
     "TODO check path
-    CONCATENATE `D:\Users\MoldaB\AppData\Local\SAP\SAP GUI\tmp\` p_exa `\` iv_path INTO lv_path.
+    CONCATENATE `C:\Users\MoldaB\AppData\Local\SAP\SAP GUI\tmp\` p_exa `\` iv_path INTO lv_path.
     REPLACE ALL OCCURRENCES OF `/` IN lv_path WITH `\`.
 
     " Export file

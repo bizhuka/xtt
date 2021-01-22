@@ -1,0 +1,60 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_XTT_XML_UPDATER</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>XML batch updater</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_UPDATER</CLSNAME>
+     <CMPNAME>CONSTRUCTOR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>CONSTRUCTOR</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_UPDATER</CLSNAME>
+     <CMPNAME>C_STATUS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Status for append mode</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_UPDATER</CLSNAME>
+     <CMPNAME>MO_ZIP</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Zip Utility</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_UPDATER</CLSNAME>
+     <CMPNAME>STR_DOC</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Append mode</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_UPDATER</CLSNAME>
+     <CMPNAME>STR_GET_DOCUMENT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Append document</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_UPDATER</CLSNAME>
+     <CMPNAME>STR_STATUS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Status for append mode</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_UPDATER</CLSNAME>
+     <CMPNAME>STR_TAG</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Append mode</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

@@ -132,7 +132,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZSY_XTT</ARBGB>
      <MSGNR>020</MSGNR>
-     <TEXT>Offset error in the &apos;&amp;1&apos; field</TEXT>
+     <TEXT>Wrong offset &amp;1 in the &apos;&amp;2&apos; field</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -150,7 +150,7 @@
      <SPRSL>E</SPRSL>
      <ARBGB>ZSY_XTT</ARBGB>
      <MSGNR>023</MSGNR>
-     <TEXT>Wrong offset &amp;1 in &apos;&amp;2&apos;</TEXT>
+     <TEXT>No curly braces for field &apos;&amp;1&apos;</TEXT>
     </T100>
     <T100>
      <SPRSL>E</SPRSL>
@@ -285,7 +285,7 @@
     <item>
      <SPRSL>R</SPRSL>
      <MSGNR>020</MSGNR>
-     <TEXT>Ошибка смещения в поле &apos;&amp;1&apos;</TEXT>
+     <TEXT>Неправильное смещение &amp;1 в поле &apos;&amp;2&apos;</TEXT>
     </item>
     <item>
      <SPRSL>R</SPRSL>
@@ -300,7 +300,7 @@
     <item>
      <SPRSL>R</SPRSL>
      <MSGNR>023</MSGNR>
-     <TEXT>Неправильное смещение &amp;1 в &apos;&amp;2&apos;</TEXT>
+     <TEXT>Никаких фигурных скобок для поля &apos;&amp;1&apos;</TEXT>
     </item>
     <item>
      <SPRSL>R</SPRSL>

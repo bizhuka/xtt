@@ -97,9 +97,14 @@ TYPES:
 
   " Table or list object in VBA terms
   BEGIN OF ts_ex_list_object,
-    dom      TYPE REF TO if_ixml_document,
-    area     TYPE ts_ex_area,
-    arc_path TYPE string,
+    dom             TYPE REF TO if_ixml_document,
+    area            TYPE ts_ex_area,
+    arc_path        TYPE string,
+    _lo_id          TYPE string,
+    _lo_name        TYPE string,
+    _lo_displayname TYPE string,
+
+    name_fm_mask    TYPE string,
   END OF ts_ex_list_object,
   tt_ex_list_object TYPE STANDARD TABLE OF ts_ex_list_object WITH DEFAULT KEY,
 
@@ -131,12 +136,12 @@ TYPES:
 
   " Drawing (Instead of lcl class)
   BEGIN OF ts_drawing,
-    dr_v_drawing      TYPE string, " Images in cell 'xl/drawings/drawing1.xml'
-    dr_v_drawing_rel  TYPE string, " Ref to files 'xl/drawings/_rels/drawing1.xml.rels'
-    dr_t_required     TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line, " Insert to '[Content_Types].xml'
+    _dr_xml_xl_drawings      TYPE REF TO zcl_xtt_xml_updater, " Images in cell 'xl/drawings/drawing1.xml'
+    _dr_xml_xl_drawings_rels TYPE REF TO zcl_xtt_xml_updater, " Ref to files 'xl/drawings/_rels/drawing1.xml.rels'
+    dr_t_required            TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line, " Insert to '[Content_Types].xml'
 
     " Images templates
-    dr_t_img_template TYPE tt_img_template,
+    dr_t_img_template        TYPE tt_img_template,
   END OF ts_drawing,
 
   " split_2_content
@@ -153,26 +158,40 @@ TYPES:
   tt_shared_fm TYPE SORTED TABLE OF ts_shared_fm WITH UNIQUE KEY sf_index, " sf_row sf_col.
 
   BEGIN OF ts_transmit,
-    new_txt_rows  TYPE string,
-    new_txt_cols  TYPE string,
-    merge_cells   TYPE string,
-    _merge_cnt    TYPE i,
-    merge_cnt_txt TYPE string,
+    rows_cells  TYPE stringtab, " sheetData tag
+    cols        TYPE stringtab,
+    merge_cells TYPE stringtab,
   END OF ts_transmit.
 **********************************************************************
 **********************************************************************
 
 CLASS lcl_ex_sheet DEFINITION FINAL.
   PUBLIC SECTION.
+    " INTERFACES: if_serializable_object.
+
     CONSTANTS:
-      mc_dyn_def_name TYPE string VALUE '*_'.
+      mc_dyn_def_name TYPE string VALUE '*_',
+
+      BEGIN OF mc_path,
+        full_path TYPE string VALUE `xl/worksheets/sheet{1}.xml`, "#EC NOTEXT
+        rel_path  TYPE string VALUE `xl/worksheets/_rels/sheet{1}.xml.rels`, "#EC NOTEXT
+        rel_tag   TYPE string VALUE `<Relationship Target="worksheets/sheet{1}.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Id="rId{1}"/>`, "#EC NOTEXT
+      END OF mc_path.
 
     DATA:
+      " Nested blocks / Templates based on a sheet
+      _index          TYPE string,
+      _index_original TYPE string,
+      _is_new         TYPE abap_bool READ-ONLY,
+
+      _name           TYPE string,
+      _state          TYPE string,  " `` || `hidden` || `veryHidden`
+
       mo_xlsx         TYPE REF TO zcl_xtt_excel_xlsx,
-      mv_full_path    TYPE string,                  " Path in zip(.xlsx,.xlsm) archive
-      mv_name         TYPE string,
-      mv_rel_path     TYPE string,
-      mo_dom          TYPE REF TO if_ixml_document, " As an object
+      " Dom updater
+      mo_xml_updater  TYPE REF TO zcl_xtt_xml_updater,
+      mo_document     TYPE REF TO if_ixml_document, " As an object
+
       mt_cells        TYPE tt_ex_cell,
       mt_rows         TYPE tt_ex_row,
       mt_columns      TYPE tt_ex_column,
@@ -193,12 +212,22 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
     METHODS:
       constructor
         IMPORTING
-          VALUE(iv_ind) TYPE i
-          io_node       TYPE REF TO if_ixml_element
-          io_xlsx       TYPE REF TO zcl_xtt_excel_xlsx,
+          iv_index TYPE string
+          io_xlsx  TYPE REF TO zcl_xtt_excel_xlsx,
       merged_cells_read,
-      defined_names_read,
       write_cells_offset,
+      defined_names_read
+        IMPORTING
+          io_node TYPE REF TO if_ixml_element OPTIONAL
+          io_src  TYPE REF TO lcl_ex_sheet    OPTIONAL,
+
+      get_indexed
+        IMPORTING
+                  iv_mask        TYPE string
+                  iv_original    TYPE abap_bool OPTIONAL
+                  iv_2           TYPE string    OPTIONAL
+        RETURNING VALUE(rv_path) TYPE string,
+      _read_dom,
 
       find_cell
         IMPORTING
@@ -221,7 +250,9 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
         CHANGING
           ct_shared_strings TYPE stringtab,
 
-      save,
+      save
+        IMPORTING
+          iv_index TYPE i,
       cells_create_refs
         RETURNING VALUE(rt_cell_ref) TYPE tt_cell_ref,
       _cells_write_xml
@@ -232,6 +263,21 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       defined_name_save
         IMPORTING
           it_cell_ref TYPE tt_cell_ref,
+
+      get_tag
+        RETURNING VALUE(rv_tag) TYPE string,
+      get_rel_tag
+        RETURNING VALUE(rv_tag) TYPE string,
+      change_table_path
+        CHANGING cv_path TYPE string,
+      get_new_id
+        IMPORTING
+                  iv_id        TYPE string
+        RETURNING VALUE(rv_id) TYPE string,
+      get_new_name
+        IMPORTING
+                  iv_name        TYPE string
+        RETURNING VALUE(rv_name) TYPE string,
 
       merge
         IMPORTING
@@ -267,12 +313,6 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
         CHANGING
           ct_cells     TYPE tt_ex_cell,
 
-      xml_replace_node
-        IMPORTING
-                  iv_tag_name    TYPE string
-                  iv_repl_text   TYPE string
-        RETURNING VALUE(ro_elem) TYPE REF TO if_ixml_element,
-
       split_2_content
         IMPORTING
           ir_field        TYPE REF TO zcl_xtt_replace_block=>ts_field
@@ -301,7 +341,12 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
         CHANGING
           ct_cells_end TYPE tt_ex_cell
           ct_cells_mid TYPE tt_ex_cell
-          ct_cells     TYPE tt_ex_cell.
+          ct_cells     TYPE tt_ex_cell,
+
+      clone
+        IMPORTING is_block       TYPE any
+                  iv_block_name  TYPE csequence
+        RETURNING VALUE(ro_copy) TYPE REF TO lcl_ex_sheet.
 ENDCLASS. "cl_ex_sheet DEFINITION
 
 CLASS lcl_tree_handler DEFINITION INHERITING FROM zcl_xtt_tree_function FINAL.

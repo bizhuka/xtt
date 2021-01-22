@@ -21,7 +21,7 @@ DEFINE create_tr_cache.
 END-OF-DEFINITION.
 
 DEFINE add_attr.
-  lv_text = <ls_item>-&2.
+  lv_text = &2.
   IF lv_text IS NOT INITIAL.
     CONDENSE lv_text.
     CONCATENATE &1 ` ` &3 `="` lv_text `"` INTO &1 RESPECTING BLANKS.

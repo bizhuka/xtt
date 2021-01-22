@@ -58,7 +58,9 @@ METHOD detect_image_annotation.
   CLEAR ev_is_annotation.
 
   " Has near and </aml:annotation>
-  CHECK strlen( cv_xml ) >= cv_pos_end + 50.
+  DATA lv_plus_50 TYPE i.
+  lv_plus_50 = cv_pos_end + 50.
+  CHECK strlen( cv_xml ) >= lv_plus_50.
   CHECK " cv_xml+cv_pos_end(50) = `}</w:t></w:r></w:p></aml:content></aml:annotation>`.
         cv_xml+cv_pos_end(50) CS '</aml:annotation>'.
 
@@ -110,7 +112,7 @@ METHOD detect_image_annotation.
   cv_pos_beg = <ls_m_start>-offset.
 
   " Delete 2,3,4 `<aml:annotation aml:id="0" w:type="Word.Comment.End"/>` ... `</aml:annotation>`
-  DATA: lv_len TYPE i, lv_blanks TYPE STRING.
+  DATA: lv_len    TYPE i, lv_blanks TYPE string.
 
   lv_len    = <ls_m_txt_end>-offset + <ls_m_txt_end>-length - <ls_m_end>-offset + strlen( `</w:r>` ).
   lv_blanks = zcl_xtt_util=>repeat( val = ` `

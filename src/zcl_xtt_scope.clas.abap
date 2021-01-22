@@ -1,9 +1,10 @@
 class ZCL_XTT_SCOPE definition
   public
   final
-  create private .
+  create public .
 
 public section.
+  type-pools ABAP .
 
   types:
     BEGIN OF ts_pair,
@@ -26,14 +27,9 @@ public section.
 
   data MT_SCOPE type TT_SCOPE read-only .
 
-  class-methods GET_INSTANCE
+  methods CONSTRUCTOR
     importing
-      !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
-      !IV_FORCE type ABAP_BOOL
-    exporting
-      !EV_NEW type ABAP_BOOL
-      !EO_INSTANCE type ref to ZCL_XTT_SCOPE .
-  class-methods CLEAR_ALL .
+      !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK .
   methods GET_SCOPES
     importing
       !IV_INDEX type I optional
@@ -63,13 +59,6 @@ protected section.
 private section.
 
   types:
-    BEGIN OF ts_instance,
-      sc_id TYPE string,
-      scope TYPE REF TO zcl_xtt_scope,
-    END OF ts_instance .
-  types:
-    tt_instance TYPE SORTED TABLE OF ts_instance WITH UNIQUE KEY sc_id .
-  types:
     BEGIN OF ts_extra_tab_opt,
         name      TYPE string, " Name of table 'R-T'
         direction TYPE string, " ;direction=column ?
@@ -78,7 +67,6 @@ private section.
   types:
     tt_extra_tab_opt TYPE SORTED TABLE OF ts_extra_tab_opt WITH UNIQUE KEY name .
 
-  class-data MT_INSTANCE type TT_INSTANCE .
   data MO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK .
   data MT_EXTRA_TAB_OPT type TT_EXTRA_TAB_OPT .
   data MO_COND type ref to ZCL_XTT_COND .
@@ -168,38 +156,8 @@ METHOD calc_cond_matches.
 ENDMETHOD.
 
 
-METHOD clear_all.
-  CLEAR mt_instance.
-ENDMETHOD.
-
-
-METHOD get_instance.
-  CLEAR: ev_new,
-         eo_instance.
-
-  DATA ls_instance TYPE ts_instance.
-  DATA lr_instance TYPE REF TO ts_instance.
-
-  READ TABLE mt_instance REFERENCE INTO lr_instance
-   WITH TABLE KEY sc_id = io_block->ms_ext-rb_id.
-  IF sy-subrc = 0.
-    " Recreate
-    IF iv_force = abap_true.
-      DELETE mt_instance INDEX sy-tabix.
-    ELSE.
-      eo_instance = lr_instance->scope.
-      RETURN.
-    ENDIF.
-  ENDIF.
-
-  " Not initilized
-  ev_new = abap_true.
-  CREATE OBJECT eo_instance.
-  eo_instance->mo_block = io_block.
-
-  ls_instance-sc_id = io_block->ms_ext-rb_id.
-  ls_instance-scope = eo_instance.
-  INSERT ls_instance INTO TABLE mt_instance.
+METHOD constructor.
+  mo_block = io_block.
 ENDMETHOD.
 
 
@@ -386,7 +344,7 @@ METHOD _get_scope_field.
 
   " Find pairs of  {R;cond= {{}}    } <--here
   DATA lv_br_count  TYPE i VALUE 1.
-  WHILE lv_br_count <> - 1.
+  WHILE lv_br_count <> -1.
     lv_pos = lv_pos + 1.
     IF lv_pos >= lv_content_len OR sy-index > 255.
       MESSAGE e024(zsy_xtt) WITH iv_content INTO sy-msgli.
@@ -496,7 +454,9 @@ ENDMETHOD.
 
 
 METHOD _is_level_norm.
-  IF mo_block->ms_ext-rb_level + 1 < ir_scope->sc_level.
+  DATA lv_level TYPE i.
+  lv_level = mo_block->ms_ext-rb_level + 1.
+  IF lv_level < ir_scope->sc_level.
     CLEAR ir_scope->end.
     RETURN.
   ENDIF.

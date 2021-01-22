@@ -73,15 +73,12 @@ METHOD example_06.
      ct_folder = lt_folders->* ).
 
   " Add sums to last elements with no children
-  DATA lo_rand_p TYPE REF TO cl_abap_random_packed.
-  lo_rand_p = cl_abap_random_packed=>create( seed = mv_seed
-                                             min  = 0
-                                             max  = 1000000 ).
+  _init_random_numbers( ).
   LOOP AT lt_folders->* REFERENCE INTO ls_folder.
     REPLACE FIRST OCCURRENCE OF lv_path: IN ls_folder->par_dir WITH 'R:',
                                          IN ls_folder->dir     WITH 'R:'.
     CHECK ls_folder->has_children <> abap_true.
-    ls_folder->sum     = lo_rand_p->get_next( ).
+    ls_folder->sum     = mo_rand_p->get_next( ).
   ENDLOOP.
 
   " Create tree

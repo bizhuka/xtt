@@ -189,10 +189,7 @@ CLASS lcl_main IMPLEMENTATION.
       <ls_wwwdata>  LIKE LINE OF lt_wwwdata.
 
     mo_injection = io_injection.
-    " Always the same random data
-    IF mo_injection IS NOT INITIAL.
-      mv_seed  = 777.
-    ENDIF.
+    _init_random_numbers( ).
 
     DEFINE add_to_list.
       APPEND INITIAL LINE TO lt_list REFERENCE INTO ls_list.
@@ -294,6 +291,22 @@ CLASS lcl_main IMPLEMENTATION.
 
     " Update screen
     pbo( ).
+  ENDMETHOD.
+
+  METHOD _init_random_numbers.
+    " Always the same random data
+    DATA lv_seed TYPE i.
+    IF mo_injection IS NOT INITIAL.
+      lv_seed  = 777.
+    ENDIF.
+    " A,B,C,D chars
+    mo_rand_i = cl_abap_random_int=>create( seed = lv_seed
+                                            min  = 0
+                                            max  = 3 ).
+    " SUMS
+    mo_rand_p = cl_abap_random_packed=>create( seed = lv_seed
+                                               min  = 0
+                                               max  = 1000000 ).
   ENDMETHOD.
 
   METHOD is_break_point_active.
@@ -482,8 +495,6 @@ CLASS lcl_main IMPLEMENTATION.
 
   METHOD get_random_table.
     DATA:
-      lo_rand_i TYPE REF TO cl_abap_random_int,
-      lo_rand_p TYPE REF TO cl_abap_random_packed,
       ls_no_sum TYPE ts_no_sum,
       lv_int    TYPE i,
       lv_column TYPE string.
@@ -492,15 +503,8 @@ CLASS lcl_main IMPLEMENTATION.
       <lv_sum>  TYPE bf_rbetr. " P with sign
 
     CLEAR et_table.
+*    _init_random_numbers( ).
 
-    " A,B,C,D chars
-    lo_rand_i = cl_abap_random_int=>create( seed = mv_seed
-                                            min  = 0
-                                            max  = 3 ).
-    " SUMS
-    lo_rand_p = cl_abap_random_packed=>create( seed = mv_seed
-                                               min  = 0
-                                               max  = 1000000 ).
     DO p_r_cnt TIMES.
       " Fill without sums
       CLEAR ls_no_sum.
@@ -510,7 +514,7 @@ CLASS lcl_main IMPLEMENTATION.
       CONCATENATE `<Caption ` ls_no_sum-caption `/>` INTO ls_no_sum-caption.
 
       " Date
-      lv_int = lo_rand_i->get_next( ).
+      lv_int = mo_rand_i->get_next( ).
       ls_no_sum-date = sy-datum - lv_int.
 
       " 3 different groups
@@ -543,7 +547,7 @@ CLASS lcl_main IMPLEMENTATION.
         ENDIF.
 
         " Show with decimals
-        <lv_sum> = lo_rand_p->get_next( ).                  " / 100
+        <lv_sum> = mo_rand_p->get_next( ).                  " / 100
         <lv_sum> = <lv_sum> / 100.
       ENDDO.
     ENDDO.

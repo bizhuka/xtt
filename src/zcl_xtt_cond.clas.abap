@@ -45,12 +45,20 @@ private section.
     END OF ts_match .
   types:
     tt_match TYPE SORTED TABLE OF ts_match WITH UNIQUE KEY cid .
+  types:
+    BEGIN OF ts_md5,
+      hash TYPE hash160,
+      prog TYPE programm,
+    END OF ts_md5 .
+  types:
+    tt_md5 TYPE SORTED TABLE OF ts_md5 WITH UNIQUE KEY hash .
 
   data MO_XTT type ref to ZCL_XTT .
   data MT_ABAP_CODE type STRINGTAB .
   data MT_MATCH type TT_MATCH .
   data MV_PROG type PROGRAMM .
   data MV_TOP_IS_DDIC_TYPE type ABAP_BOOL .
+  class-data MT_MD5 type TT_MD5 .
 
   methods _MAKE_COND_FORMS .
   methods _READ_SCOPES
@@ -72,6 +80,11 @@ private section.
       !IV_VALUE type STRING
     returning
       value(RT_CODE) type STRINGTAB .
+  class-methods _CALC_HASH
+    importing
+      !IT_CODE type STRINGTAB
+    returning
+      value(RV_HASH) type HASH160 .
 ENDCLASS.
 
 
@@ -402,20 +415,51 @@ METHOD _702_cond.
 ENDMETHOD.
 
 
+METHOD _calc_hash.
+  DATA lv_line TYPE string.
+  CONCATENATE LINES OF it_code INTO lv_line.
+  CALL FUNCTION 'CALCULATE_HASH_FOR_CHAR'
+    EXPORTING
+      data   = lv_line
+    IMPORTING
+      hash   = rv_hash
+    EXCEPTIONS
+      OTHERS = 1.
+
+  CHECK sy-subrc <> 0.
+  zcx_eui_no_check=>raise_sys_error( ).
+ENDMETHOD.
+
+
 METHOD _generate.
   " Basic header of app
   INSERT `REPORT DYNAMIC_IF.` INTO mt_abap_code INDEX 1.
   INSERT `TYPE-POOLS ABAP.`   INTO mt_abap_code INDEX 2. " Required for ABAP 7.01
   INSERT ``                   INTO mt_abap_code INDEX 3.
 
+  DATA ls_md5 TYPE ts_md5.
+  ls_md5-hash = _calc_hash( mt_abap_code ).
+  READ TABLE mt_md5 INTO ls_md5
+   WITH TABLE KEY hash = ls_md5-hash.
+  IF sy-subrc = 0.
+    mv_prog = ls_md5-prog.
+    RETURN.
+  ENDIF.
+
   DATA lv_message TYPE string.
   DATA lv_pos     TYPE i.
-  GENERATE SUBROUTINE POOL mt_abap_code NAME mv_prog
+  GENERATE SUBROUTINE POOL mt_abap_code NAME ls_md5-prog
     MESSAGE lv_message
     LINE    lv_pos.                 "#EC CI_GENERATE. <--- in lt_code[]
 
-  " Ooops! wrong syntax in if_show of if_hide!
-  CHECK sy-subrc <> 0.
+  " Application code is Ok
+  IF sy-subrc = 0.
+    mv_prog = ls_md5-prog.
+    INSERT ls_md5 INTO TABLE mt_md5.
+    RETURN.
+  ENDIF.
+
+  " Ooops! wrong syntax in MT_ABAP_CODE!
   zcx_eui_no_check=>raise_sys_error( iv_message = lv_message ).
 ENDMETHOD.
 

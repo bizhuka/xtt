@@ -15,9 +15,9 @@ public section.
       !IV_OLE_EXT_FORMAT type I default 51 .
 protected section.
 
-  methods ON_MATCH_FOUND
+  methods BOUNDS_FROM_BODY
     redefinition .
-  methods BOUNDS_FORM_BODY
+  methods ON_MATCH_FOUND
     redefinition .
 private section.
 *"* private components of class ZCL_XTT_EXCEL_XML
@@ -29,12 +29,12 @@ ENDCLASS.
 CLASS ZCL_XTT_EXCEL_XML IMPLEMENTATION.
 
 
-METHOD bounds_form_body.
-  rs_bounds = super->bounds_form_body( iv_context              = iv_context
-                                       iv_first_level_is_table = iv_first_level_is_table
-                                       iv_block_name           = iv_block_name ).
+METHOD bounds_from_body.
+  rs_bounds = super->bounds_from_body( iv_context       = iv_context
+                                       iv_root_is_table = iv_root_is_table
+                                       iv_block_name    = iv_block_name ).
 
-  rs_bounds-with_tag       = iv_first_level_is_table.
+  rs_bounds-with_tag       = iv_root_is_table.
   CHECK rs_bounds-with_tag = abap_true.
 
   DATA:

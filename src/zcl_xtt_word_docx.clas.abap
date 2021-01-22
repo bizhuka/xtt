@@ -6,7 +6,7 @@ class ZCL_XTT_WORD_DOCX definition
 
 public section.
 
-  constants MC_TABLE_PAGE_BREAK type STRING value '<w:br w:type="page"/>' ##NO_TEXT.
+  constants MC_TABLE_PAGE_BREAK type STRING value '<w:br w:type="page"/>'. "#EC NOTEXT
 
   methods CONSTRUCTOR
     importing
@@ -35,7 +35,7 @@ private section.
   types:
     tt_required TYPE SORTED TABLE OF string WITH UNIQUE KEY table_line .
 
-  data MV_DRAWING_REL type STRING .
+  data _XML_DOCUMENT_RELS type ref to ZCL_XTT_XML_UPDATER .
   data MT_REQUIRED type TT_REQUIRED .
 
   methods _CHANGE_HEADER_FOOTER
@@ -240,22 +240,17 @@ METHOD on_match_found.
     CHECK lv_rewrite <> abap_true.
 
     " Initilize refs to files
-    IF mv_drawing_rel IS INITIAL.
-      zcl_eui_conv=>xml_from_zip(
-       EXPORTING io_zip     = mo_zip
-                 iv_name    = 'word/_rels/document.xml.rels' "#EC NOTEXT
-       IMPORTING ev_sdoc    = mv_drawing_rel ).
+    IF _xml_document_rels IS INITIAL.
+      DATA lv_xml_document_rels TYPE string.
+      CONCATENATE `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+                  `</Relationships>` INTO lv_xml_document_rels.
+      CREATE OBJECT _xml_document_rels
+        EXPORTING
+          io_zip     = mo_zip
+          iv_path    = 'word/_rels/document.xml.rels' "#EC NOTEXT
+          iv_str_tag = 'Relationships'
+          iv_str_doc = lv_xml_document_rels.
     ENDIF.
-    IF mv_drawing_rel IS INITIAL.
-      CONCATENATE
-        `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
-        `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
-        `</Relationships>` INTO mv_drawing_rel.
-    ENDIF.
-
-    " Position of new string
-    DATA lv_from_rel TYPE i.
-    lv_from_rel = strlen( mv_drawing_rel ) - strlen( `</Relationships>` ).
 
     DATA lv_value TYPE string.
     CONCATENATE
@@ -263,7 +258,9 @@ METHOD on_match_found.
       lo_image->mv_index_txt
       `" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/`
       lv_file_name `"/>` INTO lv_value.
-    CONCATENATE mv_drawing_rel(lv_from_rel) lv_value `</Relationships>` INTO mv_drawing_rel.
+
+    " Bew file to relations
+    _xml_document_rels->str_add( lv_value ).
   ENDDO.
 
   " Just do not modify IV_CONTENT
@@ -300,7 +297,7 @@ METHOD _change_header_footer.
     DATA lo_file TYPE REF TO zif_xtt_file.
     CREATE OBJECT lo_file TYPE zcl_xtt_file_raw
       EXPORTING
-        iv_name   = 'dummy'
+        iv_name   = 'dummy'  "#EC NOTEXT
         iv_string = lv_content.
 
     DATA lo_html TYPE REF TO zcl_xtt.
@@ -336,35 +333,25 @@ ENDMETHOD.
 
 
 METHOD _check_drawing_rel.
-  CHECK mv_drawing_rel IS NOT INITIAL.
-
-  zcl_eui_conv=>xml_to_zip(
-   io_zip     = mo_zip
-   iv_name    = 'word/_rels/document.xml.rels'              "#EC NOTEXT
-   iv_sdoc    = mv_drawing_rel ).
+  CHECK _xml_document_rels IS NOT INITIAL.
+  _xml_document_rels->save( ).
 
   " Change files info
-  DATA lv_content_xml TYPE string.
-  zcl_eui_conv=>xml_from_zip(
-   EXPORTING io_zip     = mo_zip
-             iv_name    = '[Content_Types].xml'             "#EC NOTEXT
-   IMPORTING ev_sdoc    = lv_content_xml ).
+  DATA lo_xml_content_types TYPE REF TO zcl_xtt_xml_updater.
+  CREATE OBJECT lo_xml_content_types
+    EXPORTING
+      io_zip     = mo_zip
+      iv_path    = '[Content_Types].xml' "#EC NOTEXT
+      " Append mode for file
+      iv_str_tag = `Types`.
 
   " Add 1 by one
   DATA lv_req_text TYPE string.
-  DATA lv_len      TYPE i.
   LOOP AT mt_required INTO lv_req_text.
-    CHECK lv_content_xml NS lv_req_text.
-
-    lv_len = strlen( lv_content_xml ) - strlen( `</Types>` ).
-    CONCATENATE lv_content_xml(lv_len) lv_req_text `</Types>` INTO lv_content_xml.
+    lo_xml_content_types->str_add( lv_req_text ).
   ENDLOOP.
 
-  " And add
-  zcl_eui_conv=>xml_to_zip(
-   io_zip     = mo_zip
-   iv_name    = '[Content_Types].xml'                       "#EC NOTEXT
-   iv_sdoc    = lv_content_xml ).
+  lo_xml_content_types->save( ).
 ENDMETHOD.
 
 

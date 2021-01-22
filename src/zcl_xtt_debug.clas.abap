@@ -77,7 +77,7 @@ METHOD load_all.
     CONDENSE lv_merge_index.
 
     TRY.
-        CONCATENATE `MERGE_TYPE_` lv_merge_index INTO lv_file_name.
+        CONCATENATE lv_path `MERGE_TYPE_` lv_merge_index INTO lv_file_name.
         lo_file->import_from_file( iv_full_path = lv_file_name ).
         lv_content = zcl_eui_conv=>xstring_to_string( lo_file->mv_xstring ).
 
@@ -92,7 +92,7 @@ METHOD load_all.
         ASSIGN lr_data->* TO <ls_data>.
 
         " Load data
-        CONCATENATE `MERGE_DATA_` lv_merge_index INTO lv_file_name.
+        CONCATENATE lv_path `MERGE_DATA_` lv_merge_index INTO lv_file_name.
         lo_file->import_from_file( iv_full_path = lv_file_name ).
         lv_content = zcl_eui_conv=>xstring_to_string( lo_file->mv_xstring ).
 
@@ -102,7 +102,13 @@ METHOD load_all.
         ro_xtt->merge( is_block      = <ls_data>
                        iv_block_name = ls_field_desc-name ).
       CATCH zcx_eui_exception INTO lo_error.
-        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+        DATA lv_error TYPE string.
+        lv_error = lo_error->get_text( ).
+*        DATA: lv_prog TYPE syrepid, lv_incl TYPE syrepid, lv_line TYPE i.
+*        lo_error->get_source_position( IMPORTING program_name = lv_prog
+*                                                 include_name = lv_incl
+*                                                 source_line  = lv_line ).
+        MESSAGE lv_error TYPE 'S' DISPLAY LIKE 'E'.
         RETURN.
     ENDTRY.
   ENDDO.

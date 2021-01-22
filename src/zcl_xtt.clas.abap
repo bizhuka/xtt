@@ -81,10 +81,19 @@ public section.
       !IV_MSGTY type SYMSGTY optional .
 protected section.
 
+  types:
+    BEGIN OF to_scope,
+      sc_id TYPE string,
+      scope TYPE REF TO zcl_xtt_scope,
+    END OF to_scope .
+  types:
+    tt_scopes TYPE SORTED TABLE OF to_scope WITH UNIQUE KEY sc_id .
+
   data MV_FILE_NAME type STRING .
   data MV_OLE_EXT type STRING .
   data MV_SKIP_TAGS type ABAP_BOOL .
   data _LOGGER type ref to ZCL_EUI_LOGGER .
+  data _SCOPES type TT_SCOPES .
 
   methods RAISE_RAW_EVENTS
     importing
@@ -97,6 +106,13 @@ protected section.
       value(IV_POS_END) type I
     changing
       !CV_CONTENT type STRING .
+  methods _GET_SCOPE
+    importing
+      !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
+      !IV_FORCE type ABAP_BOOL
+    exporting
+      !EV_NEW type ABAP_BOOL
+      !EO_SCOPE type ref to ZCL_XTT_SCOPE .
 private section.
 
 *"* private components of class ZCL_XTT
@@ -301,6 +317,9 @@ METHOD merge.
   " For chain calls
   ro_xtt = me.
 
+  " For each merge
+  CLEAR _scopes.
+
   " Delegate to another class
   CHECK mo_debug IS NOT INITIAL.
   mo_debug->save_merge( is_block      = is_block
@@ -468,6 +487,37 @@ METHOD show.
     CATCH zcx_eui_exception INTO lo_error.
       MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
   ENDTRY.
+ENDMETHOD.
+
+
+METHOD _get_scope.
+  CLEAR: ev_new,
+         eo_scope.
+
+  DATA ls_scope TYPE to_scope.
+  DATA lr_scope TYPE REF TO to_scope.
+
+  READ TABLE _scopes REFERENCE INTO lr_scope
+   WITH TABLE KEY sc_id = io_block->ms_ext-rb_id.
+  IF sy-subrc = 0.
+    " Recreate
+    IF iv_force = abap_true.
+      DELETE _scopes INDEX sy-tabix.
+    ELSE.
+      eo_scope = lr_scope->scope.
+      RETURN.
+    ENDIF.
+  ENDIF.
+
+  " Not initilized
+  ev_new = abap_true.
+  CREATE OBJECT eo_scope
+    EXPORTING
+      io_block = io_block.
+
+  ls_scope-sc_id = io_block->ms_ext-rb_id.
+  ls_scope-scope = eo_scope.
+  INSERT ls_scope INTO TABLE _scopes.
 ENDMETHOD.
 
 

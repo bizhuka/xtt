@@ -3,6 +3,7 @@ class ZCL_XTT_TREE_FUNCTION definition
   create public .
 
 public section.
+  type-pools ABAP .
 
   types:
     BEGIN OF ts_row_offset,

@@ -15,6 +15,7 @@ public section.
       !IV_TEMPLATE type STRING
       !IT_FORMAT_FIELD type ZCL_XTT_UTIL=>TT_FORMAT_FIELD optional
       !IS_ROOT type ANY optional
+      !IV_ROOT_NAME type CSEQUENCE default 'R'
     returning
       value(RV_TEXT) type STRING .
 
@@ -79,7 +80,7 @@ METHOD format.
 
   " Pass data to the tamplate
   lo_html->merge( is_block      = <ls_root>
-                  " iv_block_name = 'R'
+                  iv_block_name = iv_root_name
                 ).
 
   DATA lv_text TYPE xstring.

@@ -4,6 +4,7 @@ class ZCL_XTT_IMAGE definition
   create private .
 
 public section.
+  type-pools ABAP .
 
   data MV_IMAGE type XSTRING read-only .
   data MV_EXT type STRING read-only .

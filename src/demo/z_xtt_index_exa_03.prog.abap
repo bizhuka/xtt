@@ -3,13 +3,6 @@
 
 METHOD example_03.
   TYPES:
-    " Structure of document
-    BEGIN OF ts_root,
-      title  TYPE string,
-      bottom TYPE string,
-      t      TYPE tt_rand_data, " Table within another table (lt_root)
-    END OF ts_root,
-
     " Second merge
     BEGIN OF ts_doc,
       f_title TYPE string,
@@ -17,8 +10,8 @@ METHOD example_03.
     END OF ts_doc.
 
   DATA:
-    lt_root TYPE STANDARD TABLE OF ts_root,
-    ls_root TYPE REF TO ts_root,
+    lt_root TYPE tt_root_03,
+    ls_root TYPE REF TO ts_root_03,
     lv_num  TYPE char4,
     ls_doc  TYPE ts_doc,
     lv_rem  TYPE i.
@@ -65,6 +58,28 @@ METHOD example_03.
   ENDIF.
 
   " Paste data
-  io_xtt->merge( is_block = lt_root iv_block_name = 'R' ).
-  io_xtt->merge( is_block = ls_doc  iv_block_name = 'DOC' ).
+  io_xtt->merge( is_block = ls_doc  iv_block_name = 'DOC' ). " Faster if the begining
+
+  " Each 'R' is sheet (Excel) or Page (Pdf) or Endire documnet (Word)
+  io_xtt->merge( is_block      = lt_root
+                 iv_block_name = 'R' ).
+
+  _2nd_time_for_excel( io_xtt  = io_xtt
+                       it_root = lt_root ).
+ENDMETHOD.
+
+METHOD _2nd_time_for_excel.
+  DATA lo_obj TYPE REF TO cl_abap_objectdescr.
+  lo_obj ?= cl_abap_classdescr=>describe_by_object_ref( io_xtt ).
+
+  " No meaning for WORD
+  CHECK lo_obj->absolute_name = '\CLASS=ZCL_XTT_EXCEL_XLSX'
+   " TODO change examples
+*     OR lo_obj->absolute_name = '\CLASS=ZCL_XTT_EXCEL_XML'
+*     OR lo_obj->absolute_name = '\CLASS=ZCL_XTT_PDF'
+    .
+
+  " Use 'D' anchor for other sheet
+  io_xtt->merge( is_block      = it_root
+                 iv_block_name = 'D' ).
 ENDMETHOD.

@@ -4,6 +4,7 @@ class ZCL_XTT_UTIL definition
   create public .
 
 public section.
+  type-pools ABAP .
 
   types:
     BEGIN OF ts_xml_match,
@@ -88,6 +89,11 @@ public section.
       !OCC type I
     returning
       value(RESULT) type STRING .
+  class-methods IS_TABLE
+    importing
+      !IS_ROOT type ANY
+    returning
+      value(RV_IS_TABLE) type ABAP_BOOL .
 protected section.
 *"* protected components of class ZCL_XTT_UTIL
 *"* do not include other source files here!!!
@@ -325,6 +331,15 @@ METHOD is_common_gui.
 
   " Is Ok
   rv_ok = abap_true.
+ENDMETHOD.
+
+
+METHOD is_table.
+  DATA lv_type_kind TYPE abap_typekind.
+  DESCRIBE FIELD is_root TYPE lv_type_kind.
+
+  CHECK lv_type_kind = cl_abap_typedescr=>typekind_table.
+  rv_is_table = abap_true.
 ENDMETHOD.
 
 

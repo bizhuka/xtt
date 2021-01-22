@@ -49,6 +49,14 @@ CLASS lcl_main DEFINITION FINAL.
       END OF ts_screen_opt,
       tt_screen_opt TYPE SORTED TABLE OF ts_screen_opt WITH UNIQUE KEY key,
 
+      " Structure of document
+      BEGIN OF ts_root_03,
+        title  TYPE string,
+        bottom TYPE string,
+        t      TYPE tt_rand_data, " Table within another table (lt_root)
+      END OF ts_root_03,
+      tt_root_03 TYPE STANDARD TABLE OF ts_root_03 WITH DEFAULT KEY,
+
       " Tree structure
       BEGIN OF ts_tree_05.
         INCLUDE TYPE ts_rand_data. " random data
@@ -137,6 +145,10 @@ CLASS lcl_main DEFINITION FINAL.
           io_xtt TYPE REF TO zcl_xtt
         EXPORTING
           ev_break TYPE abap_bool,
+      _2nd_time_for_excel
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt
+          it_root TYPE tt_root_03,
 
       example_04                                            "#EC CALLED
         IMPORTING
@@ -236,9 +248,14 @@ CLASS lcl_main DEFINITION FINAL.
         IMPORTING
           io_xtt TYPE REF TO zcl_xtt
         EXPORTING
-          ev_break TYPE abap_bool.
+          ev_break TYPE abap_bool,
+
+      _init_random_numbers.
 
     DATA mt_screen_opt TYPE tt_screen_opt.
     DATA mo_injection  TYPE REF TO lif_injection.
-    DATA mv_seed       TYPE i.
+
+    " Random numbers
+    DATA mo_rand_i     TYPE REF TO cl_abap_random_int.
+    DATA mo_rand_p     TYPE REF TO cl_abap_random_packed.
 ENDCLASS.

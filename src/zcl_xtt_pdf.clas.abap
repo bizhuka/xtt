@@ -14,9 +14,9 @@ public section.
     redefinition .
 protected section.
 
-  methods ON_MATCH_FOUND
+  methods BOUNDS_FROM_BODY
     redefinition .
-  methods BOUNDS_FORM_BODY
+  methods ON_MATCH_FOUND
     redefinition .
 PRIVATE SECTION.
 ENDCLASS.
@@ -26,16 +26,16 @@ ENDCLASS.
 CLASS ZCL_XTT_PDF IMPLEMENTATION.
 
 
-METHOD bounds_form_body.
+METHOD bounds_from_body.
   DATA lv_tag  TYPE string.
   lv_tag = mv_body_tag.
-  IF iv_first_level_is_table = abap_true.
+  IF iv_root_is_table = abap_true.
     mv_body_tag = lv_tag = 'subform'.                       "#EC NOTEXT
   ENDIF.
 
-  rs_bounds = super->bounds_form_body( iv_context              = iv_context
-                                       iv_first_level_is_table = iv_first_level_is_table
-                                       iv_block_name           = iv_block_name ).
+  rs_bounds = super->bounds_from_body( iv_context       = iv_context
+                                       iv_root_is_table = iv_root_is_table
+                                       iv_block_name    = iv_block_name ).
 
   DATA:
     lv_pattern TYPE string,
@@ -44,8 +44,8 @@ METHOD bounds_form_body.
   FIELD-SYMBOLS:
    <ls_match>  LIKE LINE OF rs_bounds-t_match.
 
-  rs_bounds-with_tag = iv_first_level_is_table.
-  CHECK iv_first_level_is_table = abap_true.
+  rs_bounds-with_tag = iv_root_is_table.
+  CHECK iv_root_is_table = abap_true.
 
   " Detect bounds
   CONCATENATE `<subform*name="` iv_block_name `"*` INTO lv_pattern.

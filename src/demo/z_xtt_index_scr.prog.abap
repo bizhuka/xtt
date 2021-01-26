@@ -6,8 +6,7 @@ SELECTION-SCREEN BEGIN OF BLOCK bl_example WITH FRAME TITLE TEXT-exa.
 PARAMETERS:
   " What example to launch
   p_exa   TYPE char5 AS LISTBOX VISIBLE LENGTH 80 OBLIGATORY MODIF ID exa USER-COMMAND update_scr
-   DEFAULT '03-01'
-  ,
+   DEFAULT '01-01',
 
   " Row count
   p_r_cnt TYPE int4 DEFAULT 255 MODIF ID oth,

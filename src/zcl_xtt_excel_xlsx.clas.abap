@@ -34,7 +34,6 @@ private section.
   data MO_SHEET type ref to LCL_EX_SHEET .
   data MO_ZIP type ref to CL_ABAP_ZIP .
   data MT_SHARED_STRINGS type STRINGTAB .
-  data MT_DEFINED_NAMES type TT_EX_DEFINED_NAME .
   data _PREV_SHEET_COUNT type I .
   data _XML_XL_WORKBOOK type ref to ZCL_XTT_XML_UPDATER .
   data _XML_CONTENT_TYPES type ref to ZCL_XTT_XML_UPDATER .
@@ -50,8 +49,9 @@ private section.
     returning
       value(RV_MERGED) type ABAP_BOOL .
   methods _SHEET_SAVE
-    returning
-      value(RT_NEW_TAGS) type STRINGTAB .
+    exporting
+      !ET_DEFINED_NAMES type TT_EX_DEFINED_NAME
+      !ET_NEW_TAGS type STRINGTAB .
   methods SHARED_STRINGS_READ .
   methods SHARED_STRINGS_SAVE .
   class-methods COLUMN_READ_XML
@@ -125,11 +125,11 @@ private section.
       !IV_NO_BUCKS type ABAP_BOOL
     returning
       value(RV_ADDRESS) type STRING .
-  class-methods DEFINED_NAME_READ_XML
+  methods DEFINED_NAME_READ_XML
     importing
-      !IO_WORKBOOK type ref to IF_IXML_DOCUMENT
-    changing
-      !CT_DEFINED_NAMES type TT_EX_DEFINED_NAME .
+      !IO_SHEET type ref to LCL_EX_SHEET
+    returning
+      value(RT_DEFINED_NAMES) type TT_EX_DEFINED_NAME .
   class-methods DEFINED_NAME_SAVE_XML
     importing
       !IT_DEFINED_NAMES type TT_EX_DEFINED_NAME
@@ -183,9 +183,8 @@ private section.
   methods DRAWING_SAVE_XML
     importing
       !IR_ME type ref to TS_DRAWING
-      !IO_XML_SHEET_RELS type ref to ZCL_XTT_XML_UPDATER
-    changing
-      !CV_SHEET_XML type STRING .
+      !IO_XML_XL_WORKSHEET type ref to ZCL_XTT_XML_UPDATER
+      !IO_XML_SHEET_RELS type ref to ZCL_XTT_XML_UPDATER .
 ENDCLASS.
 
 
@@ -226,9 +225,16 @@ METHOD area_get_address.
   ENDLOOP.
 
   " Add sheet name
-  IF is_area->a_sheet_name IS NOT INITIAL.
-    CONCATENATE `'` is_area->a_sheet_name `'!` rv_address INTO rv_address.
-  ENDIF.
+  CHECK is_area->a_sheet_name IS NOT INITIAL.
+
+  DATA lv_name TYPE string.
+  lv_name = is_area->a_sheet_name.
+
+  " Duplicate '
+  REPLACE ALL OCCURRENCES OF `'` IN lv_name WITH `''`.
+
+  " Surround with '
+  CONCATENATE `'` lv_name `'!` rv_address INTO rv_address.
 ENDMETHOD.                    "area_get_address
 
 
@@ -258,8 +264,12 @@ METHOD area_read_xml.
   IF l_ref IS INITIAL.
     l_ref = iv_value.
   ELSE.
-    " Delete '
     ls_area->a_sheet_name = l_name.
+
+    " Delete ''
+    REPLACE ALL OCCURRENCES OF `''` IN ls_area->a_sheet_name WITH `'`.
+
+    " Delete '
     IF ls_area->a_sheet_name(1) = `'`.
       l_len = strlen( ls_area->a_sheet_name ) - 2.
       ls_area->a_sheet_name = ls_area->a_sheet_name+1(l_len).
@@ -721,7 +731,7 @@ METHOD constructor.
       iv_str_tag = `Types`.                                  "#EC NOTEXT
 
   DATA lo_workbook TYPE REF TO if_ixml_document.
-  lo_workbook = _xml_xl_workbook->get_document( ).
+  lo_workbook = _xml_xl_workbook->obj_get_document( ).
 
   IF lo_workbook IS INITIAL.
     add_log_message( iv_text  = `The xlsx archive is broken` "#EC NOTEXT
@@ -729,14 +739,6 @@ METHOD constructor.
     CLEAR mo_zip.
     RETURN.
   ENDIF.
-
-***************************************
-  " Defined names for moving the second cell of areas
-  defined_name_read_xml(
-   EXPORTING
-    io_workbook      = lo_workbook
-   CHANGING
-    ct_defined_names = mt_defined_names ).
 
 ***************************************
   " Read sheets
@@ -826,31 +828,34 @@ METHOD defined_name_read_xml.
   DATA ls_defined_name TYPE ts_ex_defined_name.
   DATA lt_value        TYPE stringtab.
 
-  lo_node ?= io_workbook->find_from_name( 'definedName' ).
+  DATA lo_workbook TYPE REF TO if_ixml_document.
+  lo_workbook = _xml_xl_workbook->obj_get_document( ).
+  lo_node ?= lo_workbook->find_from_name( 'definedName' ).
 
   " Name & value
   WHILE lo_node IS BOUND.
     CLEAR ls_defined_name.
-    CLEAR lt_value.
 
     " Regardless CHECK l_value IS NOT INITIAL AND l_value(1) <> '#'.
-    "  APPEND INITIAL LINE TO ct_defined_names REFERENCE INTO ls_defined_name.
     ls_defined_name-d_name      = lo_node->get_attribute( 'name' ). "#EC NOTEXT
     ls_defined_name-d_local_sid = lo_node->get_attribute( 'localSheetId' ). "#EC NOTEXT
-    l_value  = lo_node->get_value( ).
+    l_value = lo_node->get_value( ).
 
     " Several areas
+    CLEAR lt_value.
     SPLIT l_value AT ',' INTO TABLE lt_value.
     LOOP AT lt_value INTO l_value.
-      area_read_xml(
-       EXPORTING
-        iv_value = l_value
-       CHANGING
-        ct_areas = ls_defined_name-d_areas ).
+      area_read_xml( EXPORTING iv_value = l_value
+                     CHANGING  ct_areas = ls_defined_name-d_areas ).
     ENDLOOP.
 
+    " Related to sheet ?
+    DELETE ls_defined_name-d_areas WHERE a_sheet_name <> io_sheet->_name.
+
     " Create new defined name
-    INSERT ls_defined_name INTO TABLE ct_defined_names.
+    IF ls_defined_name-d_areas IS NOT INITIAL.
+      INSERT ls_defined_name INTO TABLE rt_defined_names.
+    ENDIF.
 
     lo_node ?= lo_node->get_next( ).
   ENDWHILE.
@@ -1216,10 +1221,12 @@ METHOD drawing_save_xml.
 
   " Add ref
   IF io_xml_sheet_rels->str_status = zcl_xtt_xml_updater=>c_status-empty_template.
-    REPLACE FIRST OCCURRENCE OF `</worksheet>` IN cv_sheet_xml WITH `<drawing r:id="_rDrawId"/></worksheet>`.
+    io_xml_xl_worksheet->obj_replace_text( iv_from = `</worksheet>`
+                                           iv_to   = `<drawing r:id="_rDrawId"/></worksheet>` ).
   ELSE.
     " TODO before any ID in 'sheet1.xml.rels'
-    REPLACE FIRST OCCURRENCE OF `<tableParts ` IN cv_sheet_xml WITH `<drawing r:id="_rDrawId"/><tableParts `.
+    io_xml_xl_worksheet->obj_replace_text( iv_from = `<tableParts `
+                                           iv_to   = `<drawing r:id="_rDrawId"/><tableParts ` ).
   ENDIF.
 
   " Add relation
@@ -1588,13 +1595,15 @@ METHOD get_raw.
 
 ***************************************
   " Save every sheet
-  DATA lt_sheets TYPE stringtab.
-  lt_sheets  = _sheet_save( ).
+  DATA lt_sheets        TYPE stringtab.
+  DATA lt_defined_names TYPE tt_ex_defined_name.
+  _sheet_save( IMPORTING et_defined_names = lt_defined_names
+                         et_new_tags      = lt_sheets ).
 
 ***************************************
   " Save cell movements
   DATA lt_def_names TYPE stringtab.
-  lt_def_names = defined_name_save_xml( mt_defined_names ).
+  lt_def_names = defined_name_save_xml( lt_defined_names ).
 
 ***************************************
   _workbook_write_xml( it_tags_sheets    = lt_sheets
@@ -1743,8 +1752,6 @@ METHOD list_object_save_xml.
                   lv_path `"/>` INTO lv_content_type.
       io_sheet->mo_xlsx->_xml_content_types->str_add( lv_content_type ).
 
-**********************************************************************
-      " TODOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
       DATA lv_attr TYPE string.
       lv_attr = io_sheet->get_new_id( ls_list_object->_lo_id ).
       lo_table->set_attribute( name  = `id`           "#EC NOTEXT
@@ -2146,23 +2153,30 @@ ENDMETHOD.
 
 
 METHOD _sheet_save.
+  " Results
+  CLEAR et_defined_names.
+  CLEAR et_new_tags.
+
   " New numeration ?
   DATA lv_sheet_count TYPE i.
   lv_sheet_count = lines( mt_sheets ).
 
   DATA lo_sheet TYPE REF TO lcl_ex_sheet.
   LOOP AT mt_sheets INTO lo_sheet.
-    DATA lv_index TYPE sytabix.
+    DATA: lv_sid   TYPE i, lv_index TYPE sytabix.
+    lv_sid   = sy-tabix - 1.
     lv_index = sy-tabix + 555. " 100
 
     IF lv_sheet_count = _prev_sheet_count.
       CLEAR lv_index.
     ENDIF.
-    lo_sheet->save( lv_index ).
+    lo_sheet->save( EXPORTING iv_sid           = lv_sid
+                              iv_index         = lv_index
+                    CHANGING  ct_defined_names = et_defined_names ).
 
     DATA lv_tag TYPE string.
     lv_tag = lo_sheet->get_tag( ).
-    APPEND lv_tag TO rt_new_tags.
+    APPEND lv_tag TO et_new_tags.
   ENDLOOP.
 ENDMETHOD.
 
@@ -2173,8 +2187,8 @@ METHOD _workbook_write_xml.
   DATA lv_new_wb TYPE abap_bool.
   IF it_tags_def_names IS NOT INITIAL.
     lv_new_wb = abap_true.
-    _xml_xl_workbook->replace( iv_tag  = `definedNames`
-                               it_tags = it_tags_def_names ).
+    _xml_xl_workbook->obj_replace( iv_tag  = `definedNames`
+                                   it_tags = it_tags_def_names ).
   ENDIF.
 
   " Nested bloks
@@ -2183,8 +2197,8 @@ METHOD _workbook_write_xml.
 
   IF lv_sheet_count <> _prev_sheet_count.
     lv_new_wb = abap_true.
-    _xml_xl_workbook->replace( iv_tag  = `sheets`              "#EC NOTEXT
-                               it_tags = it_tags_sheets ).
+    _xml_xl_workbook->obj_replace( iv_tag  = `sheets`              "#EC NOTEXT
+                                   it_tags = it_tags_sheets ).
   ENDIF.
 
   " Yes write back
@@ -2211,10 +2225,10 @@ METHOD _workbook_write_xml.
       io_zip  = mo_zip
       iv_path = 'xl/_rels/workbook.xml.rels'. "#EC NOTEXT
   "№ 3 - delete previous sheets
-  lo_rel_updater->replace( iv_tag            = `Relationships` "#EC NOTEXT
-                           it_tags           = lt_rel_tag
-                           iv_part_attribute = `Target`        "#EC NOTEXT
-                           iv_part_value     = `worksheets/*`  "#EC NOTEXT
+  lo_rel_updater->obj_replace( iv_tag            = `Relationships` "#EC NOTEXT
+                               it_tags           = lt_rel_tag
+                               iv_part_attribute = `Target`        "#EC NOTEXT
+                               iv_part_value     = `worksheets/*`  "#EC NOTEXT
   ).
   "№ 4 - write back to zip
   lo_rel_updater->save( ).

@@ -46,8 +46,9 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     DATA ls_area         TYPE REF TO ts_ex_area.
     DATA ls_cell         TYPE REF TO ts_ex_cell.
 
-    LOOP AT mo_xlsx->mt_defined_names REFERENCE INTO ls_defined_name.
-      LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area WHERE a_sheet_name = _name.
+    _t_defined_names = mo_xlsx->defined_name_read_xml( me ).
+    LOOP AT _t_defined_names REFERENCE INTO ls_defined_name.
+      LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area.
         " Reference to reference
         LOOP AT ls_area->a_cells REFERENCE INTO ls_cell.
           " Get existing cell Or insert new one
@@ -169,6 +170,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     DATA lt_cell_ref TYPE tt_cell_ref.
     lt_cell_ref = cells_create_refs( ).
 ***************************************
+    " Replace existing text. Work with dom
     DATA ls_transmit TYPE ts_transmit.
     ls_transmit = _cells_write_xml( ).
 ***************************************
@@ -176,10 +178,11 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     mo_xlsx->data_validation_save_xml( io_sheet    = me
                                        it_cell_ref = lt_cell_ref ).
 ***************************************
-    " Replace existing text. Work with dom
     _replace_by_transmit( ls_transmit ).
 ***************************************
-    defined_name_save( lt_cell_ref ).
+    defined_name_save( EXPORTING iv_sid           = iv_sid
+                                 it_cell_ref      = lt_cell_ref
+                       CHANGING  ct_defined_names = ct_defined_names ).
 ***************************************
     " List object
     mo_xlsx->list_object_save_xml( io_sheet    = me
@@ -224,11 +227,11 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     lv_path = get_indexed( iv_mask     = mc_path-full_path
                            iv_original = abap_true ).
 
-    CREATE OBJECT mo_xml_updater
+    CREATE OBJECT _xml_xl_worksheet
       EXPORTING
         io_zip  = mo_xlsx->mo_zip
         iv_path = lv_path.
-    mo_document = mo_xml_updater->get_document( ).
+    mo_document = _xml_xl_worksheet->obj_get_document( ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD change_table_path.
@@ -320,13 +323,14 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
   METHOD _replace_by_transmit.
     DATA lo_mc TYPE REF TO if_ixml_element.
 
-    mo_xml_updater->replace( iv_tag  = 'sheetData'          "#EC NOTEXT
-                             it_tags = is_transmit-rows_cells ).
-    mo_xml_updater->replace( iv_tag  = 'cols'               "#EC NOTEXT
-                             it_tags = is_transmit-cols ).
-    lo_mc = mo_xml_updater->replace( iv_tag  = 'mergeCells' "#EC NOTEXT
-                                     it_tags = is_transmit-merge_cells ).
+    _xml_xl_worksheet->obj_replace( iv_tag  = 'sheetData'   "#EC NOTEXT
+                                    it_tags = is_transmit-rows_cells ).
+    _xml_xl_worksheet->obj_replace( iv_tag  = 'cols'        "#EC NOTEXT
+                                    it_tags = is_transmit-cols ).
 
+    lo_mc = _xml_xl_worksheet->obj_replace( iv_tag       = 'mergeCells' "#EC NOTEXT
+                                            iv_tag_after = 'sheetData' "#EC NOTEXT
+                                            it_tags      = is_transmit-merge_cells ).
     " Change count
     IF lo_mc IS NOT INITIAL AND is_transmit-merge_cells IS NOT INITIAL.
       DATA lv_merge_cnt TYPE i.
@@ -336,12 +340,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       lo_mc->set_attribute( name = 'count' value = lv_merge_cnt_txt ). "#EC NOTEXT
     ENDIF.
 
-    " Transform to string
-    DATA l_dom_str TYPE string.
-    l_dom_str = mo_xml_updater->get_raw_xml( ).
-
 ***************************************
-
     " In sheet Read relations
     DATA lv_path_rel       TYPE string.
     DATA lo_xml_sheet_rels TYPE REF TO zcl_xtt_xml_updater.
@@ -356,9 +355,9 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         iv_str_doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`.
 
     " Add ref to images
-    mo_xlsx->drawing_save_xml( EXPORTING ir_me             = mr_drawing
-                                         io_xml_sheet_rels = lo_xml_sheet_rels
-                               CHANGING  cv_sheet_xml      = l_dom_str ).
+    mo_xlsx->drawing_save_xml( ir_me               = mr_drawing
+                               io_xml_xl_worksheet = _xml_xl_worksheet
+                               io_xml_sheet_rels   = lo_xml_sheet_rels ).
     IF _is_new = abap_true OR lo_xml_sheet_rels->str_status = zcl_xtt_xml_updater=>c_status-changed.
       DATA lv_xml_sheet_rels TYPE string.
       lv_xml_sheet_rels = lo_xml_sheet_rels->str_get_document( ).
@@ -373,47 +372,48 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
        iv_sdoc    = lv_xml_sheet_rels ).
     ENDIF.
 ***************************************
-    " Replace XML file
+    " Replace anchors & Save XML file
     DATA lv_path TYPE string.
     lv_path = get_indexed( mc_path-full_path ).
-    zcl_eui_conv=>xml_to_zip( io_zip  = mo_xlsx->mo_zip
-                              iv_name = lv_path
-                              iv_sdoc = l_dom_str ).
-
-    " Load new XML ?
-    mo_document = mo_xml_updater->get_document( ).
+    _xml_xl_worksheet->save( lv_path ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD defined_name_save.
     DATA lt_defined_name TYPE tt_ex_defined_name.
-    DATA ls_defined_name TYPE REF TO ts_ex_defined_name.
-    DATA lv_delete_name  TYPE abap_bool.
-    DATA lv_tabix        TYPE sytabix.
+    DATA lr_defined_name TYPE REF TO ts_ex_defined_name.
+    DATA ls_defined_name TYPE ts_ex_defined_name.
+    DATA lv_skip_name    TYPE abap_bool.
     DATA ls_area         TYPE REF TO ts_ex_area.
 
-    LOOP AT mo_xlsx->mt_defined_names REFERENCE INTO ls_defined_name.
-      " Save postion
-      lv_tabix = sy-tabix.
-      CLEAR lv_delete_name.
+    LOOP AT _t_defined_names REFERENCE INTO lr_defined_name.
+      CLEAR lv_skip_name.
 
-      LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area WHERE a_sheet_name = _name.
+      " Make all names local
+      ls_defined_name = lr_defined_name->*.
+      IF _is_clone = abap_true AND iv_sid >= 0.
+        int_2_text iv_sid
+                   ls_defined_name-d_local_sid.
+      ENDIF.
+
+      LOOP AT lr_defined_name->d_areas REFERENCE INTO ls_area.
+        ls_area->a_sheet_name = me->_name.
         replace_with_new(
          EXPORTING
            ir_area         = ls_area
            it_cell_ref     = it_cell_ref
-           is_defined_name = ls_defined_name->*
+           is_defined_name = ls_defined_name " <--- Copy
          IMPORTING
-           ev_delete_name  = lv_delete_name
+           ev_skip_name    = lv_skip_name
          CHANGING
            ct_defined_name = lt_defined_name ).
       ENDLOOP.
 
       " Delete old range name
-      CHECK lv_delete_name = abap_true.
-      DELETE mo_xlsx->mt_defined_names INDEX lv_tabix.
+      CHECK lv_skip_name <> abap_true.
+      INSERT lr_defined_name->* INTO TABLE ct_defined_names.
     ENDLOOP.
     " Add new names
-    INSERT LINES OF lt_defined_name INTO TABLE mo_xlsx->mt_defined_names.
+    INSERT LINES OF lt_defined_name INTO TABLE ct_defined_names.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD replace_with_new.
@@ -429,7 +429,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 
     lv_cell_cnt = lines( ir_area->a_cells ).
     lv_area_cnt = lines( is_defined_name-d_areas ).
-    CLEAR ev_delete_name.
+    CLEAR ev_skip_name.
 
     LOOP AT ir_area->a_cells REFERENCE INTO lr_cell.
       lv_tabix = sy-tabix.
@@ -449,7 +449,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         LOOP AT lr_cell_ref->all INTO ls_ex_cell.
           " Define name
           CLEAR ls_defined_name.
-          ls_defined_name-d_name = ls_ex_cell->c_def_name.
+          ls_defined_name-d_name      = ls_ex_cell->c_def_name.
+          ls_defined_name-d_local_sid = is_defined_name-d_local_sid.
 
           " Add cell
           ls_area = ir_area->*.
@@ -461,7 +462,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
           INSERT ls_defined_name INTO TABLE ct_defined_name.
         ENDLOOP.
 
-        ev_delete_name = abap_true.
+        ev_skip_name = abap_true.
         RETURN.
       ENDIF.
 
@@ -501,6 +502,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         mo_xlsx->add_log_message( iv_syst = abap_true ).
         CONTINUE.
       ENDIF.
+      " if equal then merge cells
+      ms_cell->c_merge_me = <ls_scope>-merge_me.
 
       " @see match_found
       io_block->find_match( EXPORTING io_xtt     = mo_xlsx
@@ -605,9 +608,12 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 **********************************************************************
     CASE ir_field->typ.
       WHEN zcl_xtt_replace_block=>mc_type-tree.
+        " if equal then merge cells
+        CLEAR _t_merge_me.
         lo_tree_handler->init( EXPORTING io_owner = me
                                          ir_field = ir_field
                                CHANGING  ct_cells = ct_cells ).
+        merge_me( lv_by_column ).
 
       WHEN zcl_xtt_replace_block=>mc_type-table.
         merge_table_ext( EXPORTING ir_field      = ir_field
@@ -626,7 +632,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 
     " Recalc
     CHECK lv_by_column = abap_true.
-    save( 0 ). " _cells_write_xml( ).
+    save( iv_sid = -1 ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD merge_table_ext.
@@ -828,18 +834,81 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD clone.
+    " ro_copy->_state IS EMPTY -> visible.
     CREATE OBJECT ro_copy
       EXPORTING
         iv_index = me->_index_original
         io_xlsx  = me->mo_xlsx.
+    ro_copy->_is_clone = abap_true.
     ro_copy->defined_names_read( io_src = me ).
-
-    " ro_copy->_state IS EMPTY -> visible.
     ro_copy->_name = zcl_xtt_html=>format( iv_template  = me->_name
                                            is_root      = is_block
                                            iv_root_name = iv_block_name ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
+  METHOD merge_me.
+    DATA lr_prev_cell TYPE REF TO ts_ex_cell.
+    DATA lr_cell      TYPE REF TO ts_ex_cell.
+    DATA lv_merge_cnt TYPE i.
+
+    CHECK _t_merge_me[] IS NOT INITIAL.
+    CASE iv_by_column.
+      WHEN abap_false.
+        SORT  _t_merge_me STABLE BY table_line->c_col.
+      WHEN abap_true. " Revers c_col <---> c_row?
+        SORT  _t_merge_me STABLE BY table_line->c_row.
+    ENDCASE.
+
+    LOOP AT _t_merge_me INTO lr_cell.
+      IF lr_prev_cell IS INITIAL.
+        lr_prev_cell = lr_cell.
+        CONTINUE.
+      ENDIF.
+
+      DATA lv_clear TYPE abap_bool.
+      IF lr_cell->c_value = lr_prev_cell->c_value.
+        lv_clear = abap_false.
+        CASE iv_by_column.
+          WHEN abap_false.
+            IF lr_cell->c_col = lr_prev_cell->c_col.
+              lv_clear = abap_true.
+            ENDIF.
+          WHEN abap_true. " Revers c_col <---> c_row?
+            IF lr_cell->c_row = lr_prev_cell->c_row.
+              lv_clear = abap_true.
+            ENDIF.
+        ENDCASE.
+
+        IF lv_clear = abap_true.
+          CLEAR: "lr_cell->c_value, " Several times ?
+                 lr_cell->c_merge_row_dx,
+                 lr_cell->c_merge_col_dx.
+          ADD 1 TO lv_merge_cnt.
+          CONTINUE.
+        ENDIF.
+      ENDIF.
+
+      _do_merge_me( ir_cell      = lr_prev_cell
+                    iv_count     = lv_merge_cnt
+                    iv_by_column = iv_by_column ).
+      lr_prev_cell = lr_cell.
+      CLEAR lv_merge_cnt.
+    ENDLOOP.
+
+    _do_merge_me( ir_cell      = lr_prev_cell
+                  iv_count     = lv_merge_cnt
+                  iv_by_column = iv_by_column ).
+  ENDMETHOD.
+
+  METHOD _do_merge_me.
+    CHECK ir_cell IS NOT INITIAL. " AND iv_count > 0
+    CASE iv_by_column.
+      WHEN abap_false.
+        ir_cell->c_merge_row_dx = iv_count.
+      WHEN abap_true.
+        ir_cell->c_merge_col_dx = iv_count.
+    ENDCASE.
+  ENDMETHOD.
 ENDCLASS.                    "lcl_ex_sheet IMPLEMENTATION
 
 **********************************************************************
@@ -938,6 +1007,12 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
     update_cells_ref( EXPORTING it_dyn_def_name = lt_dyn_def_name
                       CHANGING  ct_cells_ref    = lt_cells_ref ).
+
+    " if equal then merge cells
+    DATA lr_cell TYPE REF TO ts_ex_cell.
+    LOOP AT lt_cells_ref INTO lr_cell WHERE table_line->c_merge_me = abap_true.
+      APPEND lr_cell TO mo_owner->_t_merge_me.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD add_tree_data_own.
@@ -1043,8 +1118,8 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
       " Find in parent of parent
       FIELD-SYMBOLS <ls_def_name> TYPE ts_ex_defined_name.
-      READ TABLE mo_owner->mo_xlsx->mt_defined_names ASSIGNING <ls_def_name>
-       WITH TABLE KEY d_name = lr_cell->c_def_name.
+      READ TABLE mo_owner->_t_defined_names ASSIGNING <ls_def_name> BINARY SEARCH " TODOOOOOOOOOOOOOOOOOOOOOOO!!!!!!!!!!!!!
+       WITH KEY d_name = lr_cell->c_def_name. " TABLE KEY
       CHECK sy-subrc = 0.
 
       " Add new group

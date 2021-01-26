@@ -98,7 +98,7 @@ METHOD catch_prepare_tree.
     lr_ref         TYPE REF TO  data.
   FIELD-SYMBOLS:
     <ls_func>      LIKE LINE OF mt_func,
-    <lt_sub_data>  TYPE ANY TABLE, " STANDARD ?
+    <lt_sub_item>  TYPE ANY TABLE, " STANDARD ?
     <lv_field>     TYPE any,
     <lv_sub_field> TYPE any.
 
@@ -106,7 +106,7 @@ METHOD catch_prepare_tree.
 
   " Cast to specefic data
   ASSIGN:
-   ir_sub_data->*    TO <lt_sub_data>.
+   ir_sub_data->*     TO <lt_sub_item>.
 
   DO 2 TIMES.
     " If no match was found & all formulas in 0 level then 2 times
@@ -141,11 +141,11 @@ METHOD catch_prepare_tree.
 
       CASE <ls_func>-name.
         WHEN 'COUNT'.
-          <lv_field> = lines( <lt_sub_data> ).
+          <lv_field> = lines( <lt_sub_item> ).
 
         WHEN 'FIRST'. " 'LAST'.
           DATA lr_sub_data TYPE REF TO data.
-          LOOP AT <lt_sub_data> REFERENCE INTO lr_sub_data.
+          LOOP AT <lt_sub_item> REFERENCE INTO lr_sub_data.
             lr_ref = _get_field_value( ir_row  = lr_sub_data
                                        is_func = <ls_func> ).
             CHECK lr_ref IS NOT INITIAL.
@@ -158,7 +158,7 @@ METHOD catch_prepare_tree.
         WHEN 'SUM' OR 'AVG'.
           " Calculate sum
           <lv_field> = 0.
-          LOOP AT <lt_sub_data> REFERENCE INTO lr_sub_data.
+          LOOP AT <lt_sub_item> REFERENCE INTO lr_sub_data.
             lr_ref = _get_field_value( ir_row  = lr_sub_data
                                        is_func = <ls_func> ).
             CHECK lr_ref IS NOT INITIAL.
@@ -168,7 +168,7 @@ METHOD catch_prepare_tree.
           ENDLOOP.
 
           IF <ls_func>-name = 'AVG'.
-            <lv_field> = <lv_field> / lines( <lt_sub_data> ).
+            <lv_field> = <lv_field> / lines( <lt_sub_item> ).
           ENDIF.
 
         WHEN OTHERS.

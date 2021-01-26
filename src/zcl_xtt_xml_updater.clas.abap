@@ -21,31 +21,35 @@ public section.
       !IV_PATH type CSEQUENCE
       !IV_STR_TAG type STRING optional
       !IV_STR_DOC type STRING optional .
-  methods REPLACE
+  methods OBJ_GET_DOCUMENT
+    returning
+      value(RO_DOC) type ref to IF_IXML_DOCUMENT .
+  methods OBJ_REPLACE
     importing
       !IV_TAG type STRING
-      !IT_TAGS type STRINGTAB optional
+      !IT_TAGS type STRINGTAB
+      !IV_TAG_AFTER type STRING optional
       !IV_PART_ATTRIBUTE type CSEQUENCE optional
       !IV_PART_VALUE type CSEQUENCE optional
     returning
       value(RR_TAG) type ref to IF_IXML_ELEMENT .
+  methods OBJ_REPLACE_TEXT
+    importing
+      !IV_FROM type STRING
+      !IV_TO type STRING .
+  methods SAVE
+    importing
+      !IV_PATH type STRING optional .
   methods STR_ADD
     importing
       !IV_TAG type STRING .
-  methods STR_GET_DOCUMENT
-    returning
-      value(RV_DOC) type STRING .
   methods STR_DELETE_PART
     importing
       !IV_BEG type I
       !IV_END type I .
-  methods SAVE .
-  methods GET_RAW_XML
+  methods STR_GET_DOCUMENT
     returning
-      value(RV_XML) type STRING .
-  methods GET_DOCUMENT
-    returning
-      value(RO_DOC) type ref to IF_IXML_DOCUMENT .
+      value(RV_DOC) type STRING .
 protected section.
 private section.
 
@@ -64,11 +68,20 @@ private section.
   data STR_TAG type STRING .
   data STR_DOC type STRING .
 
-  methods _GET_ANCHOR
+  methods _OBJ_GET_ANCHOR
     importing
       !IV_TAG type CSEQUENCE
     returning
       value(RV_ANCHOR) type STRING .
+  methods _OBJ_GET_DOCUMENT_STR
+    returning
+      value(RV_XML) type STRING .
+  methods _OBJ_ADD_AFTER
+    importing
+      !IV_TAG type STRING
+      !IV_TAG_AFTER type STRING
+    returning
+      value(RR_TAG) type ref to IF_IXML_ELEMENT .
 ENDCLASS.
 
 
@@ -90,7 +103,7 @@ METHOD constructor.
 ENDMETHOD.
 
 
-METHOD get_document.
+METHOD obj_get_document.
   ro_doc = _doc.
   CHECK ro_doc IS INITIAL.
 
@@ -102,42 +115,24 @@ METHOD get_document.
 ENDMETHOD.
 
 
-METHOD get_raw_xml.
+METHOD obj_replace.
   DATA lo_xml LIKE _doc.
-  lo_xml = get_document( ).
+  lo_xml = obj_get_document( ).
 
-  " Transform to string
-  zcl_eui_conv=>xml_to_str( EXPORTING io_doc = lo_xml
-                            IMPORTING ev_str = rv_xml ).
-
-  FIELD-SYMBOLS <ls_new_tag> LIKE LINE OF t_new_tag.
-  LOOP AT t_new_tag ASSIGNING <ls_new_tag>.
-    REPLACE FIRST OCCURRENCE OF <ls_new_tag>-_from IN rv_xml
-                           WITH <ls_new_tag>-_to.
-  ENDLOOP.
-
-  " Ready for new actions
-  CLEAR: t_new_tag,
-         _doc.
-ENDMETHOD.
-
-
-METHOD replace.
-  DATA lo_xml LIKE _doc.
-  lo_xml = get_document( ).
-
-  " parent node
+  " Serach in parent node
   rr_tag = lo_xml->find_from_name( iv_tag ).
+  IF rr_tag IS INITIAL AND it_tags[] IS NOT INITIAL.
+    rr_tag = _obj_add_after( iv_tag       = iv_tag
+                             iv_tag_after = iv_tag_after ).
+  ENDIF.
   CHECK rr_tag IS NOT INITIAL.
 
   " new replacement
   FIELD-SYMBOLS <ls_new_tag> LIKE LINE OF t_new_tag.
-
-  " From text
   APPEND INITIAL LINE TO t_new_tag ASSIGNING <ls_new_tag>.
-  <ls_new_tag>-_from = _get_anchor( iv_tag ).
 
-  " To text
+  " From - To
+  <ls_new_tag>-_from = _obj_get_anchor( iv_tag ).
   CONCATENATE LINES OF it_tags INTO <ls_new_tag>-_to.
 
   " Replace all children
@@ -179,12 +174,23 @@ METHOD replace.
 ENDMETHOD.
 
 
+METHOD obj_replace_text.
+  " new replacement
+  FIELD-SYMBOLS <ls_new_tag> LIKE LINE OF t_new_tag.
+  APPEND INITIAL LINE TO t_new_tag ASSIGNING <ls_new_tag>.
+
+  " From - To
+  <ls_new_tag>-_from = iv_from.
+  <ls_new_tag>-_to   = iv_to.
+ENDMETHOD.
+
+
 METHOD save.
   DATA lv_xml TYPE string.
 
   " Object mode with replace
   IF str_tag IS INITIAL.
-    lv_xml = get_raw_xml( ).
+    lv_xml = _obj_get_document_str( ).
   ELSE.
     " Text mode with append
     lv_xml = str_doc.
@@ -193,8 +199,14 @@ METHOD save.
   ENDIF.
 
   " Paste data to ZIP file
+  DATA lv_path TYPE string.
+  IF iv_path IS NOT INITIAL.
+    lv_path = iv_path.
+  ELSE.
+    lv_path = mv_path.
+  ENDIF.
   zcl_eui_conv=>xml_to_zip( io_zip    = mo_zip
-                            iv_name   = mv_path
+                            iv_name   = lv_path
                             iv_sdoc   = lv_xml ).
 
   " Init again
@@ -253,7 +265,54 @@ METHOD str_get_document.
 ENDMETHOD.
 
 
-METHOD _get_anchor.
+METHOD _obj_add_after.
+  " Where to insert ?
+  CHECK iv_tag_after IS NOT INITIAL.
+
+  DATA lo_xml LIKE _doc.
+  lo_xml = obj_get_document( ).
+
+  " Insert before
+  DATA lr_after TYPE REF TO if_ixml_element.
+  lr_after = lo_xml->find_from_name( iv_tag_after ).
+  CHECK lr_after IS NOT INITIAL.
+
+  " Insert after
+  lr_after ?= lr_after->get_next( ).
+  CHECK lr_after IS NOT INITIAL.
+
+  " Result tag
+  rr_tag = lo_xml->create_element( iv_tag ).
+
+  " Use XML root
+  DATA lo_root TYPE REF TO if_ixml_node.
+  lo_root = lo_xml->get_first_child( ).
+  lo_root->insert_child( new_child = rr_tag
+                         ref_child = lr_after ).
+ENDMETHOD.
+
+
+METHOD _obj_get_anchor.
   CONCATENATE `__@@` iv_tag `@@__` INTO rv_anchor.
+ENDMETHOD.
+
+
+METHOD _obj_get_document_str.
+  DATA lo_xml LIKE _doc.
+  lo_xml = obj_get_document( ).
+
+  " Transform to string
+  zcl_eui_conv=>xml_to_str( EXPORTING io_doc = lo_xml
+                            IMPORTING ev_str = rv_xml ).
+
+  FIELD-SYMBOLS <ls_new_tag> LIKE LINE OF t_new_tag.
+  LOOP AT t_new_tag ASSIGNING <ls_new_tag>.
+    REPLACE FIRST OCCURRENCE OF <ls_new_tag>-_from IN rv_xml
+                           WITH <ls_new_tag>-_to.
+  ENDLOOP.
+
+  " Ready for new actions
+  CLEAR: t_new_tag,
+         _doc.
 ENDMETHOD.
 ENDCLASS.

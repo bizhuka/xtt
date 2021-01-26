@@ -21,6 +21,7 @@ public section.
         sc_level TYPE i,
         field    TYPE string,
         t_pair   TYPE tt_pair,
+        merge_me TYPE abap_bool,
       END OF ts_scope .
   types:
     tt_scope TYPE STANDARD TABLE OF ts_scope WITH DEFAULT KEY .
@@ -233,6 +234,10 @@ METHOD _fill_t_pair.
         IF ls_pair-val = zcl_xtt_replace_block=>mc_type-block.
           lv_curr_coef = 0.
         ENDIF.
+      WHEN 'merge'.
+        " Faster
+        ir_scope->merge_me = ls_pair-val.
+        CHECK ir_scope->merge_me <> abap_true.
     ENDCASE.
 
     INSERT ls_pair INTO TABLE ir_scope->t_pair.
@@ -430,6 +435,20 @@ METHOD _inline_tree.
     zcx_eui_no_check=>raise_sys_error( ).
   ENDIF.
 
+**********************************************************************
+  " Make copy ?
+  DATA lr_dest TYPE REF TO DATA.
+  lr_dest = <ls_field>-dref.
+*  FIELD-SYMBOLS <lt_src>  TYPE ANY TABLE.
+*  FIELD-SYMBOLS <lt_dest> TYPE ANY TABLE.
+*
+*  ASSIGN <ls_field>-dref->* TO <lt_src>.
+*
+*  CREATE DATA lr_dest LIKE <lt_src>.
+*  ASSIGN lr_dest->* to <lt_dest>.
+*
+*  <lt_dest> = <lt_src>.
+**********************************************************************
   DATA lv_group1 TYPE string.
   DATA lv_group2 TYPE string.
   SPLIT ls_extra_tab_opt-group AT '-' INTO lv_group1 lv_group2.
@@ -437,7 +456,7 @@ METHOD _inline_tree.
   " Have both parts
   IF lv_group2 IS NOT INITIAL.
     <ls_field>-dref = mo_block->tree_create_relat(
-      it_table      = <ls_field>-dref
+      it_table      = lr_dest
       iv_node_key   = lv_group1
       iv_relat_key  = lv_group2 ).
     RETURN.
@@ -448,7 +467,7 @@ METHOD _inline_tree.
 
   " Fields separeted by ;
   <ls_field>-dref = mo_block->tree_create(
-   it_table      = <ls_field>-dref
+   it_table      = lr_dest
    iv_fields     = lv_group1 ).
 ENDMETHOD.
 

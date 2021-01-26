@@ -503,7 +503,7 @@ CLASS lcl_main IMPLEMENTATION.
       <lv_sum>  TYPE bf_rbetr. " P with sign
 
     CLEAR et_table.
-*    _init_random_numbers( ).
+    _init_random_numbers( ).
 
     DO p_r_cnt TIMES.
       " Fill without sums

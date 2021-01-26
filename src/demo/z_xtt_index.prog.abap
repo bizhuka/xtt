@@ -16,8 +16,8 @@ DATA:
  go_main TYPE REF TO lcl_main.                              "#EC NEEDED
 
 INITIALIZATION.
-*  SPLIT `X- - ` AT `-` INTO p_temp p_repo p_stru.
-  SPLIT ` -X- ` AT `-` INTO p_temp p_repo p_stru.
+  SPLIT `X- - ` AT `-` INTO p_temp p_repo p_stru.
+*  SPLIT ` -X- ` AT `-` INTO p_temp p_repo p_stru.
   CREATE OBJECT go_main.
 
 AT SELECTION-SCREEN OUTPUT.

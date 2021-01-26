@@ -731,7 +731,7 @@ ENDMETHOD.
     DATA:
       ls_tree      TYPE REF TO ts_tree,
       lr_table     TYPE REF TO data,
-      lr_table_ref TYPE tt_std_ref_data, " For data changing
+      lt_table_ref TYPE tt_std_ref_data, " For data changing
       lv_level     TYPE i.
     FIELD-SYMBOLS:
       <ls_tree_attr> TYPE ts_tree_attr,
@@ -767,7 +767,7 @@ ENDMETHOD.
         " 2 kinds
         APPEND:
          <ls_row>           TO <lt_std_table>, " Copy of data (convenient for handler to process)
-         <ls_sub_tree>-data TO lr_table_ref.   " Original refs to data (to change it in handler)
+         <ls_sub_tree>-data TO lt_table_ref.   " Original refs to data (to change it in handler)
       ENDLOOP.
     ENDIF.
 
@@ -777,7 +777,7 @@ ENDMETHOD.
        ir_tree         = ir_tree
        ir_data         = ir_tree->data
        ir_sub_data     = lr_table
-       it_sub_data_ref = lr_table_ref.
+       it_sub_data_ref = lt_table_ref.
   ENDMETHOD.
 
 

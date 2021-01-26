@@ -27,9 +27,9 @@ METHOD example_03.
     CONCATENATE `Bottom ` lv_num INTO ls_root->bottom.      "#EC NOTEXT
 
     " @see get_random_table description
-    get_random_table(
-     IMPORTING
-       et_table = ls_root->t ).
+    get_random_table( IMPORTING et_table = ls_root->t ).
+    " Next time generate largee table
+*    p_r_cnt = p_r_cnt + 1.
 
     CASE lv_rem.
       WHEN 1.

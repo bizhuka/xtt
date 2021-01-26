@@ -38,6 +38,8 @@ TYPES:
     " Merged data
     c_merge_row_dx   TYPE i,
     c_merge_col_dx   TYPE i,
+    " if equal then merge cells
+    c_merge_me       TYPE abap_bool,
 
     " Image, Shape, ...
     c_image          TYPE REF TO zcl_xtt_image,
@@ -93,7 +95,7 @@ TYPES:
     d_areas     TYPE tt_ex_area,
     d_count     TYPE i,
   END OF ts_ex_defined_name,
-  tt_ex_defined_name TYPE SORTED TABLE OF ts_ex_defined_name WITH UNIQUE KEY d_name,
+  tt_ex_defined_name TYPE SORTED TABLE OF ts_ex_defined_name WITH UNIQUE KEY d_name d_local_sid,
 
   " Table or list object in VBA terms
   BEGIN OF ts_ex_list_object,
@@ -180,34 +182,38 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
 
     DATA:
       " Nested blocks / Templates based on a sheet
-      _index          TYPE string,
-      _index_original TYPE string,
-      _is_new         TYPE abap_bool READ-ONLY,
+      _index            TYPE string,
+      _index_original   TYPE string,
+      _is_new           TYPE abap_bool READ-ONLY,
+      " As _is_new but for defined names only
+      _is_clone         TYPE abap_bool READ-ONLY,
 
-      _name           TYPE string,
-      _state          TYPE string,  " `` || `hidden` || `veryHidden`
+      _name             TYPE string,
+      _state            TYPE string,  " `` || `hidden` || `veryHidden`
 
-      mo_xlsx         TYPE REF TO zcl_xtt_excel_xlsx,
+      mo_xlsx           TYPE REF TO zcl_xtt_excel_xlsx,
       " Dom updater
-      mo_xml_updater  TYPE REF TO zcl_xtt_xml_updater,
-      mo_document     TYPE REF TO if_ixml_document, " As an object
+      _xml_xl_worksheet TYPE REF TO zcl_xtt_xml_updater,
+      mo_document       TYPE REF TO if_ixml_document, " As an object
 
-      mt_cells        TYPE tt_ex_cell,
-      mt_rows         TYPE tt_ex_row,
-      mt_columns      TYPE tt_ex_column,
-      mt_list_objects TYPE tt_ex_list_object,
-      mt_data_valid   TYPE tt_ex_area,
+      mt_cells          TYPE tt_ex_cell,
+      mt_rows           TYPE tt_ex_row,
+      mt_columns        TYPE tt_ex_column,
+      mt_list_objects   TYPE tt_ex_list_object,
+      mt_data_valid     TYPE tt_ex_area,
+      _t_defined_names  TYPE tt_ex_defined_name,
 
       " Current cell. For event handler
       " DELETE @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      ms_cell         TYPE REF TO ts_ex_cell,
-      mv_has_offset   TYPE abap_bool,
+      ms_cell           TYPE REF TO ts_ex_cell,
+      mv_has_offset     TYPE abap_bool,
+      _t_merge_me       TYPE tt_ex_cell_ref,
 
       " Images & shapes?
-      mr_drawing      TYPE REF TO ts_drawing,
+      mr_drawing        TYPE REF TO ts_drawing,
 
       " Shared formula
-      mt_shared_fm    TYPE tt_shared_fm.
+      mt_shared_fm      TYPE tt_shared_fm.
 
     METHODS:
       constructor
@@ -218,8 +224,8 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       write_cells_offset,
       defined_names_read
         IMPORTING
-          io_node TYPE REF TO if_ixml_element OPTIONAL
-          io_src  TYPE REF TO lcl_ex_sheet    OPTIONAL,
+          io_node     TYPE REF TO if_ixml_element OPTIONAL
+          io_src      TYPE REF TO lcl_ex_sheet    OPTIONAL,
 
       get_indexed
         IMPORTING
@@ -242,7 +248,7 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
           it_cell_ref     TYPE tt_cell_ref
           is_defined_name TYPE ts_ex_defined_name OPTIONAL
         EXPORTING
-          ev_delete_name  TYPE abap_bool
+          ev_skip_name    TYPE abap_bool
         CHANGING
           ct_defined_name TYPE tt_ex_defined_name OPTIONAL,
 
@@ -252,7 +258,10 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
 
       save
         IMPORTING
-          iv_index TYPE i,
+          iv_sid           TYPE i "zero based index
+          iv_index         TYPE i OPTIONAL
+        CHANGING
+          ct_defined_names TYPE tt_ex_defined_name OPTIONAL,
       cells_create_refs
         RETURNING VALUE(rt_cell_ref) TYPE tt_cell_ref,
       _cells_write_xml
@@ -262,7 +271,10 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
           is_transmit TYPE ts_transmit,
       defined_name_save
         IMPORTING
-          it_cell_ref TYPE tt_cell_ref,
+          iv_sid           TYPE i
+          it_cell_ref      TYPE tt_cell_ref
+        CHANGING
+          ct_defined_names TYPE tt_ex_defined_name,
 
       get_tag
         RETURNING VALUE(rv_tag) TYPE string,
@@ -346,7 +358,16 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       clone
         IMPORTING is_block       TYPE any
                   iv_block_name  TYPE csequence
-        RETURNING VALUE(ro_copy) TYPE REF TO lcl_ex_sheet.
+        RETURNING VALUE(ro_copy) TYPE REF TO lcl_ex_sheet,
+
+      merge_me
+        IMPORTING
+          iv_by_column TYPE abap_bool,
+      _do_merge_me
+        IMPORTING
+          iv_by_column TYPE abap_bool
+          ir_cell      TYPE REF TO ts_ex_cell
+          iv_count     TYPE i.
 ENDCLASS. "cl_ex_sheet DEFINITION
 
 CLASS lcl_tree_handler DEFINITION INHERITING FROM zcl_xtt_tree_function FINAL.

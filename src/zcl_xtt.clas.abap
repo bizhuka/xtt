@@ -463,7 +463,15 @@ METHOD show.
   DATA lo_eui_file  TYPE REF TO zcl_eui_file.
   DATA lo_error     TYPE REF TO zcx_eui_exception.
 
-  lv_content = get_raw( ).
+  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+  TRY.
+      " As a xstring (implemented in subclasses)
+      lv_content = get_raw( ).
+    CATCH zcx_eui_no_check INTO lo_no_check.
+      add_log_message( io_exception = lo_no_check ).
+  ENDTRY.
+  " If has los show them
+  _logger->show_as_button( ).
 
   " Get from file name
   IF mv_ole_ext IS NOT INITIAL.

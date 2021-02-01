@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xfa generator="AdobeLiveCycleDesigner_V11.0.9.20190305.2.935688_SAP" APIVersion="3.6.19049.0"?>
+<xdp:xdp xmlns:xdp="http://ns.adobe.com/xdp/" timeStamp="2019-12-22T11:30:52Z" uuid="44f91db2-144e-4791-9c2d-781d283658a2">
+<template xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xmlns="http://www.xfa.org/schema/xfa-template/3.3/">
+   <?formServer defaultPDFRenderFormat acrobat10.0dynamic?>
+   <subform name="form1" layout="tb" locale="ru_RU" restoreState="auto">
+      <pageSet>
+         <pageArea name="Page1" id="Page1">
+            <contentArea x="6.35mm" y="3.175mm" w="203.2mm" h="273.05mm"/>
+            <medium stock="letter" short="8.5in" long="11in"/>
+            <?templateDesigner expand 1?></pageArea>
+         <?templateDesigner expand 1?></pageSet>
+      <subform w="8in" layout="tb" name="R">
+         <subform w="203.202mm" minH="35.875mm" layout="tb" name="PAGE_BLOCK">
+            <draw w="203.2mm" h="15.875mm">
+               <font typeface="Arial"/>
+               <value>
+                  <exData contentType="text/html" xliff:rid="DE9B4C2B-3AD6-46CB-ACCE-783BA0D6A003">
+                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;text-indent:35.4pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;text-decoration:none;letter-spacing:0in"><span style="xfa-spacerun:yes"> </span></p><p style="margin-bottom:8pt;text-indent:35.4pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;text-decoration:none;letter-spacing:0in">Block {R-TITLE}</p><p style="margin-bottom:8pt;text-indent:35.4pt;line-height:12.95pt;font-family:Calibri;font-size:11pt;text-decoration:none;letter-spacing:0in"><span style="xfa-spacerun:yes"> </span></p></body>
+                  </exData>
+               </value>
+               <ui>
+                  <textEdit/>
+               </ui>
+               <margin leftInset="0.5mm" rightInset="0.5mm" topInset="0.5mm" bottomInset="0.5mm"/>
+               <para vAlign="bottom"/>
+            </draw>
+            <subform name="Table1" layout="table" columnWidths="40.6402mm 40.6402mm 40.6402mm 40.6402mm 40.6402mm">
+               <border>
+                  <edge/>
+               </border>
+               <subform layout="row" name="HeaderRow" id="HeaderRow_ID">
+                  <assist role="TH"/>
+                  <draw h="10mm" name="Cell1">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="83483D43-7C10-463E-B94B-4ADC352A4DB9">Caption</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="center"/>
+                  </draw>
+                  <draw h="10mm" name="Cell2">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="ADF01250-2066-40E1-BDD6-CD5CF0A62EA6">Group</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="center"/>
+                  </draw>
+                  <draw h="10mm" name="Cell3">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="E305E5C2-14E7-48B3-92C6-C4CB94B1C1C5">Date</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="center"/>
+                  </draw>
+                  <draw h="10mm" name="Cell4">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="8B31CA66-6574-45A9-975D-C26701AD9A2C">SUM1</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="center"/>
+                  </draw>
+                  <draw h="10mm" name="Cell5">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="09C16CC7-6950-4AEC-959B-32FDE11147E8">SUM2</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="center"/>
+                  </draw>
+                  <border>
+                     <edge presence="hidden"/>
+                  </border>
+                  <occur max="-1"/>
+                  <bind match="none"/>
+                  <?templateDesigner expand 1?></subform>
+               <subform layout="row" name="Row1">
+                  <assist role="TR"/>
+                  <draw h="10mm" name="Cell1">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="62FA1503-5B7C-4CC4-9FFE-28102AFB29CA">{R-T-CAPTION}</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="center"/>
+                  </draw>
+                  <draw h="10mm" name="Cell2">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="EF88A2A4-760E-427F-8DF4-BB49261C3ADB">{R-T-GROUP}</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="center"/>
+                  </draw>
+                  <draw h="10mm" name="Cell3">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="F2638213-9E81-48F7-A61A-7623A79FFEC3">{R-T-DATE}</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="center"/>
+                  </draw>
+                  <draw h="10mm" name="Cell4">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="C3D5510B-76A8-42F8-9865-361895C88D77">{R-T-SUM1;type=mask}</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="right"/>
+                  </draw>
+                  <draw h="10mm" name="Cell5">
+                     <border>
+                        <edge/>
+                        <corner thickness="0.1778mm"/>
+                     </border>
+                     <ui>
+                        <textEdit/>
+                     </ui>
+                     <value>
+                        <text xliff:rid="A52803C0-8BD7-4500-8458-DD48B672516F">{R-T-SUM2;type=mask}</text>
+                     </value>
+                     <font typeface="Arial"/>
+                     <margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>
+                     <para vAlign="middle" hAlign="right"/>
+                  </draw>
+                  <border>
+                     <edge presence="hidden"/>
+                  </border>
+                  <bind match="none"/>
+                  <?templateDesigner expand 1?></subform>
+               <bind match="none"/>
+               <?templateDesigner rowpattern first:1, next:1, firstcolor:f0f0f0, nextcolor:ffffff, apply:0?>
+               <overflow leader="HeaderRow"/>
+               <?templateDesigner expand 0?></subform>
+            <?templateDesigner expand 1?>
+            <breakAfter targetType="pageArea"/>
+         </subform>
+         <?templateDesigner expand 1?></subform>
+      <proto/>
+      <desc>
+         <text name="version">11.0.1.20160812.1.925753.903801</text>
+      </desc>
+      <?templateDesigner expand 1?>
+      <?renderCache.subset "Arial" 0 0 UTF-16 2 136 001000140015001E00200024002600270028002A002C0030003100320033003500360037003800440048004C004E00500051005200530055005600570058005C005E0060?>
+      <?renderCache.subset "Calibri" 0 0 UTF-16 2 56 00030011001C002F003E005A00640110016C016F017D037203820383?></subform>
+   <?templateDesigner DefaultPreviewDynamic 1?>
+   <?templateDesigner DefaultRunAt client?>
+   <?templateDesigner Grid show:1, snap:1, units:0, color:ff8080, origin:(0,0), interval:(125000,125000)?>
+   <?templateDesigner WidowOrphanControl 0?>
+   <?templateDesigner DefaultCaptionFontSettings face:Arial;size:10;weight:normal;style:normal?>
+   <?templateDesigner DefaultValueFontSettings face:Arial;size:10;weight:normal;style:normal?>
+   <?templateDesigner DefaultLanguage JavaScript?>
+   <?acrobat JavaScript strictScoping?>
+   <?templateDesigner SaveTaggedPDF 0?>
+   <?templateDesigner SavePDFWithEmbeddedFonts 0?>
+   <?templateDesigner SavePDFWithLog 0?>
+   <?templateDesigner FormTargetVersion 33?>
+   <?templateDesigner Zoom 138?>
+   <?templateDesigner Rulers horizontal:1, vertical:1, guidelines:1, crosshairs:0?></template>
+<config xmlns="http://www.xfa.org/schema/xci/3.0/">
+   <agent name="designer">
+      <!--  [0..n]  -->
+      <destination>pdf</destination>
+      <pdf>
+         <!--  [0..n]  -->
+         <fontInfo/>
+      </pdf>
+   </agent>
+   <present>
+      <!--  [0..n]  -->
+      <pdf>
+         <!--  [0..n]  -->
+         <version>1.7</version>
+         <adobeExtensionLevel>8</adobeExtensionLevel>
+      </pdf>
+      <xdp>
+         <packets>*</packets>
+      </xdp>
+   </present>
+   <psMap>
+      <font typeface="Calibri" psName="Calibri" weight="normal" posture="normal"/>
+   </psMap>
+</config>
+<localeSet xmlns="http://www.xfa.org/schema/xfa-locale-set/2.7/">
+   <locale name="ru_RU" desc="Russian (Russia)">
+      <calendarSymbols name="gregorian">
+         <monthNames>
+            <month>января</month>
+            <month>февраля</month>
+            <month>марта</month>
+            <month>апреля</month>
+            <month>мая</month>
+            <month>июня</month>
+            <month>июля</month>
+            <month>августа</month>
+            <month>сентября</month>
+            <month>октября</month>
+            <month>ноября</month>
+            <month>декабря</month>
+         </monthNames>
+         <monthNames abbr="1">
+            <month>янв.</month>
+            <month>февр.</month>
+            <month>марта</month>
+            <month>апр.</month>
+            <month>мая</month>
+            <month>июня</month>
+            <month>июля</month>
+            <month>авг.</month>
+            <month>сент.</month>
+            <month>окт.</month>
+            <month>нояб.</month>
+            <month>дек.</month>
+         </monthNames>
+         <dayNames>
+            <day>воскресенье</day>
+            <day>понедельник</day>
+            <day>вторник</day>
+            <day>среда</day>
+            <day>четверг</day>
+            <day>пятница</day>
+            <day>суббота</day>
+         </dayNames>
+         <dayNames abbr="1">
+            <day>Вс</day>
+            <day>Пн</day>
+            <day>Вт</day>
+            <day>Ср</day>
+            <day>Чт</day>
+            <day>Пт</day>
+            <day>Сб</day>
+         </dayNames>
+         <meridiemNames>
+            <meridiem>AM</meridiem>
+            <meridiem>PM</meridiem>
+         </meridiemNames>
+         <eraNames>
+            <era>до н.э.</era>
+            <era>н.э.</era>
+         </eraNames>
+      </calendarSymbols>
+      <datePatterns>
+         <datePattern name="full">D MMMM YYYY 'г.'</datePattern>
+         <datePattern name="long">D MMMM YYYY 'г.'</datePattern>
+         <datePattern name="med">DD.MM.YYYY</datePattern>
+         <datePattern name="short">DD.MM.YY</datePattern>
+      </datePatterns>
+      <timePatterns>
+         <timePattern name="full">H:MM:SS Z</timePattern>
+         <timePattern name="long">H:MM:SS Z</timePattern>
+         <timePattern name="med">H:MM:SS</timePattern>
+         <timePattern name="short">H:MM</timePattern>
+      </timePatterns>
+      <dateTimeSymbols>GanjkHmsSEDFwWxhKzZ</dateTimeSymbols>
+      <numberPatterns>
+         <numberPattern name="numeric">z,zz9.zzz</numberPattern>
+         <numberPattern name="currency">z,zz9.zz$</numberPattern>
+         <numberPattern name="percent">z,zz9%</numberPattern>
+      </numberPatterns>
+      <numberSymbols>
+         <numberSymbol name="decimal">,</numberSymbol>
+         <numberSymbol name="grouping"> </numberSymbol>
+         <numberSymbol name="percent">%</numberSymbol>
+         <numberSymbol name="minus">-</numberSymbol>
+         <numberSymbol name="zero">0</numberSymbol>
+      </numberSymbols>
+      <currencySymbols>
+         <currencySymbol name="symbol">р.</currencySymbol>
+         <currencySymbol name="isoname">RUR</currencySymbol>
+         <currencySymbol name="decimal">,</currencySymbol>
+      </currencySymbols>
+      <typefaces>
+         <typeface name="Myriad Pro"/>
+         <typeface name="Minion Pro"/>
+         <typeface name="Courier Std"/>
+         <typeface name="Adobe Pi Std"/>
+         <typeface name="Adobe Hebrew"/>
+         <typeface name="Adobe Arabic"/>
+         <typeface name="Adobe Thai"/>
+         <typeface name="Kozuka Gothic Pro-VI M"/>
+         <typeface name="Kozuka Mincho Pro-VI R"/>
+         <typeface name="Adobe Ming Std L"/>
+         <typeface name="Adobe Song Std L"/>
+         <typeface name="Adobe Myungjo Std M"/>
+         <typeface name="Adobe Devanagari"/>
+      </typefaces>
+   </locale>
+</localeSet>
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.4-c005 78.150055, 2013/08/07-22:58:47        ">
+   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+      <rdf:Description xmlns:xmp="http://ns.adobe.com/xap/1.0/" xmlns:pdf="http://ns.adobe.com/pdf/1.3/" xmlns:xmpMM="http://ns.adobe.com/xap/1.0/mm/" xmlns:desc="http://ns.adobe.com/xfa/promoted-desc/" rdf:about="">
+         <xmp:MetadataDate>2019-12-22T11:30:52Z</xmp:MetadataDate>
+         <xmp:CreatorTool>Adobe LiveCycle Designer 11.0</xmp:CreatorTool>
+         <pdf:Producer>Adobe LiveCycle Designer 11.0</pdf:Producer>
+         <xmpMM:DocumentID>uuid:44f91db2-144e-4791-9c2d-781d283658a2</xmpMM:DocumentID>
+         <desc:version rdf:parseType="Resource">
+            <rdf:value>11.0.1.20160812.1.925753.903801</rdf:value>
+            <desc:ref>/template/subform[1]</desc:ref>
+         </desc:version>
+      </rdf:Description>
+   </rdf:RDF>
+</x:xmpmeta></xdp:xdp>

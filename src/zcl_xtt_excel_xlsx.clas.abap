@@ -526,11 +526,11 @@ METHOD cell_write_xml.
 
   " Update formula. Only for backward compatibility?
   DEFINE replace_all_with_buck.
-    CONCATENATE:
-     `$` &1 INTO lv_from,
-     `$` &2 INTO lv_to.
+    concatenate:
+     `$` &1 into lv_from,
+     `$` &2 into lv_to.
 
-    REPLACE ALL OCCURRENCES OF lv_from IN is_cell->c_formula WITH lv_to.
+    replace all occurrences of lv_from in is_cell->c_formula with lv_to.
   END-OF-DEFINITION.
 
   " To text
@@ -559,7 +559,8 @@ METHOD cell_write_xml.
 
     " Formula in ListObjects
     IF io_sheet->_is_new = abap_true.
-      LOOP AT io_sheet->mt_list_objects ASSIGNING FIELD-SYMBOL(<ls_list_object>).
+      FIELD-SYMBOLS <ls_list_object> LIKE LINE OF io_sheet->mt_list_objects.
+      LOOP AT io_sheet->mt_list_objects ASSIGNING <ls_list_object>.
         CHECK is_cell->c_formula CS <ls_list_object>-name_fm_mask. "  -> _lo_name && '['
 
         DATA lv_tab_name TYPE string.

@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_W3MI" serializer_version="v2.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <NAME>ZXXT_DEMO_020-DOCX</NAME>
+   <TEXT>Basic table example</TEXT>
+   <PARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_DEMO_020-DOCX</OBJID>
+     <NAME>filename</NAME>
+     <VALUE>ZXXT_DEMO_020.DOCX</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_DEMO_020-DOCX</OBJID>
+     <NAME>mimetype</NAME>
+     <VALUE>Word</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_DEMO_020-DOCX</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.DOCX</VALUE>
+    </WWWPARAMS>
+   </PARAMS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

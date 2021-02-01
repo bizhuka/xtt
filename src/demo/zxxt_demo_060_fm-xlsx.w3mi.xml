@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_W3MI" serializer_version="v2.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <NAME>ZXXT_DEMO_060_FM-XLSX</NAME>
+   <TEXT>Tree group by field relations - SUM by excel formula</TEXT>
+   <PARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_DEMO_060_FM-XLSX</OBJID>
+     <NAME>filename</NAME>
+     <VALUE>ZXXT_DEMO_060_FM.XLSX</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_DEMO_060_FM-XLSX</OBJID>
+     <NAME>mimetype</NAME>
+     <VALUE>Excel</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
+     <RELID>MI</RELID>
+     <OBJID>ZXXT_DEMO_060_FM-XLSX</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.XLSX</VALUE>
+    </WWWPARAMS>
+   </PARAMS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

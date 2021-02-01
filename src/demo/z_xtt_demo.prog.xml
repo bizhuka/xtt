@@ -1,0 +1,645 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <PROGDIR>
+    <NAME>Z_XTT_DEMO</NAME>
+    <SUBC>1</SUBC>
+    <RLOAD>E</RLOAD>
+    <FIXPT>X</FIXPT>
+    <UCCHECK>X</UCCHECK>
+   </PROGDIR>
+   <TPOOL>
+    <item>
+     <ID>I</ID>
+     <KEY>010</KEY>
+     <ENTRY>Simple structure</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>020</KEY>
+     <ENTRY>Basic table example</ENTRY>
+     <LENGTH>29</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>021</KEY>
+     <ENTRY>Different formulas</ENTRY>
+     <LENGTH>28</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>030</KEY>
+     <ENTRY>Nested blocks</ENTRY>
+     <LENGTH>23</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>040</KEY>
+     <ENTRY>Data types</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>050</KEY>
+     <ENTRY>Tree group by fields</ENTRY>
+     <LENGTH>40</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>051</KEY>
+     <ENTRY>Output level by condition</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>052</KEY>
+     <ENTRY>Aggregation functions</ENTRY>
+     <LENGTH>42</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>060</KEY>
+     <ENTRY>Tree (group by field relations)</ENTRY>
+     <LENGTH>62</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>070</KEY>
+     <ENTRY>Macro call &amp; on_prepare_raw</ENTRY>
+     <LENGTH>54</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>080</KEY>
+     <ENTRY>direction=column</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>090</KEY>
+     <ENTRY>Dynamic table (tree)</ENTRY>
+     <LENGTH>40</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>100</KEY>
+     <ENTRY>Images</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>110</KEY>
+     <ENTRY>Image template declration</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>120</KEY>
+     <ENTRY>Class attributes</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>130</KEY>
+     <ENTRY>COND #( ) operator</ENTRY>
+     <LENGTH>28</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>140</KEY>
+     <ENTRY>;type=block</ENTRY>
+     <LENGTH>21</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>CDR</KEY>
+     <ENTRY>Cannot detect IS_ROOT type</ENTRY>
+     <LENGTH>52</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>DCN</KEY>
+     <ENTRY>Documentation №</ENTRY>
+     <LENGTH>25</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>DWN</KEY>
+     <ENTRY>Download</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>EML</KEY>
+     <ENTRY>Send</ENTRY>
+     <LENGTH>14</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>EXA</KEY>
+     <ENTRY>Example</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>F4F</KEY>
+     <ENTRY>Select fullpath</ENTRY>
+     <LENGTH>25</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>F4P</KEY>
+     <ENTRY>Select root directory</ENTRY>
+     <LENGTH>42</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>LCN</KEY>
+     <ENTRY>Lines count =</ENTRY>
+     <LENGTH>23</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>NDA</KEY>
+     <ENTRY>No data at all</ENTRY>
+     <LENGTH>24</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>SHW</KEY>
+     <ENTRY>Show</ENTRY>
+     <LENGTH>14</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>SND</KEY>
+     <ENTRY>Send options</ENTRY>
+     <LENGTH>22</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>TBR</KEY>
+     <ENTRY>Activate &quot;ZXTT_BREAK_POINT&quot; in tr. SAAB</ENTRY>
+     <LENGTH>78</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>TEM</KEY>
+     <ENTRY>Template</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>TIC</KEY>
+     <ENTRY>Test icons</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>TIT</KEY>
+     <ENTRY>Title</ENTRY>
+     <LENGTH>15</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>TOO</KEY>
+     <ENTRY>Table of objects</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>TRE</KEY>
+     <ENTRY>Tree - REF TO DATA (Old way)</ENTRY>
+     <LENGTH>56</LENGTH>
+    </item>
+    <item>
+     <ID>R</ID>
+     <ENTRY>XTT demo reports</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>IMG_SIZE</KEY>
+     <ENTRY>Set image size</ENTRY>
+     <LENGTH>22</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_B_CNT</KEY>
+     <ENTRY>Block count (Table of tables)</ENTRY>
+     <LENGTH>37</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_C_CNT</KEY>
+     <ENTRY>Column count</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_DTEMPL</KEY>
+     <ENTRY>Template</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_EMAIL</KEY>
+     <ENTRY>E-Mail Address</ENTRY>
+     <LENGTH>22</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_EXA</KEY>
+     <ENTRY>Demo example</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_OPEN</KEY>
+     <ENTRY>Open (default &apos;X&apos;)</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_PATH</KEY>
+     <ENTRY>Fullpath (default &apos;&apos;)</ENTRY>
+     <LENGTH>29</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_R_CNT</KEY>
+     <ENTRY>Row count</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_R_MANY</KEY>
+     <ENTRY>Multi roots</ENTRY>
+     <LENGTH>19</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_R_PATH</KEY>
+     <ENTRY>Hierarchy root (Small folder)</ENTRY>
+     <LENGTH>37</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_STEMPL</KEY>
+     <ENTRY>Template</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_STOP</KEY>
+     <ENTRY>BREAK-POINT before MERGE( )</ENTRY>
+     <LENGTH>35</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_TEXT</KEY>
+     <ENTRY>Text</ENTRY>
+     <LENGTH>12</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_TITLE</KEY>
+     <ENTRY>Document title</ENTRY>
+     <LENGTH>22</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_USER</KEY>
+     <ENTRY>User Name</ENTRY>
+     <LENGTH>17</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_ZIP</KEY>
+     <ENTRY>Compress to zip (for XML)</ENTRY>
+     <LENGTH>33</LENGTH>
+    </item>
+   </TPOOL>
+   <I18N_TPOOL>
+    <item>
+     <LANGUAGE>R</LANGUAGE>
+     <TEXTPOOL>
+      <item>
+       <ID>I</ID>
+       <KEY>010</KEY>
+       <ENTRY>Вывод простой структуры</ENTRY>
+       <LENGTH>26</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>020</KEY>
+       <ENTRY>Вывод простой таблицы</ENTRY>
+       <LENGTH>29</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>021</KEY>
+       <ENTRY>Формулы в Excel</ENTRY>
+       <LENGTH>28</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>030</KEY>
+       <ENTRY>Вложенные блоки</ENTRY>
+       <LENGTH>23</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>040</KEY>
+       <ENTRY>Типы данных</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>050</KEY>
+       <ENTRY>Деревья (группировка по полям)</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>051</KEY>
+       <ENTRY>Вывод уровня по условию</ENTRY>
+       <LENGTH>50</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>052</KEY>
+       <ENTRY>Функции агрегации</ENTRY>
+       <LENGTH>42</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>060</KEY>
+       <ENTRY>Деревья (на основе связи родитель дочерний)</ENTRY>
+       <LENGTH>62</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>070</KEY>
+       <ENTRY>Вызов макроса и событие prepare_raw</ENTRY>
+       <LENGTH>54</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>080</KEY>
+       <ENTRY>direction=column</ENTRY>
+       <LENGTH>26</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>090</KEY>
+       <ENTRY>Динамическая таблица (дерево)</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>100</KEY>
+       <ENTRY>Изображения</ENTRY>
+       <LENGTH>16</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>110</KEY>
+       <ENTRY>Изображения &apos;;type=image&apos;</ENTRY>
+       <LENGTH>50</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>120</KEY>
+       <ENTRY>Атрибуты класса</ENTRY>
+       <LENGTH>26</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>130</KEY>
+       <ENTRY>Дополнение &apos;;cond=&apos;</ENTRY>
+       <LENGTH>28</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>140</KEY>
+       <ENTRY>Блоки по условию</ENTRY>
+       <LENGTH>21</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>CDR</KEY>
+       <ENTRY>Не удается определить тип IS_ROOT</ENTRY>
+       <LENGTH>52</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>DCN</KEY>
+       <ENTRY>Документация №</ENTRY>
+       <LENGTH>25</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>DWN</KEY>
+       <ENTRY>Скачать</ENTRY>
+       <LENGTH>18</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>EML</KEY>
+       <ENTRY>Отправить</ENTRY>
+       <LENGTH>14</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>EXA</KEY>
+       <ENTRY>Пример</ENTRY>
+       <LENGTH>17</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>F4F</KEY>
+       <ENTRY>Выбрать полный путь</ENTRY>
+       <LENGTH>25</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>F4P</KEY>
+       <ENTRY>Выберите корневой каталог</ENTRY>
+       <LENGTH>42</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>LCN</KEY>
+       <ENTRY>Количество строк =</ENTRY>
+       <LENGTH>23</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>NDA</KEY>
+       <ENTRY>Нет данных</ENTRY>
+       <LENGTH>24</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>SHW</KEY>
+       <ENTRY>Показать</ENTRY>
+       <LENGTH>14</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>SND</KEY>
+       <ENTRY>Параметры отправки</ENTRY>
+       <LENGTH>22</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>TBR</KEY>
+       <ENTRY>Активируйте &quot;ZXTT_BREAK_POINT&quot; в тр. SAAB</ENTRY>
+       <LENGTH>78</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>TEM</KEY>
+       <ENTRY>Шаблон</ENTRY>
+       <LENGTH>18</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>TIC</KEY>
+       <ENTRY>Проверка иконок</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>TIT</KEY>
+       <ENTRY>Заголовок</ENTRY>
+       <LENGTH>15</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>TOO</KEY>
+       <ENTRY>Таблица объектов</ENTRY>
+       <LENGTH>26</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>TRE</KEY>
+       <ENTRY>Дерево - REF TO DATA (Старый способ)</ENTRY>
+       <LENGTH>56</LENGTH>
+      </item>
+      <item>
+       <ID>R</ID>
+       <ENTRY>Демонстрационные отчеты XTT</ENTRY>
+       <LENGTH>70</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>IMG_SIZE</KEY>
+       <ENTRY>Установить размер картинки</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_B_CNT</KEY>
+       <ENTRY>Количество блоков (Таб-аТаб-ц)</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_C_CNT</KEY>
+       <ENTRY>Количество столбцов</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_DTEMPL</KEY>
+       <ENTRY>Шаблон</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_EMAIL</KEY>
+       <ENTRY>Адрес электронной почты</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_EXA</KEY>
+       <ENTRY>Демо-пример</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_OPEN</KEY>
+       <ENTRY>Открыть (пу &apos;X&apos;)</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_PATH</KEY>
+       <ENTRY>Полный путь (пу &apos;&apos;)</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_R_CNT</KEY>
+       <ENTRY>Количество строк</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_R_MANY</KEY>
+       <ENTRY>Несколько корневых элементов</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_R_PATH</KEY>
+       <ENTRY>Корень иерархии (Малая папка)</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_STEMPL</KEY>
+       <ENTRY>Шаблон</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_STOP</KEY>
+       <ENTRY>BREAK-POINT до MERGE( )</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_TEXT</KEY>
+       <ENTRY>Текст</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_TITLE</KEY>
+       <ENTRY>Название документа</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_USER</KEY>
+       <ENTRY>Имя пользователя</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_ZIP</KEY>
+       <ENTRY>Сжать в zip (для XML)</ENTRY>
+       <LENGTH>38</LENGTH>
+      </item>
+     </TEXTPOOL>
+    </item>
+   </I18N_TPOOL>
+  </asx:values>
+ </asx:abap>
+</abapGit>

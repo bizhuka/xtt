@@ -331,6 +331,16 @@ CLASS lcl_demo_021 DEFINITION FINAL INHERITING FROM lcl_demo_020.
 ENDCLASS.
 
 **********************************************************************
+CLASS lcl_demo_022 DEFINITION FINAL INHERITING FROM lcl_demo_020.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
+ENDCLASS.
+
+**********************************************************************
 CLASS lcl_demo_030 DEFINITION FINAL INHERITING FROM lcl_demo.
   PUBLIC SECTION.
     METHODS:

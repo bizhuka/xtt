@@ -18,6 +18,7 @@ INCLUDE z_xtt_demo_n010.
 
 INCLUDE z_xtt_demo_n020.
 INCLUDE z_xtt_demo_n021.
+INCLUDE z_xtt_demo_n022.
 
 INCLUDE z_xtt_demo_n030.
 INCLUDE z_xtt_demo_n040.

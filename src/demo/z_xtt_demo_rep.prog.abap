@@ -4,10 +4,10 @@
 CLASS lcl_report IMPLEMENTATION.
   METHOD class_constructor.
     DATA lt_include TYPE STANDARD TABLE OF trdirt.
-    SELECT name text INTO CORRESPONDING FIELDS OF TABLE lt_include ##too_many_itab_fields
+    SELECT name text INTO CORRESPONDING FIELDS OF TABLE lt_include ##too_many_itab_fields "#EC "#EC CI_GENBUFF or "#EC "#EC CI_SGLSELECT
     FROM trdirt
-    WHERE sprsl = 'E'
-      AND name LIKE 'Z_XTT_DEMO_N%'.
+    WHERE name LIKE 'Z_XTT_DEMO_N%'
+      AND sprsl = 'E'.
 
     DATA lr_include TYPE REF TO trdirt.
     LOOP AT lt_include REFERENCE INTO lr_include.

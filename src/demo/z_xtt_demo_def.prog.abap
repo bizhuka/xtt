@@ -208,7 +208,8 @@ CLASS lcl_demo IMPLEMENTATION.
     SELECT DISTINCT objid text INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata ##too_many_itab_fields
     FROM wwwdata
     FOR ALL ENTRIES IN lt_template
-    WHERE objid = lt_template-objid.
+    WHERE relid = 'MI'
+      AND objid = lt_template-objid.
 
     " Set text
     LOOP AT rt_listbox REFERENCE INTO lr_listbox.

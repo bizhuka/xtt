@@ -68,6 +68,8 @@ CLASS lcl_test IMPLEMENTATION.
         id     = 'P_EXA'
       IMPORTING
         values = lt_list.
+
+    " DELETE lt_list WHERE key ''.
     CHECK lt_list IS NOT INITIAL.
 
     " Result in JSON
@@ -104,10 +106,10 @@ CLASS lcl_test IMPLEMENTATION.
                            iv_template  = lr_template->objid ).
 
         " Download template
-        DATA lo_smw0_file TYPE REF TO zif_xtt_file.
+        DATA lo_xtt_file TYPE REF TO zif_xtt_file.
         lo_demo->get_from_template( EXPORTING iv_template = lr_template->objid
-                                    IMPORTING eo_file     = lo_smw0_file ).
-        lo_demo->download_template( io_file      = lo_smw0_file
+                                    IMPORTING eo_file     = lo_xtt_file ).
+        lo_demo->download_template( io_file      = lo_xtt_file
                                     iv_file_name = lr_file->template ).
       ENDLOOP.
     ENDLOOP.
@@ -132,8 +134,8 @@ CLASS lcl_test IMPLEMENTATION.
   METHOD _fill_file_info.
     APPEND INITIAL LINE TO ms_cur_demo->files REFERENCE INTO rr_file.
 
-    lcl_demo=>get_from_template( EXPORTING iv_template = iv_objid
-                                 IMPORTING ev_type     = rr_file->kind ).
+    cut->o_demo->get_from_template( EXPORTING iv_template = iv_objid
+                                    IMPORTING ev_type     = rr_file->kind ).
 
     " 2 unique names
     rr_file->template = rr_file->report  = iv_objid.

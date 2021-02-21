@@ -286,7 +286,9 @@ METHOD find_match.
 
     " Markers for block's range (tables only). Can specify block's end(start) explicitly
     DO 1 TIMES.
-      CHECK ms_ext-rb_level >= is_scope-sc_level AND ms_ext-typ <> mc_type-tree. " is_scope-field = ms_ext-name.
+      CHECK ms_ext-rb_level >= is_scope-sc_level
+        AND ms_ext-typ <> mc_type-table
+        AND ms_ext-typ <> mc_type-tree. " is_scope-field = ms_ext-name.
 
       CONCATENATE cv_content(is_scope-beg) cv_content+lv_off INTO cv_content RESPECTING BLANKS.
     ENDDO.

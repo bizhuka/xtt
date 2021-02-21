@@ -329,7 +329,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
                                     it_tags = is_transmit-cols ).
 
     lo_mc = _xml_xl_worksheet->obj_replace( iv_tag       = 'mergeCells' "#EC NOTEXT
-                                            iv_tag_after = 'sheetData' "#EC NOTEXT
+                                            iv_tag_relat = '+sheetData' "#EC NOTEXT  After `sheetData`
                                             it_tags      = is_transmit-merge_cells ).
     " Change count
     IF lo_mc IS NOT INITIAL AND is_transmit-merge_cells IS NOT INITIAL.
@@ -852,6 +852,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     DATA lv_merge_cnt TYPE i.
 
     CHECK _t_merge_me[] IS NOT INITIAL.
+*    DATA(lt_ex_cell) = VALUE tt_ex_cell( FOR lr_cell_line IN _t_merge_me ( lr_cell_line->* ) ). BREAK-POINT.
+
     CASE iv_by_column.
       WHEN abap_false.
         SORT  _t_merge_me STABLE BY table_line->c_col.
@@ -859,14 +861,22 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         SORT  _t_merge_me STABLE BY table_line->c_row.
     ENDCASE.
 
+    DATA lt_level TYPE SORTED TABLE OF i WITH UNIQUE KEY TABLE_LINE.
     LOOP AT _t_merge_me INTO lr_cell.
       IF lr_prev_cell IS INITIAL.
         lr_prev_cell = lr_cell.
         CONTINUE.
       ENDIF.
 
-      DATA lv_clear TYPE abap_bool.
-      IF lr_cell->c_value = lr_prev_cell->c_value.
+      DATA: lv_is_same TYPE abap_bool, lv_clear TYPE abap_bool.
+      " Merge with parent level ?
+      INSERT lr_cell->c_merge_level INTO TABLE lt_level.
+      lv_is_same = abap_true.
+      IF lines( lt_level ) = 1 AND lr_cell->c_merge_tabix <= lr_prev_cell->c_merge_tabix.
+        lv_is_same = abap_false.
+      ENDIF.
+
+      IF lr_cell->c_value = lr_prev_cell->c_value AND lv_is_same = abap_true.
         lv_clear = abap_false.
         CASE iv_by_column.
           WHEN abap_false.
@@ -880,7 +890,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         ENDCASE.
 
         IF lv_clear = abap_true.
-          CLEAR: "lr_cell->c_value, " Several times ?
+          CLEAR: " lr_cell->c_value, " Several times ?
                  lr_cell->c_merge_row_dx,
                  lr_cell->c_merge_col_dx.
           ADD 1 TO lv_merge_cnt.
@@ -892,7 +902,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
                     iv_count     = lv_merge_cnt
                     iv_by_column = iv_by_column ).
       lr_prev_cell = lr_cell.
-      CLEAR lv_merge_cnt.
+      CLEAR: lt_level,
+             lv_merge_cnt.
     ENDLOOP.
 
     _do_merge_me( ir_cell      = lr_prev_cell
@@ -1011,6 +1022,8 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     " if equal then merge cells
     DATA lr_cell TYPE REF TO ts_ex_cell.
     LOOP AT lt_cells_ref INTO lr_cell WHERE table_line->c_merge_me = abap_true.
+      lr_cell->c_merge_tabix = iv_tabix.
+      lr_cell->c_merge_level = ir_tree->level.
       APPEND lr_cell TO mo_owner->_t_merge_me.
     ENDLOOP.
   ENDMETHOD.

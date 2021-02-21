@@ -149,10 +149,15 @@ CLASS lcl_report IMPLEMENTATION.
 
     " Current demo
     o_demo = lr_demo->inst.
-    o_demo->set_merge_info( me ).
+    DATA lv_exit TYPE abap_bool.
+    lv_exit = o_demo->set_merge_info( me ).
 
-    CHECK mo_injection IS INITIAL.
-    _merge_show_all( ).
+    CHECK mo_injection IS INITIAL
+      AND lv_exit <> abap_true.
+
+    DATA ls_grid_params TYPE ts_grid_params.
+    ls_grid_params = _get_grid_params( ).
+    show_alv( ls_grid_params ).
   ENDMETHOD.
 
   METHOD f4_full_path.
@@ -335,34 +340,35 @@ CLASS lcl_report IMPLEMENTATION.
     <ls_color>-color-col = <ls_color>-color-int = '1'.
   ENDMETHOD.
 
-  METHOD _merge_show_all.
-    DATA lr_table TYPE REF TO data.
-    GET REFERENCE OF t_merge_alv INTO lr_table.
+  METHOD _get_grid_params.
+    GET REFERENCE OF t_merge_alv INTO rs_gp-r_table.
 
-    DATA lt_catalog TYPE lvc_t_fcat.
-    lt_catalog = _make_tech_catalog( lr_table ).
+    rs_gp-t_catalog = _make_tech_catalog( rs_gp-r_table ).
+    DATA lr_field TYPE REF TO lvc_s_fcat.
+    READ TABLE rs_gp-t_catalog REFERENCE INTO lr_field WITH KEY fieldname = 'VALUE'.
+    lr_field->hotspot = 'X'.
 
-    FIELD-SYMBOLS <ls_field> LIKE LINE OF lt_catalog.
-    READ TABLE lt_catalog ASSIGNING <ls_field> WITH KEY fieldname = 'VALUE'.
-    <ls_field>-hotspot = 'X'.
+    rs_gp-s_layout-ctab_fname = 'T_COLOR'.
+    CONCATENATE o_demo->v_desc ` - №` p_exa INTO rs_gp-s_layout-grid_title.
+  ENDMETHOD.
 
+  METHOD show_alv.
     DATA lt_toolbar TYPE ttb_button.
     lt_toolbar = _make_toolbar( ).
 
-    DATA ls_layout TYPE lvc_s_layo.
-    ls_layout-ctab_fname = 'T_COLOR'.
-    CONCATENATE o_demo->v_desc ` - №` p_exa INTO ls_layout-grid_title.
+    " Merge both toolbars
+    APPEND LINES OF is_grid_params-t_toolbar TO lt_toolbar.
 
-    DATA lo_alv TYPE REF TO zcl_eui_alv.
-    CREATE OBJECT lo_alv
+    CREATE OBJECT co_alv
       EXPORTING
-        ir_table       = lr_table
-        is_layout      = ls_layout
-        it_mod_catalog = lt_catalog
+        ir_table       = is_grid_params-r_table
+        is_layout      = is_grid_params-s_layout
+        it_mod_catalog = is_grid_params-t_catalog
+        it_sort        = is_grid_params-t_sort
         it_toolbar     = lt_toolbar.
 
-    lo_alv->set_top_of_page_height( ).
-    lo_alv->show( io_handler      = me
+    co_alv->set_top_of_page_height( ).
+    co_alv->show( io_handler      = me
                   iv_handlers_map = |_ON_HOTSPOT_CLICK;_ON_TOP_OF_PAGE;_ON_USER_COMMAND|  ).
   ENDMETHOD.
 
@@ -460,6 +466,10 @@ CLASS lcl_report IMPLEMENTATION.
 
       WHEN c_cmd-download.
         o_demo->download( t_merge[] ).
+
+      WHEN OTHERS.
+        o_demo->on_user_command( sender  = sender
+                                 e_ucomm = e_ucomm ).
     ENDCASE.
   ENDMETHOD.
 

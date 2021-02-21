@@ -3,7 +3,7 @@
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
    <PROGDIR>
-    <NAME>Z_XTT_DEMO_N022</NAME>
+    <NAME>Z_XTT_DEMO_N150</NAME>
     <SUBC>I</SUBC>
     <RLOAD>E</RLOAD>
     <UCCHECK>X</UCCHECK>
@@ -11,8 +11,8 @@
    <TPOOL>
     <item>
      <ID>R</ID>
-     <ENTRY>Merging cells (Flight Model)</ENTRY>
-     <LENGTH>28</LENGTH>
+     <ENTRY>Without grid template</ENTRY>
+     <LENGTH>21</LENGTH>
     </item>
    </TPOOL>
   </asx:values>

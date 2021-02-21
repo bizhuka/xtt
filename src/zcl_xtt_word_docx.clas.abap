@@ -6,7 +6,7 @@ class ZCL_XTT_WORD_DOCX definition
 
 public section.
 
-  constants MC_TABLE_PAGE_BREAK type STRING value '<w:br w:type="page"/>'. "#EC NOTEXT
+  constants MC_TABLE_PAGE_BREAK type STRING value '<w:br w:type="page"/>' ##NO_TEXT.
 
   methods CONSTRUCTOR
     importing

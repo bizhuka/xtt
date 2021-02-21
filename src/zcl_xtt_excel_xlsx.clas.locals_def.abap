@@ -40,6 +40,8 @@ TYPES:
     c_merge_col_dx   TYPE i,
     " if equal then merge cells
     c_merge_me       TYPE abap_bool,
+    c_merge_tabix    TYPE sytabix,
+    c_merge_level    TYPE i,
 
     " Image, Shape, ...
     c_image          TYPE REF TO zcl_xtt_image,
@@ -224,8 +226,8 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       write_cells_offset,
       defined_names_read
         IMPORTING
-          io_node     TYPE REF TO if_ixml_element OPTIONAL
-          io_src      TYPE REF TO lcl_ex_sheet    OPTIONAL,
+          io_node TYPE REF TO if_ixml_element OPTIONAL
+          io_src  TYPE REF TO lcl_ex_sheet    OPTIONAL,
 
       get_indexed
         IMPORTING

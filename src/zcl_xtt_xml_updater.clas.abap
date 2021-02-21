@@ -28,7 +28,7 @@ public section.
     importing
       !IV_TAG type STRING
       !IT_TAGS type STRINGTAB
-      !IV_TAG_AFTER type STRING optional
+      !IV_TAG_RELAT type STRING optional
       !IV_PART_ATTRIBUTE type CSEQUENCE optional
       !IV_PART_VALUE type CSEQUENCE optional
     returning
@@ -76,10 +76,10 @@ private section.
   methods _OBJ_GET_DOCUMENT_STR
     returning
       value(RV_XML) type STRING .
-  methods _OBJ_ADD_AFTER
+  methods _OBJ_ADD_RELAT
     importing
       !IV_TAG type STRING
-      !IV_TAG_AFTER type STRING
+      !IV_TAG_RELAT type STRING
     returning
       value(RR_TAG) type ref to IF_IXML_ELEMENT .
 ENDCLASS.
@@ -122,8 +122,8 @@ METHOD obj_replace.
   " Serach in parent node
   rr_tag = lo_xml->find_from_name( iv_tag ).
   IF rr_tag IS INITIAL AND it_tags[] IS NOT INITIAL.
-    rr_tag = _obj_add_after( iv_tag       = iv_tag
-                             iv_tag_after = iv_tag_after ).
+    rr_tag = _obj_add_relat( iv_tag       = iv_tag
+                             iv_tag_relat = iv_tag_relat ).
   ENDIF.
   CHECK rr_tag IS NOT INITIAL.
 
@@ -265,21 +265,27 @@ METHOD str_get_document.
 ENDMETHOD.
 
 
-METHOD _obj_add_after.
+METHOD _obj_add_relat.
   " Where to insert ?
-  CHECK iv_tag_after IS NOT INITIAL.
+  CHECK iv_tag_relat IS NOT INITIAL.
+
+  DATA: lv_tag_relat LIKE iv_tag_relat, lv_oper TYPE char1.
+  lv_tag_relat = iv_tag_relat+1.
+  lv_oper      = iv_tag_relat(1).
 
   DATA lo_xml LIKE _doc.
   lo_xml = obj_get_document( ).
 
   " Insert before
-  DATA lr_after TYPE REF TO if_ixml_element.
-  lr_after = lo_xml->find_from_name( iv_tag_after ).
-  CHECK lr_after IS NOT INITIAL.
+  DATA lr_relat TYPE REF TO if_ixml_element.
+  lr_relat = lo_xml->find_from_name( lv_tag_relat ).
+  CHECK lr_relat IS NOT INITIAL.
 
-  " Insert after
-  lr_after ?= lr_after->get_next( ).
-  CHECK lr_after IS NOT INITIAL.
+  " Insert after ?
+  IF lv_oper = '+'.
+    lr_relat ?= lr_relat->get_next( ).
+  ENDIF.
+  CHECK lr_relat IS NOT INITIAL.
 
   " Result tag
   rr_tag = lo_xml->create_element( iv_tag ).
@@ -288,7 +294,7 @@ METHOD _obj_add_after.
   DATA lo_root TYPE REF TO if_ixml_node.
   lo_root = lo_xml->get_first_child( ).
   lo_root->insert_child( new_child = rr_tag
-                         ref_child = lr_after ).
+                         ref_child = lr_relat ).
 ENDMETHOD.
 
 

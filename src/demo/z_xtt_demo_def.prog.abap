@@ -265,6 +265,9 @@ CLASS lcl_demo IMPLEMENTATION.
         io_file = eo_file.
   ENDMETHOD.
 
+  METHOD on_user_command.
+  ENDMETHOD.
+
   METHOD _get_template_by_f4.
     DATA lt_template TYPE tt_template.
     lt_template = get_templates( ).

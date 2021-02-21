@@ -29,7 +29,15 @@ TYPES:
     group   TYPE string,
     caption TYPE string,
     date    TYPE d,
-  END OF ts_no_sum.
+  END OF ts_no_sum,
+
+  BEGIN OF ts_grid_params,
+    r_table   TYPE REF TO data,
+    s_layout  TYPE lvc_s_layo,
+    t_catalog TYPE lvc_t_fcat,
+    t_sort    TYPE lvc_t_sort,
+    t_toolbar TYPE ttb_button,
+  END OF ts_grid_params.
 
 **********************************************************************
 **********************************************************************
@@ -96,7 +104,8 @@ CLASS lcl_demo DEFINITION ABSTRACT.
 
       set_merge_info ABSTRACT
         IMPORTING
-          io_report TYPE REF TO lcl_report,
+                  io_report      TYPE REF TO lcl_report
+        RETURNING VALUE(rv_exit) TYPE abap_bool,
 
       get_templates ABSTRACT
         RETURNING VALUE(rt_templates) TYPE tt_template,
@@ -104,16 +113,21 @@ CLASS lcl_demo DEFINITION ABSTRACT.
       download_template
         IMPORTING
           io_file      TYPE REF TO zif_xtt_file
-          iv_file_name TYPE csequence OPTIONAL.
+          iv_file_name TYPE csequence OPTIONAL,
 
-    CLASS-METHODS:
       get_from_template
         IMPORTING
           iv_template TYPE csequence
         EXPORTING
           ev_type     TYPE string
           eo_xtt      TYPE REF TO zcl_xtt
-          eo_file     TYPE REF TO zif_xtt_file.
+          eo_file     TYPE REF TO zif_xtt_file,
+
+      on_user_command FOR EVENT user_command OF cl_gui_alv_grid
+        IMPORTING
+          sender
+          e_ucomm.
+
   PROTECTED SECTION.
     METHODS:
       _merge
@@ -220,7 +234,11 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
         EXPORTING
           et_table      TYPE STANDARD TABLE,
 
-      init_random_generator.
+      init_random_generator,
+
+      show_alv
+        IMPORTING is_grid_params TYPE ts_grid_params
+        CHANGING  co_alv         TYPE REF TO zcl_eui_alv OPTIONAL.
 
     CLASS-METHODS:
       class_constructor.
@@ -230,15 +248,17 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
     DATA t_merge       TYPE tt_merge        READ-ONLY.
 
     " Random numbers
-    DATA mo_rand_i     TYPE REF TO cl_abap_random_int.
-    DATA mo_rand_p     TYPE REF TO cl_abap_random_packed.
+    DATA mo_rand_i     TYPE REF TO cl_abap_random_int    READ-ONLY.
+    DATA mo_rand_p     TYPE REF TO cl_abap_random_packed READ-ONLY.
+
+    " Test mode
+    DATA mo_injection  TYPE REF TO lif_injection READ-ONLY.
 
   PRIVATE SECTION.
     CLASS-DATA:
       t_demo TYPE tt_demo.
 
     DATA t_merge_alv   TYPE tt_merge_alv.
-    DATA mo_injection  TYPE REF TO lif_injection.
 
     METHODS:
       _update_demo_listbox,
@@ -267,7 +287,8 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
                   ir_alv         TYPE REF TO ts_merge_alv
         RETURNING VALUE(rv_text) TYPE string,
 
-      _merge_show_all,
+      _get_grid_params
+        RETURNING VALUE(rs_gp) TYPE ts_grid_params,
 
       _on_hotspot_click FOR EVENT hotspot_click OF cl_gui_alv_grid "#EC CALLED
         IMPORTING "sender
@@ -275,6 +296,7 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
 
       _on_user_command FOR EVENT user_command OF cl_gui_alv_grid "#EC CALLED
         IMPORTING
+          sender
           e_ucomm,
 
       _on_top_of_page FOR EVENT top_of_page OF cl_gui_alv_grid "#EC CALLED
@@ -331,13 +353,37 @@ CLASS lcl_demo_021 DEFINITION FINAL INHERITING FROM lcl_demo_020.
 ENDCLASS.
 
 **********************************************************************
-CLASS lcl_demo_022 DEFINITION FINAL INHERITING FROM lcl_demo_020.
+CLASS lcl_demo_022 DEFINITION INHERITING FROM lcl_demo_020.
   PUBLIC SECTION.
     METHODS:
       get_desc_text  REDEFINITION,
       get_url_base   REDEFINITION,
       set_merge_info REDEFINITION,
       get_templates  REDEFINITION.
+
+  PROTECTED SECTION.
+    TYPES:
+      BEGIN OF ts_flight_info,
+        cityfrom  TYPE spfli-cityfrom,
+        landxfrom TYPE t005t-landx,
+        cityto    TYPE spfli-cityto,
+        landxto   TYPE t005t-landx,
+        carrname  TYPE scarr-carrname,
+        connid    TYPE spfli-connid,
+        fldate    TYPE sflight-fldate,
+        deptime   TYPE spfli-deptime,
+        arrtime   TYPE spfli-arrtime,
+        price     TYPE sflight-price,
+        currency  TYPE sflight-currency,
+        seatsmax  TYPE sflight-seatsmax,
+        seatsocc  TYPE sflight-seatsocc,
+        _group1   TYPE string,
+      END OF ts_flight_info,
+      tt_flight_info TYPE STANDARD TABLE OF ts_flight_info WITH DEFAULT KEY.
+
+    METHODS:
+      _get_flight_info
+        RETURNING VALUE(rt_flight_info) TYPE tt_flight_info.
 ENDCLASS.
 
 **********************************************************************
@@ -624,4 +670,47 @@ CLASS lcl_demo_140 DEFINITION FINAL INHERITING FROM lcl_demo_010.
       get_desc_text  REDEFINITION,
       get_url_base   REDEFINITION,
       get_templates  REDEFINITION.
+ENDCLASS.
+
+**********************************************************************
+CLASS lcl_demo_150 DEFINITION FINAL INHERITING FROM lcl_demo_022.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text     REDEFINITION,
+      get_url_base      REDEFINITION,
+      set_merge_info    REDEFINITION,
+      get_templates     REDEFINITION,
+      get_from_template REDEFINITION,
+      on_user_command   REDEFINITION.
+
+  PRIVATE SECTION.
+    CONSTANTS:
+      c_sum_fields TYPE string VALUE 'PRICE,SEATSMAX,SEATSOCC'.
+
+    DATA:
+      mo_alv          TYPE REF TO zcl_eui_alv,
+
+      " Unit test mode
+      mt_test_catalog TYPE lvc_t_fcat,
+      mt_test_sort    TYPE lvc_t_sort.
+
+    METHODS:
+      _get_grid_params
+        RETURNING VALUE(rs_gp) TYPE ts_grid_params,
+
+      _group_by
+        IMPORTING
+                  iv_fields       TYPE csequence
+        RETURNING VALUE(rt_group) TYPE lvc_t_sort,
+
+      _get_modify_catalog
+        RETURNING VALUE(rt_catalog) TYPE lvc_t_fcat,
+
+      _get_test_catalog
+        IMPORTING
+                  ir_table          TYPE REF TO data
+        RETURNING VALUE(rt_catalog) TYPE lvc_t_fcat,
+
+      _make_toolbar
+        RETURNING VALUE(rt_toolbar) TYPE ttb_button.
 ENDCLASS.

@@ -151,7 +151,7 @@ METHOD on_match_found.
 
     " new value fo image
     DATA lv_image_val TYPE string.
-    lv_image_val = cl_http_utility=>encode_x_base64( lo_image->mv_image ).
+    lv_image_val = zcl_eui_conv=>xstring_to_base64( lo_image->mv_image ).
 
     " Get original text
     DATA lv_len TYPE i.

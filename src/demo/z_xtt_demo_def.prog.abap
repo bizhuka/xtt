@@ -205,7 +205,7 @@ CLASS lcl_demo IMPLEMENTATION.
     ENDLOOP.
 
     DATA lt_wwwdata TYPE STANDARD TABLE OF wwwdata WITH DEFAULT KEY.
-    SELECT DISTINCT objid text INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata ##too_many_itab_fields
+    SELECT DISTINCT objid text INTO CORRESPONDING FIELDS OF TABLE lt_wwwdata "#EC TOO_MANY_ITAB_FIELDS
     FROM wwwdata
     FOR ALL ENTRIES IN lt_template
     WHERE relid = 'MI'

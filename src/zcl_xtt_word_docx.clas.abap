@@ -6,7 +6,7 @@ class ZCL_XTT_WORD_DOCX definition
 
 public section.
 
-  constants MC_TABLE_PAGE_BREAK type STRING value '<w:br w:type="page"/>' ##NO_TEXT.
+  constants MC_TABLE_PAGE_BREAK type STRING value '<w:br w:type="page"/>'. "#EC NOTEXT
 
   methods CONSTRUCTOR
     importing
@@ -122,7 +122,7 @@ METHOD get_image_tag.
      io_image->mv_index_txt
      io_image->mv_ext INTO ev_name.
 
-    ev_bindata = cl_http_utility=>encode_x_base64( io_image->mv_image ).
+    ev_bindata = zcl_eui_conv=>xstring_to_base64( io_image->mv_image ).
     CONCATENATE `<w:binData w:name="` ev_name `" xml:space="preserve">`
      ev_bindata `</w:binData>` INTO ev_bindata.
 

@@ -7,6 +7,8 @@ public section.
   type-pools ABAP .
   class ZCL_XTT_REPLACE_BLOCK definition load .
 
+  types TS_BOUNDS type ZSS_XTT_BOUNDS .
+
   methods CONSTRUCTOR
     importing
       !IO_FILE type ref to ZIF_XTT_FILE
@@ -25,26 +27,6 @@ public section.
   methods MERGE
     redefinition .
 protected section.
-
-  types:
-    BEGIN OF ts_bounds,
-      " All occurrences of
-      t_match     TYPE match_result_tab,
-
-      " tags info
-      first_match TYPE i,
-      last_match  TYPE i,
-      with_tag    TYPE abap_bool,
-
-      " Detect postion
-      pos_beg     TYPE i,
-      pos_end     TYPE i,
-      pos_cnt     TYPE i,
-
-      " Finally info from context
-      text_before TYPE string,
-      text_after  TYPE string,
-    END OF ts_bounds .
 
   data MV_BODY_TAG type STRING .
   data MV_ROW_TAG type STRING .

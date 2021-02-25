@@ -36,12 +36,12 @@ CLASS lcl_demo_040 IMPLEMENTATION.
     CONCATENATE sy-datum sy-uzeit INTO ls_root-datetime.
 
     " Assign Internal to Language-Dependent Unit
-    SELECT msehi msehl INTO CORRESPONDING FIELDS OF TABLE ls_root-u ##too_many_itab_fields
+    SELECT msehi msehl INTO CORRESPONDING FIELDS OF TABLE ls_root-u "#EC TOO_MANY_ITAB_FIELDS
     FROM t006a
     WHERE spras = sy-langu.
 
     " Country Names
-    SELECT land1 landx INTO CORRESPONDING FIELDS OF TABLE ls_root-c ##too_many_itab_fields
+    SELECT land1 landx INTO CORRESPONDING FIELDS OF TABLE ls_root-c "#EC TOO_MANY_ITAB_FIELDS
     FROM t005t
     WHERE spras = sy-langu.
 

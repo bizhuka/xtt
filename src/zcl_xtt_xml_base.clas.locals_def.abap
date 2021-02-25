@@ -34,7 +34,7 @@ CLASS lcl_tree_handler DEFINITION INHERITING FROM zcl_xtt_tree_function FINAL.
         IMPORTING
                   iv_tr_id           TYPE string
                   iv_middle          TYPE csequence
-                  is_bounds          TYPE zcl_xtt_xml_base=>ts_bounds
+                  is_bounds          TYPE zss_xtt_bounds
                   ir_field           TYPE REF TO zcl_xtt_replace_block=>ts_field
         RETURNING VALUE(rv_has_text) TYPE abap_bool,
 

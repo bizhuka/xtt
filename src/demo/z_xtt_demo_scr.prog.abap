@@ -1,6 +1,11 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
 
+TYPE-POOLS:
+ abap,
+ vrm,
+ cntb.
+
 " Example option
 SELECTION-SCREEN BEGIN OF BLOCK bl_example WITH FRAME TITLE text-exa.
 PARAMETERS:

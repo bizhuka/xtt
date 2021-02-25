@@ -61,6 +61,12 @@
      <LANGU>E</LANGU>
      <DESCRIPT>For SaveAs</DESCRIPT>
     </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
+     <CMPNAME>TS_BOUNDS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Fill the strucure from top to bottom (results)</DESCRIPT>
+    </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>
  </asx:abap>

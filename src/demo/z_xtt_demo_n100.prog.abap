@@ -18,7 +18,7 @@ CLASS lcl_demo_100 IMPLEMENTATION.
     rs_root-title = 'Test icons'(tic).
 
     " Get icon IDs
-    SELECT id name INTO CORRESPONDING FIELDS OF TABLE rs_root-t ##too_many_itab_fields
+    SELECT id name INTO CORRESPONDING FIELDS OF TABLE rs_root-t "#EC TOO_MANY_ITAB_FIELDS
     FROM icon UP TO p_r_cnt ROWS
     WHERE oleng = 2.
 

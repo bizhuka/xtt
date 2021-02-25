@@ -7,18 +7,9 @@ class ZCL_XTT_REPLACE_BLOCK definition
 
 public section.
   type-pools ABAP .
-  class ZCL_XTT definition load .
-  class ZCL_XTT_SCOPE definition load .
 
   types:
-    BEGIN OF ts_field,
-        name    TYPE string,        " Name in template
-        typ     TYPE string,        " Type of data
-        dref    TYPE REF TO data,   " Value for replacement
-        oref    TYPE REF TO object, " Value for replacement
-        fl_id   TYPE string,
-        fl_stat TYPE abap_bool,
-      END OF ts_field .
+    ts_field TYPE zss_xtt_field .
   types:
     BEGIN OF ts_field_ext.
         INCLUDE TYPE ts_field AS fld.
@@ -96,7 +87,7 @@ public section.
   methods FIND_MATCH
     importing
       !IO_XTT type ref to ZCL_XTT
-      !IS_SCOPE type ZCL_XTT_SCOPE=>TS_SCOPE
+      !IS_SCOPE type ZSS_XTT_SCOPE
     changing
       !CV_CONTENT type STRING .
   class-methods GET_AS_STRING
@@ -143,7 +134,7 @@ private section.
   class-methods _CHECK_OFFEST
     importing
       !IO_XTT type ref to ZCL_XTT
-      !IS_SCOPE type ZCL_XTT_SCOPE=>TS_SCOPE
+      !IS_SCOPE type ZSS_XTT_SCOPE
       !IV_CONTENT type STRING
     returning
       value(RV_OFFSET) type I .

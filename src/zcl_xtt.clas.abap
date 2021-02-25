@@ -101,7 +101,7 @@ protected section.
   methods ON_MATCH_FOUND
   abstract
     importing
-      !IS_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
+      !IS_FIELD type ref to ZSS_XTT_FIELD
       value(IV_POS_BEG) type I
       value(IV_POS_END) type I
     changing
@@ -149,13 +149,17 @@ METHOD add_log_message.
                       iv_msgty = iv_msgty ).
         RETURN.
       ENDIF.
-    CATCH cx_sy_move_cast_error. "#EC NO_HANDLER
+    CATCH cx_sy_move_cast_error.                        "#EC NO_HANDLER
   ENDTRY.
 
   " Ordinary exception
-  _logger->add_exception( io_exception = io_exception
-                          iv_msgty     = iv_msgty ).
-
+  " in 7.00 cannot read texts
+*  _logger->add_exception( io_exception = io_exception
+*                          iv_msgty     = iv_msgty ).
+  DATA lv_msg TYPE string.
+  lv_msg = io_exception->get_text( ).
+  _logger->add_text( iv_text  = lv_msg
+                     iv_msgty = 'E' ).
 ENDMETHOD.
 
 
@@ -366,10 +370,12 @@ METHOD send.
     lv_file_size TYPE i,
     lt_data      TYPE solix_tab,
     lo_error     TYPE REF TO cx_bcs,
-    lt_body      TYPE soli_tab,
+    lt_body      TYPE solix_tab,
     lv_value     TYPE xstring,
     lv_filename  TYPE string,
-    lv_body      TYPE string.
+    lv_body      TYPE string,
+    lx_body      TYPE xstring,
+    lv_len       TYPE i.
   FIELD-SYMBOLS:
     <ls_recipient> LIKE LINE OF it_recipients_bcs.
 
@@ -379,15 +385,22 @@ METHOD send.
 
       " Body
       lv_body = iv_body.
-      lt_body = cl_document_bcs=>string_to_soli( lv_body ).
-      lo_doc = cl_document_bcs=>create_document(
+      " i_text = cl_document_bcs=>string_to_soli( lv_body ).
+      lx_body = zcl_eui_conv=>string_to_xstring( lv_body ).
+      zcl_eui_conv=>xstring_to_binary( EXPORTING iv_xstring = lx_body
+                                       IMPORTING et_table   = lt_body
+                                                 ev_length  = lv_len ).
+      lv_size = lv_len.
+      lo_doc  = cl_document_bcs=>create_document(
        i_type    = 'HTM'
-       i_text    = lt_body
+       i_hex     = lt_body
+       i_length  = lv_size
        i_subject = iv_subject ).
 
       " № 1 - Add recipients
       LOOP AT it_recipients INTO lo_recipient.
-        lo_mail->add_recipient( i_recipient = lo_recipient i_express = iv_express ).
+        lo_mail->add_recipient( i_recipient = lo_recipient
+                                i_express   = iv_express ).
       ENDLOOP.
 
       " № 2 - Add recipients
@@ -417,12 +430,9 @@ METHOD send.
 
         " Convert to table
         lv_value = get_raw( ).
-        zcl_eui_conv=>xstring_to_binary(
-         EXPORTING
-           iv_xstring = lv_value
-         IMPORTING
-           ev_length  = lv_file_size
-           et_table   = lt_data ).
+        zcl_eui_conv=>xstring_to_binary( EXPORTING iv_xstring = lv_value
+                                         IMPORTING ev_length  = lv_file_size
+                                                   et_table   = lt_data ).
         lv_size = lv_file_size.
 
         " Convert to proper type

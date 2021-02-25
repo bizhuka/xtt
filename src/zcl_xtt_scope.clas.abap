@@ -7,22 +7,11 @@ public section.
   type-pools ABAP .
 
   types:
-    BEGIN OF ts_pair,
-        key TYPE string,
-        val TYPE string,
-      END OF ts_pair .
+    ts_pair  TYPE zss_xtt_pair .
   types:
-    tt_pair TYPE SORTED TABLE OF ts_pair WITH UNIQUE KEY key .
+    tt_pair  TYPE ztt_xtt_pair .
   types:
-    BEGIN OF ts_scope,
-        index    TYPE i,
-        beg      TYPE i,
-        end      TYPE i,
-        sc_level TYPE i,
-        field    TYPE string,
-        t_pair   TYPE tt_pair,
-        merge_me TYPE abap_bool,
-      END OF ts_scope .
+    ts_scope TYPE zss_xtt_scope .
   types:
     tt_scope TYPE STANDARD TABLE OF ts_scope WITH DEFAULT KEY .
 

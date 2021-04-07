@@ -34,9 +34,9 @@ private section.
   data MO_SHEET type ref to LCL_EX_SHEET .
   data MO_ZIP type ref to CL_ABAP_ZIP .
   data MT_SHARED_STRINGS type STRINGTAB .
-  data _PREV_SHEET_COUNT type I .
   data _XML_XL_WORKBOOK type ref to ZCL_XTT_XML_UPDATER .
   data _XML_CONTENT_TYPES type ref to ZCL_XTT_XML_UPDATER .
+  data _SHEETS_COUNTER type I value 555 ##NO_TEXT.
 
   methods _WORKBOOK_WRITE_XML
     importing
@@ -141,7 +141,8 @@ private section.
   methods LIST_OBJECT_SAVE_XML
     importing
       !IO_SHEET type ref to LCL_EX_SHEET
-      !IT_CELL_REF type TT_CELL_REF .
+      !IT_CELL_REF type TT_CELL_REF
+      !IV_SID type I .
   class-methods DATA_VALIDATION_READ_XML
     importing
       !IO_SHEET type ref to LCL_EX_SHEET .
@@ -526,11 +527,11 @@ METHOD cell_write_xml.
 
   " Update formula. Only for backward compatibility?
   DEFINE replace_all_with_buck.
-    concatenate:
-     `$` &1 into lv_from,
-     `$` &2 into lv_to.
+    CONCATENATE:
+     `$` &1 INTO lv_from,
+     `$` &2 INTO lv_to.
 
-    replace all occurrences of lv_from in is_cell->c_formula with lv_to.
+    REPLACE ALL OCCURRENCES OF lv_from IN is_cell->c_formula WITH lv_to.
   END-OF-DEFINITION.
 
   " To text
@@ -558,7 +559,7 @@ METHOD cell_write_xml.
     ENDIF.
 
     " Formula in ListObjects
-    IF io_sheet->_is_new = abap_true.
+    IF io_sheet->_is_new( ) = abap_true AND cs_transmit-iv_sid >= 0.
       FIELD-SYMBOLS <ls_list_object> LIKE LINE OF io_sheet->mt_list_objects.
       LOOP AT io_sheet->mt_list_objects ASSIGNING <ls_list_object>.
         CHECK is_cell->c_formula CS <ls_list_object>-name_fm_mask. "  -> _lo_name && '['
@@ -762,10 +763,6 @@ METHOD constructor.
     " Next
     lo_node ?= lo_node->get_next( ).
   ENDWHILE.
-
-  " For new sheets
-  _prev_sheet_count = lines( mt_sheets[] ).
-*  _prev_sheet_count = 777. " !!!!!!!!!!!!!!
 ENDMETHOD.                    "constructor
 
 
@@ -1746,24 +1743,25 @@ METHOD list_object_save_xml.
     DATA lv_path TYPE string.
     lv_path = ls_list_object->arc_path.
 
-    IF io_sheet->_is_new = abap_true.
-      io_sheet->change_table_path( CHANGING  cv_path  = lv_path ).
+    IF io_sheet->_is_new( ) = abap_true AND iv_sid >= 0.
+      io_sheet->change_table_path( EXPORTING iv_sid   = iv_sid
+                                   CHANGING  cv_path  = lv_path ).
       DATA lv_content_type TYPE string.
-      CONCATENATE `<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml" PartName="/`  "#EC NOTEXT
+      CONCATENATE `<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml" PartName="/` "#EC NOTEXT
                   lv_path `"/>` INTO lv_content_type.
       io_sheet->mo_xlsx->_xml_content_types->str_add( lv_content_type ).
 
       DATA lv_attr TYPE string.
       lv_attr = io_sheet->get_new_id( ls_list_object->_lo_id ).
-      lo_table->set_attribute( name  = `id`           "#EC NOTEXT
+      lo_table->set_attribute( name  = `id`                 "#EC NOTEXT
                                value = lv_attr ).
 
       lv_attr = io_sheet->get_new_name( ls_list_object->_lo_name ).
-      lo_table->set_attribute( name  = `name`         "#EC NOTEXT
+      lo_table->set_attribute( name  = `name`               "#EC NOTEXT
                                value = lv_attr ).
 
       lv_attr = io_sheet->get_new_name( ls_list_object->_lo_displayname ).
-      lo_table->set_attribute( name  = `displayName`  "#EC NOTEXT
+      lo_table->set_attribute( name  = `displayName`        "#EC NOTEXT
                                value = lv_attr ).
     ENDIF.
 
@@ -2125,8 +2123,10 @@ METHOD _sheet_merge.
   FIELD-SYMBOLS <ls_block> TYPE any.
   LOOP AT it_block ASSIGNING <ls_block>.
     " New sheet
+    _sheets_counter = _sheets_counter + 1.
     mo_sheet = lo_sheet->clone( is_block      = <ls_block>
-                                iv_block_name = iv_block_name ).
+                                iv_block_name = iv_block_name
+                                iv_new_index  = _sheets_counter ).
     INSERT mo_sheet INTO mt_sheets INDEX lv_position.
     lv_position = lv_position + 1.
 
@@ -2158,21 +2158,12 @@ METHOD _sheet_save.
   CLEAR et_defined_names.
   CLEAR et_new_tags.
 
-  " New numeration ?
-  DATA lv_sheet_count TYPE i.
-  lv_sheet_count = lines( mt_sheets ).
-
   DATA lo_sheet TYPE REF TO lcl_ex_sheet.
   LOOP AT mt_sheets INTO lo_sheet.
-    DATA: lv_sid   TYPE i, lv_index TYPE sytabix.
+    DATA: lv_sid   TYPE i.
     lv_sid   = sy-tabix - 1.
-    lv_index = sy-tabix + 555. " 100
 
-    IF lv_sheet_count = _prev_sheet_count.
-      CLEAR lv_index.
-    ENDIF.
     lo_sheet->save( EXPORTING iv_sid           = lv_sid
-                              iv_index         = lv_index
                     CHANGING  ct_defined_names = et_defined_names ).
 
     DATA lv_tag TYPE string.
@@ -2187,17 +2178,13 @@ METHOD _workbook_write_xml.
 
   DATA lv_new_wb TYPE abap_bool.
   IF it_tags_def_names IS NOT INITIAL.
-    lv_new_wb = abap_true.
+    lv_new_wb = abap_true. " Source 1
     _xml_xl_workbook->obj_replace( iv_tag  = `definedNames`
                                    it_tags = it_tags_def_names ).
   ENDIF.
 
-  " Nested bloks
-  DATA lv_sheet_count TYPE i.
-  lv_sheet_count = lines( mt_sheets[] ).
-
-  IF lv_sheet_count <> _prev_sheet_count.
-    lv_new_wb = abap_true.
+  IF _sheets_counter > 555.
+    lv_new_wb = abap_true. " Source 2
     _xml_xl_workbook->obj_replace( iv_tag  = `sheets`              "#EC NOTEXT
                                    it_tags = it_tags_sheets ).
   ENDIF.
@@ -2209,7 +2196,7 @@ METHOD _workbook_write_xml.
 **********************************************************************
 **********************************************************************
   " Writeback rel file
-  CHECK lv_sheet_count <> _prev_sheet_count.
+  CHECK _sheets_counter > 555.
 
   "№ 1 - New sheets' tags
   DATA lt_rel_tag TYPE stringtab.

@@ -165,6 +165,7 @@ TYPES:
     rows_cells  TYPE stringtab, " sheetData tag
     cols        TYPE stringtab,
     merge_cells TYPE stringtab,
+    iv_sid      TYPE i,
   END OF ts_transmit.
 **********************************************************************
 **********************************************************************
@@ -186,9 +187,6 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       " Nested blocks / Templates based on a sheet
       _index            TYPE string,
       _index_original   TYPE string,
-      _is_new           TYPE abap_bool READ-ONLY,
-      " As _is_new but for defined names only
-      _is_clone         TYPE abap_bool READ-ONLY,
 
       _name             TYPE string,
       _state            TYPE string,  " `` || `hidden` || `veryHidden`
@@ -261,7 +259,6 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       save
         IMPORTING
           iv_sid           TYPE i "zero based index
-          iv_index         TYPE i OPTIONAL
         CHANGING
           ct_defined_names TYPE tt_ex_defined_name OPTIONAL,
       cells_create_refs
@@ -283,7 +280,9 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       get_rel_tag
         RETURNING VALUE(rv_tag) TYPE string,
       change_table_path
-        CHANGING cv_path TYPE string,
+        IMPORTING
+                  iv_sid  TYPE i
+        CHANGING  cv_path TYPE string,
       get_new_id
         IMPORTING
                   iv_id        TYPE string
@@ -360,7 +359,10 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       clone
         IMPORTING is_block       TYPE any
                   iv_block_name  TYPE csequence
+                  iv_new_index   TYPE i
         RETURNING VALUE(ro_copy) TYPE REF TO lcl_ex_sheet,
+      _is_new
+        RETURNING VALUE(rv_new) TYPE abap_bool,
 
       merge_me
         IMPORTING

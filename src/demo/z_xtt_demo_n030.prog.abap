@@ -16,19 +16,19 @@ CLASS lcl_demo_030 IMPLEMENTATION.
 
   METHOD set_merge_info.
     TYPES:
-     " Second merge
-     BEGIN OF ts_doc,
-       f_title TYPE string,
-       l_title TYPE string,
-     END OF ts_doc,
+      " Second merge
+      BEGIN OF ts_doc,
+        f_title TYPE string,
+        l_title TYPE string,
+      END OF ts_doc,
 
-     " Structure of document
-     BEGIN OF ts_root,
-       title  TYPE string,
-       bottom TYPE string,
-       t      TYPE tt_rand_data, " Table within another table (lt_root)
-     END OF ts_root,
-     tt_root TYPE STANDARD TABLE OF ts_root WITH DEFAULT KEY.
+      " Structure of document
+      BEGIN OF ts_root,
+        title  TYPE string,
+        bottom TYPE string,
+        t      TYPE tt_rand_data, " Table within another table (lt_root)
+      END OF ts_root,
+      tt_root TYPE STANDARD TABLE OF ts_root WITH DEFAULT KEY.
 
     DATA:
       lt_root TYPE tt_root,
@@ -82,6 +82,7 @@ CLASS lcl_demo_030 IMPLEMENTATION.
   METHOD get_templates.
     APPEND 'ZXXT_DEMO_030_A-XLSX'    TO rt_templates.
     APPEND 'ZXXT_DEMO_030_B-XLSX'    TO rt_templates.
+    APPEND 'ZXXT_DEMO_030_C-XLSX'    TO rt_templates.
     APPEND 'ZXXT_DEMO_030-DOCX'      TO rt_templates.
     APPEND 'ZXXT_DEMO_030-XDP'       TO rt_templates.
     APPEND 'ZXXT_DEMO_030_EXCEL-XML' TO rt_templates.

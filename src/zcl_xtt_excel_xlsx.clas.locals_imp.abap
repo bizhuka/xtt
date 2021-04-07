@@ -153,12 +153,6 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD save.
-    " Path to the sheet etc
-    IF iv_index IS NOT INITIAL.
-      int_2_text iv_index _index.
-      _is_new = abap_true.
-    ENDIF.
-***************************************
     " Late initilization (without merge)
     write_cells_offset( ).
     mv_has_offset = abap_false.
@@ -173,6 +167,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     " Replace existing text. Work with dom
     DATA ls_transmit TYPE ts_transmit.
     ls_transmit = _cells_write_xml( ).
+    ls_transmit-iv_sid = iv_sid.
 ***************************************
     " Data validation (Use dom)
     mo_xlsx->data_validation_save_xml( io_sheet    = me
@@ -186,7 +181,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 ***************************************
     " List object
     mo_xlsx->list_object_save_xml( io_sheet    = me
-                                   it_cell_ref = lt_cell_ref ).
+                                   it_cell_ref = lt_cell_ref
+                                   iv_sid      = iv_sid ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD get_tag.
@@ -235,7 +231,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD change_table_path.
-    CHECK _is_new = abap_true.
+    CHECK _is_new( ) = abap_true AND iv_sid >= 0.
 
     " Could call several times
     DATA lv_name TYPE string.
@@ -358,10 +354,11 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     mo_xlsx->drawing_save_xml( ir_me               = mr_drawing
                                io_xml_xl_worksheet = _xml_xl_worksheet
                                io_xml_sheet_rels   = lo_xml_sheet_rels ).
-    IF _is_new = abap_true OR lo_xml_sheet_rels->str_status = zcl_xtt_xml_updater=>c_status-changed.
+    IF ( _is_new( ) = abap_true AND is_transmit-iv_sid >= 0 ) OR lo_xml_sheet_rels->str_status = zcl_xtt_xml_updater=>c_status-changed.
       DATA lv_xml_sheet_rels TYPE string.
       lv_xml_sheet_rels = lo_xml_sheet_rels->str_get_document( ).
-      change_table_path( CHANGING cv_path = lv_xml_sheet_rels ).
+      change_table_path( EXPORTING iv_sid  = is_transmit-iv_sid
+                         CHANGING  cv_path = lv_xml_sheet_rels ).
 
       " And save relation
       lv_path_rel = get_indexed( iv_mask     = mc_path-rel_path
@@ -390,7 +387,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 
       " Make all names local
       ls_defined_name = lr_defined_name->*.
-      IF _is_clone = abap_true AND iv_sid >= 0.
+      IF _is_new( ) = abap_true AND iv_sid >= 0.
         int_2_text iv_sid
                    ls_defined_name-d_local_sid.
       ENDIF.
@@ -631,7 +628,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     ENDIF.
 
     " Recalc
-    CHECK lv_by_column = abap_true.
+    CHECK lv_by_column EQ abap_true.
     save( iv_sid = -1 ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
@@ -839,11 +836,16 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       EXPORTING
         iv_index = me->_index_original
         io_xlsx  = me->mo_xlsx.
-    ro_copy->_is_clone = abap_true.
+    int_2_text iv_new_index ro_copy->_index.
     ro_copy->defined_names_read( io_src = me ).
     ro_copy->_name = zcl_xtt_html=>format( iv_template  = me->_name
                                            is_root      = is_block
                                            iv_root_name = iv_block_name ).
+  ENDMETHOD.
+*--------------------------------------------------------------------*
+  METHOD _is_new.
+    CHECK _index <> _index_original.
+    rv_new = abap_true.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD merge_me.
@@ -861,7 +863,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         SORT  _t_merge_me STABLE BY table_line->c_row.
     ENDCASE.
 
-    DATA lt_level TYPE SORTED TABLE OF i WITH UNIQUE KEY TABLE_LINE.
+    DATA lt_level TYPE SORTED TABLE OF i WITH UNIQUE KEY table_line.
     LOOP AT _t_merge_me INTO lr_cell.
       IF lr_prev_cell IS INITIAL.
         lr_prev_cell = lr_cell.

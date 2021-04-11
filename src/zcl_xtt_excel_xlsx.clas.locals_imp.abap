@@ -161,8 +161,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     CHECK mt_cells IS NOT INITIAL.
 ***************************************
     " Find old -> new match
-    DATA lt_cell_ref TYPE tt_cell_ref.
-    lt_cell_ref = cells_create_refs( ).
+    cells_create_refs( ).
 ***************************************
     " Replace existing text. Work with dom
     DATA ls_transmit TYPE ts_transmit.
@@ -170,18 +169,15 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     ls_transmit-iv_sid = iv_sid.
 ***************************************
     " Data validation (Use dom)
-    mo_xlsx->data_validation_save_xml( io_sheet    = me
-                                       it_cell_ref = lt_cell_ref ).
+    mo_xlsx->data_validation_save_xml( io_sheet = me  ).
 ***************************************
     _replace_by_transmit( ls_transmit ).
 ***************************************
     defined_name_save( EXPORTING iv_sid           = iv_sid
-                                 it_cell_ref      = lt_cell_ref
                        CHANGING  ct_defined_names = ct_defined_names ).
 ***************************************
     " List object
     mo_xlsx->list_object_save_xml( io_sheet    = me
-                                   it_cell_ref = lt_cell_ref
                                    iv_sid      = iv_sid ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
@@ -256,8 +252,9 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     DATA ls_cell_ref TYPE ts_cell_ref.
     DATA lr_cell_ref TYPE REF TO ts_cell_ref.
 
+    CLEAR _t_cell_ref[].
     LOOP AT mt_cells REFERENCE INTO ls_cell.
-      READ TABLE rt_cell_ref REFERENCE INTO lr_cell_ref
+      READ TABLE _t_cell_ref REFERENCE INTO lr_cell_ref
        WITH TABLE KEY r = ls_cell->c_row
                       c = ls_cell->c_col_ind.
 
@@ -265,7 +262,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         ls_cell_ref-r   = ls_cell->c_row.
         ls_cell_ref-c   = ls_cell->c_col_ind.
         ls_cell_ref-beg = ls_cell.
-        INSERT ls_cell_ref INTO TABLE rt_cell_ref REFERENCE INTO lr_cell_ref.
+        INSERT ls_cell_ref INTO TABLE _t_cell_ref REFERENCE INTO lr_cell_ref.
       ENDIF.
 
       lr_cell_ref->end = ls_cell.
@@ -397,7 +394,6 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         replace_with_new(
          EXPORTING
            ir_area         = ls_area
-           it_cell_ref     = it_cell_ref
            is_defined_name = ls_defined_name " <--- Copy
          IMPORTING
            ev_skip_name    = lv_skip_name
@@ -432,7 +428,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       lv_tabix = sy-tabix.
 
       " OLD -> NEW
-      READ TABLE it_cell_ref REFERENCE INTO lr_cell_ref
+      READ TABLE _t_cell_ref REFERENCE INTO lr_cell_ref
        WITH TABLE KEY r = lr_cell->c_row
                       c = lr_cell->c_col_ind.
       CHECK sy-subrc = 0.

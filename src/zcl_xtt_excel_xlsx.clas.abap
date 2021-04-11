@@ -141,15 +141,13 @@ private section.
   methods LIST_OBJECT_SAVE_XML
     importing
       !IO_SHEET type ref to LCL_EX_SHEET
-      !IT_CELL_REF type TT_CELL_REF
       !IV_SID type I .
   class-methods DATA_VALIDATION_READ_XML
     importing
       !IO_SHEET type ref to LCL_EX_SHEET .
   class-methods DATA_VALIDATION_SAVE_XML
     importing
-      !IO_SHEET type ref to LCL_EX_SHEET
-      !IT_CELL_REF type TT_CELL_REF .
+      !IO_SHEET type ref to LCL_EX_SHEET .
   class-methods GET_WITHOUT_T
     importing
       !IV_TEXT type STRING
@@ -352,13 +350,13 @@ ENDMETHOD.                    "cell_is_string
 METHOD cell_read_xml.
   DATA: ls_cell TYPE REF TO ts_ex_cell,
         lo_elem TYPE REF TO if_ixml_element,
-        l_val   TYPE string,
         l_ind   TYPE i.
   DATA  lo_xtt_error TYPE REF TO zcx_xtt_exception.
 
   " Transform coordinates
-  l_val = io_node->get_attribute( 'r' ).
-  IF l_val IS INITIAL.
+  DATA l_cell_ref TYPE string.
+  l_cell_ref = io_node->get_attribute( 'r' ).
+  IF l_cell_ref IS INITIAL.
     MESSAGE w026(zsy_xtt) WITH iv_row INTO sy-msgli.
     io_sheet->mo_xlsx->add_log_message( iv_syst = abap_true ).
     RETURN.
@@ -367,7 +365,7 @@ METHOD cell_read_xml.
   " Insert new one
   APPEND INITIAL LINE TO io_sheet->mt_cells REFERENCE INTO ls_cell.
   cell_init(
-   iv_coordinate = l_val
+   iv_coordinate = l_cell_ref
    is_cell       = ls_cell ).
 
   ls_cell->c_type  = io_node->get_attribute( 't' ).
@@ -377,6 +375,7 @@ METHOD cell_read_xml.
   lo_elem = io_node->find_from_name( name = 'f' ).
   IF lo_elem IS BOUND.
     " Unescape fm
+    DATA l_val TYPE string.
     l_val = lo_elem->get_value( ).
     l_val = cl_http_utility=>escape_html( l_val ).
 
@@ -416,6 +415,17 @@ METHOD cell_read_xml.
 
     " Set fm
     ls_cell->c_formula = l_val.
+
+    " Array FM ?
+    DO 1 TIMES.
+      l_val = lo_elem->get_attribute( 't' ).
+      CHECK l_val = 'array'.
+
+      l_val = lo_elem->get_attribute( 'ref' ).
+      CHECK l_val = l_cell_ref.
+
+      ls_cell->c_formula_is_arr = abap_true.
+    ENDDO.
     RETURN.
   ENDIF.
 
@@ -576,7 +586,15 @@ METHOD cell_write_xml.
     " TODO test formula_shift
 
     " Write formula
-    CONCATENATE `<f>` is_cell->c_formula `</f>` INTO lv_data.
+    lv_data = `<f`.
+
+    IF is_cell->c_formula_is_arr = abap_true.
+      CONCATENATE lv_data ` t="array"` " is_cell->c_formula_type
+                          ` ref="` lv_new_col iv_new_row_txt `"`
+             INTO lv_data.
+    ENDIF.
+
+    CONCATENATE lv_data `>` is_cell->c_formula `</f>` INTO lv_data.
   ELSEIF is_cell->c_value IS NOT INITIAL.
     " String
     IF cell_is_string( is_cell ) = abap_true.
@@ -805,8 +823,7 @@ METHOD data_validation_save_xml.
     CHECK lo_data_valid IS NOT INITIAL.
 
     " Change
-    io_sheet->replace_with_new( ir_area     = ls_area
-                                it_cell_ref = it_cell_ref ).
+    io_sheet->replace_with_new( ir_area = ls_area ).
 
     lv_address = zcl_xtt_excel_xlsx=>area_get_address(
       is_area     = ls_area
@@ -1727,8 +1744,7 @@ METHOD list_object_save_xml.
     GET REFERENCE OF ls_list_object->area INTO ls_area.
 
     " Change cells
-    io_sheet->replace_with_new( ir_area     = ls_area
-                                it_cell_ref = it_cell_ref ).
+    io_sheet->replace_with_new( ir_area = ls_area ).
 
     lv_address = area_get_address(
      is_area     = ls_area

@@ -399,7 +399,14 @@ CLASS lcl_demo_040 DEFINITION FINAL INHERITING FROM lcl_demo.
       get_desc_text  REDEFINITION,
       get_url_base   REDEFINITION,
       set_merge_info REDEFINITION,
-      get_templates  REDEFINITION.
+      get_templates  REDEFINITION,
+
+      _add_delimiter
+        IMPORTING
+          iv_delimiter TYPE csequence
+          iv_field     TYPE csequence
+        CHANGING
+          ct_table     TYPE STANDARD TABLE.
 ENDCLASS.
 
 **********************************************************************
@@ -550,6 +557,39 @@ ENDCLASS.
 **********************************************************************
 CLASS lcl_demo_090 DEFINITION FINAL INHERITING FROM lcl_demo.
   PUBLIC SECTION.
+    TYPES:
+      BEGIN OF ts_column,
+        mon      TYPE numc2,
+        mon_name TYPE string,
+        col_name TYPE string, " <-- NAME like {R-T-SUM*}
+      END OF ts_column,
+      tt_column TYPE STANDARD TABLE OF ts_column WITH DEFAULT KEY,
+
+      BEGIN OF ts_merge,
+        title TYPE string,      " for 091
+        c     TYPE tt_column,   " Month columns
+        t     TYPE REF TO data, " Table part
+      END OF ts_merge,
+      tt_merge TYPE STANDARD TABLE OF ts_merge WITH DEFAULT KEY.
+
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      get_screen_opt REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
+
+    CLASS-METHODS:
+      get_one_merge
+        IMPORTING
+                  io_report       TYPE REF TO lcl_report
+        RETURNING VALUE(rs_merge) TYPE ts_merge.
+ENDCLASS.
+
+**********************************************************************
+CLASS lcl_demo_091 DEFINITION FINAL INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+
     METHODS:
       get_desc_text  REDEFINITION,
       get_url_base   REDEFINITION,

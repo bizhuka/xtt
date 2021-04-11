@@ -22,7 +22,10 @@ TYPES:
     c_value          TYPE string,
     c_type           TYPE string,
     c_style          TYPE string,
+
+    " FM
     c_formula        TYPE string,
+    c_formula_is_arr TYPE abap_bool,
 
     " Range name
     c_def_name       TYPE string,
@@ -213,7 +216,10 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       mr_drawing        TYPE REF TO ts_drawing,
 
       " Shared formula
-      mt_shared_fm      TYPE tt_shared_fm.
+      mt_shared_fm      TYPE tt_shared_fm,
+
+      " New offsets
+      _t_cell_ref       TYPE tt_cell_ref.
 
     METHODS:
       constructor
@@ -245,7 +251,6 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       replace_with_new
         IMPORTING
           ir_area         TYPE REF TO ts_ex_area
-          it_cell_ref     TYPE tt_cell_ref
           is_defined_name TYPE ts_ex_defined_name OPTIONAL
         EXPORTING
           ev_skip_name    TYPE abap_bool
@@ -261,8 +266,7 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
           iv_sid           TYPE i "zero based index
         CHANGING
           ct_defined_names TYPE tt_ex_defined_name OPTIONAL,
-      cells_create_refs
-        RETURNING VALUE(rt_cell_ref) TYPE tt_cell_ref,
+      cells_create_refs,
       _cells_write_xml
         RETURNING VALUE(rs_transmit) TYPE ts_transmit,
       _replace_by_transmit
@@ -271,7 +275,6 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       defined_name_save
         IMPORTING
           iv_sid           TYPE i
-          it_cell_ref      TYPE tt_cell_ref
         CHANGING
           ct_defined_names TYPE tt_ex_defined_name,
 

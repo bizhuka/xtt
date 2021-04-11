@@ -14,56 +14,49 @@ CLASS lcl_demo_090 IMPLEMENTATION.
     rs_opt-row_count = rs_opt-colum_count = abap_true.
   ENDMETHOD.
 
-  METHOD set_merge_info.
-    TYPES:
-      BEGIN OF ts_column,
-        mon      TYPE numc2,
-        col_name TYPE string, " <-- NAME like {R-T-SUM*}
-      END OF ts_column,
-      tt_column TYPE STANDARD TABLE OF ts_column WITH DEFAULT KEY,
-
-      " Document structure
-      BEGIN OF ts_merge0,
-        a TYPE tt_column, " Tree 1 In template {C-A}
-      END OF ts_merge0,
-
-      BEGIN OF ts_merge1,
-        t TYPE REF TO data, " Tree 2 In template {R-T}
-      END OF ts_merge1.
-
-    DATA ls_merge0 TYPE ts_merge0.
-    DATA ls_merge1 TYPE ts_merge1.
-    DATA lt_column TYPE REF TO tt_column.
-    DATA ls_column TYPE ts_column.
-    DATA ls_no_sum TYPE ts_no_sum.
-    DATA lo_struc  TYPE REF TO cl_abap_structdescr.
-    DATA lt_comp   TYPE abap_component_tab.
-    DATA ls_comp   TYPE abap_componentdescr.
-    DATA lo_table  TYPE REF TO cl_abap_tabledescr.
-    DATA lr_table  TYPE REF TO data.
-    DATA lv_index  TYPE string.
-    FIELD-SYMBOLS <lt_table> TYPE STANDARD TABLE.
-
+  METHOD get_one_merge.
     " Structure without sums
+    DATA lo_struc  TYPE REF TO cl_abap_structdescr.
+    DATA ls_no_sum TYPE ts_no_sum.
     lo_struc ?= cl_abap_typedescr=>describe_by_data( ls_no_sum ).
+
+    DATA lt_comp   TYPE abap_component_tab.
     lt_comp = lo_struc->get_components( ).
+
+    DATA ls_comp   TYPE abap_componentdescr.
     ls_comp-type ?= cl_abap_typedescr=>describe_by_name( 'BF_RBETR' ).
 
-    CREATE DATA lt_column.
+    DATA lt_month_name TYPE wdr_date_nav_month_name_tab.
+    CALL FUNCTION 'MONTH_NAMES_GET'
+      TABLES
+        month_names = lt_month_name[]
+      EXCEPTIONS
+        OTHERS      = 0.
+    SORT lt_month_name BY mnr.
+
     DO p_c_cnt TIMES.
       " Index without leading space
+      DATA lv_index  TYPE string.
       lv_index = sy-index.
       CONDENSE lv_index.
 
       " Index of month
+      DATA ls_column TYPE ts_column.
       ls_column-mon = sy-index MOD 12.
       IF ls_column-mon = 0.
         ls_column-mon = 12.
       ENDIF.
 
+      FIELD-SYMBOLS <ls_month_name> LIKE LINE OF lt_month_name.
+      READ TABLE lt_month_name ASSIGNING <ls_month_name> BINARY SEARCH
+       WITH KEY mnr = ls_column-mon.
+      IF sy-subrc = 0.
+        ls_column-mon_name = <ls_month_name>-ltx.
+      ENDIF.
+
       " Add with dynamic column name
       CONCATENATE `{R-T-SUM` lv_index `;func=SUM}` INTO ls_column-col_name.
-      APPEND ls_column TO lt_column->*.
+      APPEND ls_column TO rs_merge-c.
 
       " Add new column
       CONCATENATE `SUM` lv_index INTO ls_comp-name.
@@ -74,32 +67,54 @@ CLASS lcl_demo_090 IMPLEMENTATION.
     lo_struc = cl_abap_structdescr=>create( p_components = lt_comp ).
 
     " Create standard table based on new structure
+    DATA lo_table  TYPE REF TO cl_abap_tabledescr.
     lo_table = cl_abap_tabledescr=>create( p_line_type = lo_struc ).
-    CREATE DATA lr_table TYPE HANDLE lo_table.
-    ASSIGN lr_table->* TO <lt_table>.
+
+    " Table part
+    " {R-T} in a temaplte. @see get_random_table description
+    CREATE DATA rs_merge-t TYPE HANDLE lo_table.
+
+    " And fill table part
+    FIELD-SYMBOLS <lt_table> TYPE STANDARD TABLE.
+    ASSIGN rs_merge-t->* TO <lt_table>.
+    io_report->get_random_table( EXPORTING iv_column_cnt = p_c_cnt
+                                 IMPORTING et_table      = <lt_table> ).
+  ENDMETHOD.
+
+  METHOD set_merge_info.
+    TYPES:
+      " Document structure
+      BEGIN OF ts_merge0,
+        a TYPE tt_column, " Tree 1 In template {C-A}
+      END OF ts_merge0,
+
+      BEGIN OF ts_merge1,
+        t TYPE REF TO data, " Tree 2 In template {R-T}
+      END OF ts_merge1.
 
 **********************************
-    " Columns
-    " old way
+    DATA ls_data TYPE ts_merge.
+    ls_data = get_one_merge( io_report ).
+
+**********************************
+    " Columns - old way
 *  ls_merge0-a = zcl_xtt_replace_block=>tree_create(
 *   it_table      = lt_column
 *   iv_fields     = ''   ).   " <-- No fields! Tree with level=0
 
     " New way (declaration in template)
-    ls_merge0-a = lt_column->*.
+    DATA ls_merge0 TYPE ts_merge0.
+    ls_merge0-a = ls_data-c[].
 
 **********************************
-    " Rows
-    " {R-T} in a temaplte. @see get_random_table description
-    io_report->get_random_table( EXPORTING iv_column_cnt = p_c_cnt
-                                 IMPORTING et_table      = <lt_table> ).
-    " old way
+    " Rows - old way
 *    ls_merge1-t = zcl_xtt_replace_block=>tree_create(
 *     it_table      = lr_table
 *     iv_fields     = ''   ).   " <-- No fields! Tree with level=0
 
     " New way (declaration in template)
-    ls_merge1-t = lr_table.
+    DATA ls_merge1 TYPE ts_merge1.
+    ls_merge1-t = ls_data-t.
 
 **********************************
     io_report->merge_add_one( is_root    = ls_merge0

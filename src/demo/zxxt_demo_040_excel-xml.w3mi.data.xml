@@ -115,6 +115,7 @@
     ss:Color="#000000" ss:Bold="1"/>
   </Style>
   <Style ss:ID="s87">
+   <Alignment ss:Vertical="Bottom" ss:WrapText="1"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1"/>
@@ -199,7 +200,7 @@
    <Row ss:AutoFitHeight="0">
     <Cell ss:Index="2" ss:StyleID="s87"><Data ss:Type="String">{R-C-LAND1}</Data><NamedCell
       ss:Name="COUTRY_LIST"/></Cell>
-    <Cell ss:StyleID="s87"><Data ss:Type="String">{R-C-LANDX}</Data><NamedCell
+    <Cell ss:StyleID="s87"><Data ss:Type="String">{R-C-LANDX50}</Data><NamedCell
       ss:Name="COUTRY_LIST"/></Cell>
    </Row>
   </Table>
@@ -238,10 +239,10 @@
     <Cell ss:StyleID="s86"><Data ss:Type="String">Country Name</Data><NamedCell
       ss:Name="COUTRY2_LIST"/></Cell>
    </Row>
-   <Row ss:AutoFitHeight="0">
+   <Row ss:Height="30">
     <Cell ss:Index="2" ss:StyleID="s87"><Data ss:Type="String">{R-W-LAND1}</Data><NamedCell
       ss:Name="COUTRY2_LIST"/></Cell>
-    <Cell ss:StyleID="s87"><Data ss:Type="String">{R-W-LANDX}</Data><NamedCell
+    <Cell ss:StyleID="s87"><Data ss:Type="String">{R-W-LANDX50;type=as_is}</Data><NamedCell
       ss:Name="COUTRY2_LIST"/></Cell>
    </Row>
   </Table>

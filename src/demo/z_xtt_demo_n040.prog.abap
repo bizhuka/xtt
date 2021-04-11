@@ -41,15 +41,39 @@ CLASS lcl_demo_040 IMPLEMENTATION.
     WHERE spras = sy-langu.
 
     " Country Names
-    SELECT land1 landx INTO CORRESPONDING FIELDS OF TABLE ls_root-c "#EC TOO_MANY_ITAB_FIELDS
+    SELECT land1 landx50 INTO CORRESPONDING FIELDS OF TABLE ls_root-c "#EC TOO_MANY_ITAB_FIELDS
     FROM t005t
     WHERE spras = sy-langu.
+    ls_root-w[] = ls_root-c[].
+
+    " № 1 - Test new line delimiters -> *.xslx
+    _add_delimiter( EXPORTING iv_delimiter = cl_abap_char_utilities=>cr_lf
+                              iv_field     = 'MSEHL'
+                    CHANGING  ct_table     = ls_root-u[] ).
+    " № 2 - Test new line delimiters -> *.xslx
+    _add_delimiter( EXPORTING iv_delimiter = cl_abap_char_utilities=>cr_lf
+                              iv_field     = 'LANDX50'
+                    CHANGING  ct_table     = ls_root-c[] ).
 
     " Only for ZCL_XTT_EXCEL_XML
-    ls_root-w[] = ls_root-c[].
+    _add_delimiter( EXPORTING iv_delimiter = `&#10;` " ;type=as_is
+                              iv_field     = 'LANDX50'
+                    CHANGING  ct_table     = ls_root-w[] ).
 
     " Paste data
     io_report->merge_add_one( ls_root ).
+  ENDMETHOD.
+
+  METHOD _add_delimiter.
+    FIELD-SYMBOLS <ls_row>   TYPE any.
+    FIELD-SYMBOLS <lv_field> TYPE csequence.
+
+    LOOP AT ct_table ASSIGNING <ls_row>.
+      ASSIGN COMPONENT iv_field OF STRUCTURE <ls_row> TO <lv_field>.
+      CONCATENATE <lv_field>
+                  iv_delimiter
+                  <lv_field> INTO <lv_field>.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD get_templates.

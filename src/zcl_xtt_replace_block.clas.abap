@@ -354,7 +354,7 @@ ENDMETHOD.
         ENDIF.
 
         " Delete symbols 0-31
-        REPLACE ALL OCCURRENCES OF REGEX '[^[:print:]]' IN rv_result WITH ''.
+        REPLACE ALL OCCURRENCES OF REGEX '[^[:print:]\r\n]' IN rv_result WITH ''.
 
         " Replace special chars
         rv_result = cl_http_utility=>escape_html( rv_result ).

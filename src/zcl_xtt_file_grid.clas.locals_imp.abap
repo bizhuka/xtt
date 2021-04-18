@@ -138,7 +138,7 @@ CLASS lcl_xtt_styles IMPLEMENTATION.
 
   METHOD _get_date_format_tag_end.
     DATA lv_mask TYPE text10.
-    SELECT SINGLE ddtext INTO lv_mask                      "##WARN_OK
+    SELECT SINGLE ddtext INTO lv_mask                   "#EC CI_NOORDER
     FROM usr01 AS u INNER JOIN dd07t AS d ON u~datfm = d~domvalue_l "#EC CI_BUFFJOIN
     WHERE u~bname      = sy-uname
       AND d~domname    = 'XUDATFM'

@@ -14,9 +14,9 @@ public section.
     redefinition .
 protected section.
 
-  methods ON_MATCH_FOUND
-    redefinition .
   methods BOUNDS_FROM_BODY
+    redefinition .
+  methods ON_MATCH_FOUND
     redefinition .
 PRIVATE SECTION.
 ENDCLASS.

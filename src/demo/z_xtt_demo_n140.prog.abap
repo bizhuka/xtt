@@ -1,6 +1,15 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_140 DEFINITION FINAL INHERITING FROM lcl_demo_010.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      get_templates  REDEFINITION.
+ENDCLASS.
 
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_140 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = ';type=block'(140).

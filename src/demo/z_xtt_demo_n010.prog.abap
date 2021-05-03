@@ -1,6 +1,16 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_010 DEFINITION INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
+ENDCLASS.
 
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_010 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Simple structure'(010).

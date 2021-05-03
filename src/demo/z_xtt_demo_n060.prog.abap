@@ -1,6 +1,56 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_060 DEFINITION FINAL INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+    TYPES:
+      BEGIN OF ts_tree_06,
+        " Folders hierarchy
+        dir          TYPE string,
+        par_dir      TYPE string,
 
+        " Empty field. Filled in on_prepare_tree_06
+        level        TYPE i,
+
+        sum          TYPE bf_rbetr,
+        has_children TYPE abap_bool,
+      END OF ts_tree_06,
+      tt_tree_06 TYPE STANDARD TABLE OF ts_tree_06 WITH DEFAULT KEY,
+
+      " Document structure
+      BEGIN OF ts_root,
+        title TYPE string,
+
+        " Or just TYPE tt_tree_06
+        t     TYPE REF TO data, " <-- Table of trees (better to use general REF TO)
+
+        " Old way
+        c     TYPE REF TO data,
+      END OF ts_root.
+
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base    REDEFINITION,
+      set_merge_info  REDEFINITION,
+      get_templates   REDEFINITION.
+
+  PROTECTED SECTION.
+    METHODS:
+      _merge          REDEFINITION,
+      on_prepare_tree_06 FOR EVENT prepare_tree OF zcl_xtt_replace_block
+        IMPORTING
+          ir_tree
+          ir_data,
+
+      _fill_with_folders
+        IMPORTING
+          iv_dir    TYPE csequence
+          iv_sep    TYPE char1
+        CHANGING
+          ct_folder TYPE tt_tree_06.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_060 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Tree (group by field relations)'(060).

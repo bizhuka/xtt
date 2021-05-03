@@ -1,6 +1,43 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_080 DEFINITION FINAL INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      get_screen_opt REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
+  PROTECTED SECTION.
+    TYPES:
+      " Document structure
+      BEGIN OF ts_root,
+        a TYPE REF TO data,  " Tree old way
+        t TYPE tt_rand_data, " internal flat table ( In template {R-T} )
+      END OF ts_root.
 
+    METHODS:
+      _merge          REDEFINITION,
+
+      on_prepare_tree_08 FOR EVENT prepare_tree OF zcl_xtt_replace_block
+        IMPORTING
+          ir_tree      " Type Ref To ZCL_XTT_REPLACE_BLOCK=>TS_TREE
+          ir_data      " Type Ref To DATA
+          ir_sub_data. " Type Ref To DATA
+
+*    TYPES:
+*    " Tree structure
+*    BEGIN OF ts_row.
+*            INCLUDE TYPE ts_rand_data. " random data
+*    TYPES:
+*      " Fill in callback. Functions in Excel like `;func=COUNT` are preferable
+*      ch_count TYPE i, " New field for trees
+*    END OF ts_row,
+*    tt_row TYPE STANDARD TABLE OF ts_row WITH DEFAULT KEY.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_080 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'direction=column'(080).

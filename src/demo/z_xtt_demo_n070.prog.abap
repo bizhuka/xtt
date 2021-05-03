@@ -7,6 +7,36 @@
 * on other hand ON_PREPARE_RAW event always works
 *&---------------------------------------------------------------------*
 
+CLASS lcl_demo_070 DEFINITION FINAL INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION,
+
+      on_pbo_07 FOR EVENT pbo_event OF zif_eui_manager      "#EC CALLED
+        IMPORTING
+          sender
+          io_container.
+
+  PROTECTED SECTION.
+    METHODS:
+      _merge          REDEFINITION,
+      _do_download    REDEFINITION,
+
+      on_prepare_raw_07 FOR EVENT prepare_raw OF zcl_xtt
+        IMPORTING "sender
+          iv_path
+          ir_content, " Type Ref To XSTRING
+
+      check_ole_07
+        IMPORTING
+          io_ole_app TYPE ole2_object.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_070 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Macro call & on_prepare_raw'(070).

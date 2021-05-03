@@ -319,21 +319,23 @@ ENDMETHOD.
 
 
 METHOD do_merge.
-  DATA lo_scope TYPE REF TO zcl_xtt_scope.
-  read_scopes( EXPORTING io_block = io_block
-                         iv_tabix = iv_tabix
-                         iv_force = iv_force
-               IMPORTING eo_scope = lo_scope
-               CHANGING  cv_content = cv_content ).
+  IF iv_root_is_table <> abap_true.
+    DATA lo_scope TYPE REF TO zcl_xtt_scope.
+    read_scopes( EXPORTING io_block = io_block
+                           iv_tabix = iv_tabix
+                           iv_force = iv_force
+                 IMPORTING eo_scope = lo_scope
+                 CHANGING  cv_content = cv_content ).
 
-  " What will search in template. At first '{ROOT-'
-  " Already found scopes
-  FIELD-SYMBOLS <ls_scope> LIKE LINE OF lo_scope->mt_scope.
-  LOOP AT lo_scope->mt_scope ASSIGNING <ls_scope>.
-    io_block->find_match( EXPORTING io_xtt     = me
-                                    is_scope   = <ls_scope>
-                          CHANGING  cv_content = cv_content ).
-  ENDLOOP.
+    " What will search in template. At first '{ROOT-'
+    " Already found scopes
+    FIELD-SYMBOLS <ls_scope> LIKE LINE OF lo_scope->mt_scope.
+    LOOP AT lo_scope->mt_scope ASSIGNING <ls_scope>.
+      io_block->find_match( EXPORTING io_xtt     = me
+                                      is_scope   = <ls_scope>
+                            CHANGING  cv_content = cv_content ).
+    ENDLOOP.
+  ENDIF.
 
   DATA lr_field TYPE REF TO zcl_xtt_replace_block=>ts_field.
   LOOP AT io_block->mt_fields REFERENCE INTO lr_field.

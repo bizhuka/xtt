@@ -1,6 +1,17 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_050 DEFINITION INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      get_screen_opt REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
+ENDCLASS.
 
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_050 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Tree group by fields'(050).

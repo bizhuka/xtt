@@ -1,6 +1,23 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_040 DEFINITION FINAL INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION,
 
+      _add_delimiter
+        IMPORTING
+          iv_delimiter TYPE csequence
+          iv_field     TYPE csequence
+        CHANGING
+          ct_table     TYPE STANDARD TABLE.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_040 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Data types'(040).

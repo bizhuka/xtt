@@ -226,17 +226,22 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     mo_document = _xml_xl_worksheet->obj_get_document( ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
-  METHOD change_table_path.
+  METHOD change_xml_doc.
     CHECK _is_new( ) = abap_true AND iv_sid >= 0.
 
     " Could call several times
-    DATA lv_name TYPE string.
-    lv_name = get_indexed( `tables/table{1}` ).             "#EC NOTEXT
-    REPLACE ALL OCCURRENCES OF REGEX lv_name IN cv_path WITH `tables/table`. "#EC NOTEXT
+    DATA: lv_mask TYPE string, lv_name TYPE string.
+    CONCATENATE iv_mask `{1}` INTO lv_mask.
+    lv_name = get_indexed( lv_mask ).                       "#EC NOTEXT
+    REPLACE ALL OCCURRENCES OF REGEX lv_name IN cv_doc WITH iv_mask. "#EC NOTEXT
 
     " Set new names
-    lv_name = get_indexed( `tables/table{1}$1` ). "#EC NOTEXT  " $1 - as in get_new_id( )
-    REPLACE ALL OCCURRENCES OF REGEX `tables\/table([0-9]+)` IN cv_path WITH lv_name. "#EC NOTEXT
+    CONCATENATE iv_mask `{1}$1` INTO lv_mask.
+    lv_name = get_indexed( lv_mask  ). "#EC NOTEXT  " $1 - as in get_new_id( )
+
+    CONCATENATE iv_mask `([0-9]+)` INTO lv_mask.
+    REPLACE FIRST OCCURRENCE OF `/` IN lv_mask WITH `\/`.
+    REPLACE ALL OCCURRENCES OF REGEX lv_mask IN cv_doc WITH lv_name. "#EC NOTEXT
   ENDMETHOD.
   METHOD get_new_id.
     rv_id = get_indexed( iv_mask = `{1}{2}`
@@ -347,15 +352,33 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         iv_str_tag = `Relationships`  "#EC NOTEXT
         iv_str_doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"></Relationships>`.
 
+    DATA: lv_draw_path     TYPE string, lv_draw_path_rel TYPE string.
+    IF _is_new( ) = abap_true AND is_transmit-iv_sid >= 0.
+      lv_draw_path     = get_indexed( `xl/drawings/drawing{1}1.xml` ).
+      lv_draw_path_rel = get_indexed( `xl/drawings/_rels/drawing{1}1.xml.rels` ).
+    ENDIF.
+
     " Add ref to images
     mo_xlsx->drawing_save_xml( ir_me               = mr_drawing
+                               iv_path             = lv_draw_path
+                               iv_path_rel         = lv_draw_path_rel
                                io_xml_xl_worksheet = _xml_xl_worksheet
                                io_xml_sheet_rels   = lo_xml_sheet_rels ).
     IF ( _is_new( ) = abap_true AND is_transmit-iv_sid >= 0 ) OR lo_xml_sheet_rels->str_status = zcl_xtt_xml_updater=>c_status-changed.
+      DATA lv_rel TYPE STRING.
+      lv_rel = get_indexed( `<Override PartName="/xl/drawings/drawing{1}1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>` ).
+      mo_xlsx->_xml_content_types->str_add( lv_rel ).
+
       DATA lv_xml_sheet_rels TYPE string.
       lv_xml_sheet_rels = lo_xml_sheet_rels->str_get_document( ).
-      change_table_path( EXPORTING iv_sid  = is_transmit-iv_sid
-                         CHANGING  cv_path = lv_xml_sheet_rels ).
+      " N1
+      change_xml_doc( EXPORTING iv_sid  = is_transmit-iv_sid
+                                iv_mask = `drawings/drawing`
+                      CHANGING  cv_doc  = lv_xml_sheet_rels ).
+      " N2
+      change_xml_doc( EXPORTING iv_sid  = is_transmit-iv_sid
+                                iv_mask = `tables/table`
+                      CHANGING  cv_doc  = lv_xml_sheet_rels ).
 
       " And save relation
       lv_path_rel = get_indexed( iv_mask     = mc_path-rel_path

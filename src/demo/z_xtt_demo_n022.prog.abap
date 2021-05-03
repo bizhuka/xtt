@@ -1,6 +1,40 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_022 DEFINITION INHERITING FROM lcl_demo_020.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
 
+  PROTECTED SECTION.
+    TYPES:
+      BEGIN OF ts_flight_info,
+        cityfrom  TYPE spfli-cityfrom,
+        landxfrom TYPE t005t-landx,
+        cityto    TYPE spfli-cityto,
+        landxto   TYPE t005t-landx,
+        carrname  TYPE scarr-carrname,
+        connid    TYPE spfli-connid,
+        fldate    TYPE sflight-fldate,
+        deptime   TYPE spfli-deptime,
+        arrtime   TYPE spfli-arrtime,
+        price     TYPE sflight-price,
+        currency  TYPE sflight-currency,
+        seatsmax  TYPE sflight-seatsmax,
+        seatsocc  TYPE sflight-seatsocc,
+        _group1   TYPE string,
+      END OF ts_flight_info,
+      tt_flight_info TYPE STANDARD TABLE OF ts_flight_info WITH DEFAULT KEY.
+
+    METHODS:
+      _get_flight_info
+        RETURNING VALUE(rt_flight_info) TYPE tt_flight_info.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_022 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Merging cells (Flight Model)'(022).

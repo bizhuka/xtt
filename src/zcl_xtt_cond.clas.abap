@@ -183,6 +183,9 @@ METHOD get_type.
         lv_len = lv_len / 2.
         CONCATENATE `n LENGTH ` lv_len INTO ev_type.
 
+      WHEN cl_abap_typedescr=>typekind_char OR cl_abap_typedescr=>typekind_clike.
+        CONCATENATE `c LENGTH ` lv_len INTO ev_type.
+
       WHEN cl_abap_typedescr=>typekind_packed OR cl_abap_typedescr=>typekind_float OR
            '/' OR 'a' OR 'e'. " typekind_decfloat OR typekind_decfloat16 OR typekind_decfloat34.
         ev_type = `p LENGTH 16 DECIMALS 5`.
@@ -194,8 +197,7 @@ METHOD get_type.
         ev_type = 't'.
 
         " No trunsformation for STRING
-      WHEN cl_abap_typedescr=>typekind_char OR cl_abap_typedescr=>typekind_clike OR
-           cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string OR
+      WHEN cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string OR
            cl_abap_typedescr=>typekind_w OR
            " Binary data in template? Dump ?
            cl_abap_typedescr=>typekind_hex OR cl_abap_typedescr=>typekind_xsequence OR cl_abap_typedescr=>typekind_xstring.

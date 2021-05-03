@@ -1,6 +1,17 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_110 DEFINITION FINAL INHERITING FROM lcl_demo_100.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      get_screen_opt REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
+ENDCLASS.
 
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_110 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Image template declration'(110).

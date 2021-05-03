@@ -1,6 +1,49 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_150 DEFINITION FINAL INHERITING FROM lcl_demo_022.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text     REDEFINITION,
+      get_url_base      REDEFINITION,
+      set_merge_info    REDEFINITION,
+      get_templates     REDEFINITION,
+      get_from_template REDEFINITION,
+      on_user_command   REDEFINITION.
 
+  PRIVATE SECTION.
+    CONSTANTS:
+      c_sum_fields TYPE string VALUE 'PRICE,SEATSMAX,SEATSOCC'.
+
+    DATA:
+      mo_alv          TYPE REF TO zcl_eui_alv,
+
+      " Unit test mode
+      mt_test_catalog TYPE lvc_t_fcat,
+      mt_test_sort    TYPE lvc_t_sort.
+
+    METHODS:
+      _get_grid_params
+        RETURNING VALUE(rs_gp) TYPE ts_grid_params,
+
+      _group_by
+        IMPORTING
+                  iv_fields       TYPE csequence
+        RETURNING VALUE(rt_group) TYPE lvc_t_sort,
+
+      _get_modify_catalog
+        RETURNING VALUE(rt_catalog) TYPE lvc_t_fcat,
+
+      _get_test_catalog
+        IMPORTING
+                  ir_table          TYPE REF TO data
+        RETURNING VALUE(rt_catalog) TYPE lvc_t_fcat,
+
+      _make_toolbar
+        RETURNING VALUE(rt_toolbar) TYPE ttb_button.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_150 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'No template. Grid-based'(150).

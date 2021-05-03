@@ -1,6 +1,52 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_120_attr DEFINITION FINAL
+     FRIENDS zcl_xtt_replace_block. " <--- for private fields
+  PUBLIC SECTION.
+    METHODS:
+      constructor
+        IMPORTING
+          is_rand_data TYPE ts_rand_data.
 
+    " All fields are private!
+  PRIVATE SECTION.
+    DATA:
+      group   TYPE string,                                  "#EC NEEDED
+      caption TYPE string,                                  "#EC NEEDED
+      date    TYPE d,                                       "#EC NEEDED
+      sum1    TYPE bf_rbetr,                                "#EC NEEDED
+      sum2    TYPE bf_rbetr.                                "#EC NEEDED
+ENDCLASS.
+**********************************************************************
+CLASS lcl_demo_120 DEFINITION FINAL INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+    " INTERFACES if_serializable_object
+
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      get_screen_opt REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
+
+    TYPES:
+     tt_demo_120_attr TYPE STANDARD TABLE OF REF TO lcl_demo_120_attr WITH DEFAULT KEY.
+
+    " Public fields are always accessible
+    DATA title TYPE string.                                 "#EC NEEDED
+    DATA t TYPE tt_rand_data. "#EC NEEDED internal flat table ( In template {R-T} )
+    DATA a TYPE REF TO data. "#EC NEEDED tt_demo_120_attr, Cannot show in ALV
+    DATA date TYPE d.                                     "#EC NEEDED 8
+    DATA time TYPE t.                                     "#EC NEEDED 6
+    DATA datetime TYPE cpet_reftimestamp. "#EC NEEDED 14 = date(8) + time(6)
+
+  PROTECTED SECTION.
+    METHODS:
+      _make_a_obj_table.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_120 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Class attributes'(120).

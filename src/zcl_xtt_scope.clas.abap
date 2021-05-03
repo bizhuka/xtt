@@ -63,7 +63,7 @@ private section.
 
   methods _GET_SCOPE
     importing
-      !IV_OFFSET type I
+      !IS_MATCH type MATCH_RESULT
       !IO_XTT type ref to ZCL_XTT
       !IV_CONTENT type STRING
     returning
@@ -157,22 +157,22 @@ METHOD get_scopes.
   DATA lv_text_begin TYPE string.
   CONCATENATE '{' mo_block->ms_ext-name INTO lv_text_begin.
 
-  DATA lt_find_res TYPE match_result_tab.
-  FIND ALL OCCURRENCES OF lv_text_begin IN cv_content RESULTS lt_find_res.
+  DATA lt_match TYPE match_result_tab.
+  FIND ALL OCCURRENCES OF lv_text_begin IN cv_content RESULTS lt_match.
 
 **********************************************************************
   " Search from the last position. That's why 1 run only
   DATA lv_index TYPE i.
-  lv_index = lines( lt_find_res ).
+  lv_index = lines( lt_match ).
   WHILE lv_index > 0.
     " Read the next match
-    FIELD-SYMBOLS <ls_find_res> LIKE LINE OF lt_find_res.
-    READ TABLE lt_find_res ASSIGNING <ls_find_res> INDEX lv_index.
+    FIELD-SYMBOLS <ls_match> LIKE LINE OF lt_match.
+    READ TABLE lt_match ASSIGNING <ls_match> INDEX lv_index.
     lv_index = lv_index - 1.
 
     DATA lr_scope TYPE REF TO ts_scope.
     lr_scope = _get_scope( io_xtt     = io_xtt
-                           iv_offset  = <ls_find_res>-offset
+                           is_match   = <ls_match>
                            iv_content = cv_content ).
     CHECK lr_scope->end IS NOT INITIAL.
 
@@ -251,11 +251,23 @@ METHOD _get_scope.
   CREATE DATA rr_scope.
 
   " 1 try
-  rr_scope->beg  = iv_offset.
+  rr_scope->beg  = is_match-offset.
   FIND FIRST OCCURRENCE OF '}'
        IN SECTION OFFSET rr_scope->beg OF iv_content
        MATCH OFFSET rr_scope->end.
   CHECK sy-subrc = 0.
+
+  " Get field bounds till `;` or `}`
+  DATA lv_end_char TYPE C VALUE ';'.
+
+  DATA lv_short_cond TYPE abap_bool.
+  DATA lv_index      TYPE i.
+
+  lv_index = is_match-offset + is_match-length.
+  IF rr_scope->end > lv_index AND iv_content+lv_index(1) = ':'.
+    lv_short_cond = abap_true.
+    lv_end_char   = ':'.
+  ENDIF.
 
   " Read tech name
   DATA: l_whole_field TYPE string, l_beg TYPE i, l_cnt TYPE i.
@@ -263,9 +275,8 @@ METHOD _get_scope.
   l_cnt         = rr_scope->end - rr_scope->beg - 1.
   l_whole_field = iv_content+l_beg(l_cnt).
 
-  " Get field bounds till `;` or `}`
   DATA lv_end TYPE i.
-  FIND FIRST OCCURRENCE OF ';' IN SECTION OFFSET rr_scope->beg OF iv_content
+  FIND FIRST OCCURRENCE OF lv_end_char IN SECTION OFFSET rr_scope->beg OF iv_content
        MATCH OFFSET lv_end.
   IF sy-subrc <> 0 OR lv_end > rr_scope->end.
     lv_end = rr_scope->end.
@@ -307,7 +318,7 @@ METHOD _get_scope.
     " Ingone option of grandchildren {R-T-FIELD}
     DATA lv_name TYPE string.
     lv_name = rr_scope->field.
-    FIND FIRST OCCURRENCE OF ';' IN lv_name MATCH OFFSET lv_end.
+    FIND FIRST OCCURRENCE OF lv_end_char IN lv_name MATCH OFFSET lv_end.
     IF sy-subrc = 0.
       lv_name = lv_name(lv_end).
     ENDIF.
@@ -316,6 +327,12 @@ METHOD _get_scope.
     CHECK _is_level_norm( rr_scope ) = abap_true.
   ENDIF.
 
+  IF lv_short_cond = abap_true.
+    REPLACE FIRST OCCURRENCE OF ':' IN: l_whole_field   WITH ';cond=',
+                                        rr_scope->field WITH ';cond='.
+    REPLACE ALL OCCURRENCES OF 'v-' IN: l_whole_field   WITH 'value-',
+                                        rr_scope->field WITH 'value-'.
+  ENDIF.
   " All field options
   _fill_t_pair( iv_whole_field = l_whole_field
                 ir_scope       = rr_scope ).

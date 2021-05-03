@@ -1,6 +1,39 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
+CLASS lcl_demo_100 DEFINITION INHERITING FROM lcl_demo.
+  PUBLIC SECTION.
+    METHODS:
+      get_desc_text  REDEFINITION,
+      get_url_base   REDEFINITION,
+      get_screen_opt REDEFINITION,
+      set_merge_info REDEFINITION,
+      get_templates  REDEFINITION.
 
+  PROTECTED SECTION.
+    TYPES:
+      BEGIN OF ts_icon,
+        id   TYPE icon-id,
+        name TYPE bapibds01-objkey,
+        " use code declaration instead
+        img  TYPE REF TO object, " zcl_xtt_image
+        raw  TYPE xstring,
+      END OF ts_icon,
+
+      " Document structure
+      BEGIN OF ts_root,
+        title TYPE string,
+        t     TYPE STANDARD TABLE OF ts_icon WITH DEFAULT KEY, " internal flat table ( In template {R-T} )
+      END OF ts_root.
+
+    METHODS:
+      _get_root
+        IMPORTING
+                  iv_raw         TYPE abap_bool
+        RETURNING VALUE(rs_root) TYPE ts_root.
+ENDCLASS.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_demo_100 IMPLEMENTATION.
   METHOD get_desc_text.
     rv_desc_text = 'Images'(100).

@@ -282,10 +282,11 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
         RETURNING VALUE(rv_tag) TYPE string,
       get_rel_tag
         RETURNING VALUE(rv_tag) TYPE string,
-      change_table_path
+      change_xml_doc
         IMPORTING
                   iv_sid  TYPE i
-        CHANGING  cv_path TYPE string,
+                  iv_mask TYPE csequence
+        CHANGING  cv_doc  TYPE string,
       get_new_id
         IMPORTING
                   iv_id        TYPE string

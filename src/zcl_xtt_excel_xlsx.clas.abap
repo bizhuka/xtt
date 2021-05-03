@@ -182,6 +182,8 @@ private section.
   methods DRAWING_SAVE_XML
     importing
       !IR_ME type ref to TS_DRAWING
+      !IV_PATH type STRING
+      !IV_PATH_REL type STRING
       !IO_XML_XL_WORKSHEET type ref to ZCL_XTT_XML_UPDATER
       !IO_XML_SHEET_RELS type ref to ZCL_XTT_XML_UPDATER .
 ENDCLASS.
@@ -1220,8 +1222,8 @@ METHOD drawing_save_xml.
   CHECK ir_me->_dr_xml_xl_drawings->str_status      = zcl_xtt_xml_updater=>c_status-changed
      OR ir_me->_dr_xml_xl_drawings_rels->str_status = zcl_xtt_xml_updater=>c_status-changed.
 
-  ir_me->_dr_xml_xl_drawings->save( ).
-  ir_me->_dr_xml_xl_drawings_rels->save( ).
+  ir_me->_dr_xml_xl_drawings->save( iv_path ).
+  ir_me->_dr_xml_xl_drawings_rels->save( iv_path_rel ).
 
   " Add 1 by one
   DATA lv_req_text TYPE string.
@@ -1760,8 +1762,9 @@ METHOD list_object_save_xml.
     lv_path = ls_list_object->arc_path.
 
     IF io_sheet->_is_new( ) = abap_true AND iv_sid >= 0.
-      io_sheet->change_table_path( EXPORTING iv_sid   = iv_sid
-                                   CHANGING  cv_path  = lv_path ).
+      io_sheet->change_xml_doc( EXPORTING iv_sid  = iv_sid
+                                          iv_mask = `tables/table`
+                                CHANGING  cv_doc  = lv_path ).
       DATA lv_content_type TYPE string.
       CONCATENATE `<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml" PartName="/` "#EC NOTEXT
                   lv_path `"/>` INTO lv_content_type.

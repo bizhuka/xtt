@@ -34,7 +34,7 @@ CLASS lcl_demo_131 DEFINITION INHERITING FROM lcl_demo.
 
       _get_screen_context
         IMPORTING
-          io_report TYPE REF TO lcl_report
+                  io_report                TYPE REF TO lcl_report
         RETURNING VALUE(rs_screen_context) TYPE REF TO ts_screen_context,
 
       _get_root
@@ -96,7 +96,8 @@ CLASS lcl_demo_131 IMPLEMENTATION.
     WHERE pernr IN is_screen_context-s_pernr[]
       AND endda GE sy-datum
       AND begda LE sy-datum
-      AND sprps NE 'X'.
+      AND sprps NE 'X'
+    ORDER BY pernr.
 
     DATA lr_root TYPE REF TO ts_root.
     LOOP AT rt_root REFERENCE INTO lr_root.

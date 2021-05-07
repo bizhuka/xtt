@@ -82,7 +82,7 @@ CLASS lcl_demo_131 IMPLEMENTATION.
     lo_screen->customize( name     = 'P_MAX_COUNT'
                           required = '1'
                           iv_label = 'Max. Personnel Number' ).
-    lo_screen->popup( iv_col_end = 114 ).
+    lo_screen->popup( iv_col_end = 83 ). " 114 IF lo_screen->set_status( VALUE #( title = '' ) ).
     CHECK lo_screen->show( ) <> 'OK'.
     " Cancel is pressed
     CLEAR rs_screen_context.

@@ -87,6 +87,9 @@ private section.
       !IR_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
     changing
       !CV_CONTENT type STRING .
+  methods DELETE_TAGS_BEFORE_SEARCH
+    importing
+      !IV_BLOCK_NAME type CSEQUENCE .
   methods DELETE_LAST_PAGE_BREAK .
   methods READ_SCOPES
     importing
@@ -270,6 +273,27 @@ METHOD delete_last_page_break.
 ENDMETHOD.
 
 
+METHOD delete_tags_before_search.
+  CHECK mv_skip_tags = abap_true.
+
+  DATA: lv_cnt  TYPE i, lv_from TYPE string, lv_to TYPE string.
+  lv_cnt = strlen( mv_file_content ).
+
+  CONCATENATE `\{`
+              `(<[^\>]+>)*`  " <--- delete tags
+              iv_block_name INTO lv_from.
+  CONCATENATE `{`
+              iv_block_name INTO lv_to.
+
+  REPLACE ALL OCCURRENCES OF REGEX lv_from IN mv_file_content WITH lv_to RESPECTING CASE.
+  CHECK sy-subrc = 0.
+
+  lv_cnt = lv_cnt - strlen( mv_file_content ).
+  MESSAGE e013(zsy_xtt) WITH lv_cnt lv_to INTO sy-msgli.
+  add_log_message( iv_syst = abap_true ).
+ENDMETHOD.
+
+
 METHOD download.
   " If need saveAs
   DATA lv_open TYPE string.
@@ -378,6 +402,8 @@ METHOD merge.
   " For chain calls
   ro_xtt = super->merge( is_block      = is_block
                          iv_block_name = iv_block_name ).
+
+  delete_tags_before_search( iv_block_name ).
 
   " Special case
   DATA lv_root_is_table TYPE abap_bool.

@@ -18,7 +18,8 @@ public section.
       !IV_OLE_EXT type STRING optional
       !IV_OLE_EXT_FORMAT type I optional
       !IV_SKIP_TAGS type ABAP_BOOL optional
-      !IV_TABLE_PAGE_BREAK type STRING optional .
+      !IV_LINE_BREAK type STRING optional
+      !IV_PAGE_BREAK type STRING optional .
 
   methods DOWNLOAD
     redefinition .
@@ -48,7 +49,8 @@ protected section.
     redefinition .
 private section.
 
-  data MV_IF_TABLE_PAGE_BREAK type STRING .
+  data MV_LINE_BREAK type STRING .
+  data MV_PAGE_BREAK type STRING .
 
   methods BOUNDS_FROM_ROW
     importing
@@ -228,11 +230,12 @@ METHOD constructor.
    iv_ole_ext = iv_ole_ext  ).
 
   " For regex
-  mv_body_tag            = iv_body_tag.
-  mv_row_tag             = iv_row_tag.
-  mv_path                = iv_path.
-  mv_skip_tags           = iv_skip_tags.
-  mv_if_table_page_break = iv_table_page_break.
+  mv_body_tag   = iv_body_tag.
+  mv_row_tag    = iv_row_tag.
+  mv_path       = iv_path.
+  mv_skip_tags  = iv_skip_tags.
+  mv_line_break = iv_line_break.
+  mv_page_break = iv_page_break.
 
   " For download & show methods
   mv_ole_ext_format = iv_ole_ext_format.
@@ -250,11 +253,11 @@ ENDMETHOD.
 
 
 METHOD delete_last_page_break.
-  CHECK mv_if_table_page_break IS NOT INITIAL.
+  CHECK mv_page_break IS NOT INITIAL.
 
   " Delete last page break
   DATA lt_match TYPE match_result_tab.
-  FIND ALL OCCURRENCES OF mv_if_table_page_break IN mv_file_content RESULTS lt_match.
+  FIND ALL OCCURRENCES OF mv_page_break IN mv_file_content RESULTS lt_match.
   CHECK sy-subrc = 0.
 
   " Get last OCCURRENCES OF page-break
@@ -289,6 +292,8 @@ METHOD delete_tags_before_search.
   CHECK sy-subrc = 0.
 
   lv_cnt = lv_cnt - strlen( mv_file_content ).
+  CHECK lv_cnt <> 0.
+
   MESSAGE e013(zsy_xtt) WITH lv_cnt lv_to INTO sy-msgli.
   add_log_message( iv_syst = abap_true ).
 ENDMETHOD.
@@ -607,9 +612,13 @@ METHOD on_match_found.
   CHECK is_field->typ <> zcl_xtt_replace_block=>mc_type-tree.
 
   " Try to get value as a string
-  IF mv_value IS INITIAL.
+  DO 1 TIMES.
+    CHECK mv_value IS INITIAL.
     mv_value = zcl_xtt_replace_block=>get_as_string( is_field = is_field ).
-  ENDIF.
+
+    CHECK is_field->typ = zcl_xtt_replace_block=>mc_type-string AND mv_line_break IS NOT INITIAL.
+    REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>cr_lf IN mv_value WITH mv_line_break.
+  ENDDO.
 
   " Write new value
   iv_pos_end = iv_pos_end + 1.

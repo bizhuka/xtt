@@ -67,10 +67,11 @@ ENDMETHOD.
 
 METHOD constructor.
   super->constructor(
-   io_file             = io_file
-   iv_body_tag         = 'template'                         "#EC NOTEXT
-   iv_row_tag          = 'subform'                          "#EC NOTEXT
-   iv_table_page_break = '<breakAfter targetType="pageArea"/>' "#EC NOTEXT
+   io_file       = io_file
+   iv_body_tag   = 'template'                               "#EC NOTEXT
+   iv_row_tag    = 'subform'                                "#EC NOTEXT
+   "iv_line_break = '' ?
+   iv_page_break = '<breakAfter targetType="pageArea"/>'    "#EC NOTEXT
   ).
 
   " Change extension

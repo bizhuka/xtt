@@ -183,7 +183,7 @@ CLASS lcl_demo IMPLEMENTATION.
     ENDIF.
 
     " Show popup
-    lo_screen->popup( iv_col_end = 116 ).
+    lo_screen->popup( iv_col_end = 114 ).
     CHECK lo_screen->show( ) = 'OK'.
 
     " Return template from screen

@@ -365,7 +365,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
                                io_xml_xl_worksheet = _xml_xl_worksheet
                                io_xml_sheet_rels   = lo_xml_sheet_rels ).
     IF ( _is_new( ) = abap_true AND is_transmit-iv_sid >= 0 ) OR lo_xml_sheet_rels->str_status = zcl_xtt_xml_updater=>c_status-changed.
-      DATA lv_rel TYPE STRING.
+      DATA lv_rel TYPE string.
       lv_rel = get_indexed( `<Override PartName="/xl/drawings/drawing{1}1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>` ).
       mo_xlsx->_xml_content_types->str_add( lv_rel ).
 
@@ -873,58 +873,66 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     DATA lv_merge_cnt TYPE i.
 
     CHECK _t_merge_me[] IS NOT INITIAL.
-*    DATA(lt_ex_cell) = VALUE tt_ex_cell( FOR lr_cell_line IN _t_merge_me ( lr_cell_line->* ) ). BREAK-POINT.
 
+    """ DATA(lt_ex_cell1) = VALUE tt_ex_cell( FOR lr_cell_line IN _t_merge_me ( lr_cell_line->* ) ). BREAK-POINT.
     CASE iv_by_column.
       WHEN abap_false.
         SORT  _t_merge_me STABLE BY table_line->c_col.
       WHEN abap_true. " Revers c_col <---> c_row?
         SORT  _t_merge_me STABLE BY table_line->c_row.
     ENDCASE.
+    """ DATA(lt_ex_cell2) = VALUE tt_ex_cell( FOR lr_cell_line IN _t_merge_me ( lr_cell_line->* ) ). BREAK-POINT.
 
+    "DATA lt_unq_cell TYPE SORTED TABLE OF ts_ex_cell WITH UNIQUE KEY table_line.
     DATA lt_level TYPE SORTED TABLE OF i WITH UNIQUE KEY table_line.
+    DATA: lv_is_same_pos TYPE abap_bool.
+
     LOOP AT _t_merge_me INTO lr_cell.
+      lv_is_same_pos = abap_true.
+***      INSERT lr_cell->* INTO TABLE lt_unq_cell.
+***      IF sy-subrc <> 0.
+***        lv_is_same_pos = abap_false.
+***      ENDIF.
+
+      INSERT lr_cell->c_merge_tr_level INTO TABLE lt_level.
+
       IF lr_prev_cell IS INITIAL.
         lr_prev_cell = lr_cell.
         CONTINUE.
       ENDIF.
 
-      DATA: lv_is_same TYPE abap_bool, lv_clear TYPE abap_bool.
+      CASE iv_by_column.
+        WHEN abap_false.
+          IF lr_cell->c_col <> lr_prev_cell->c_col.
+            lv_is_same_pos = abap_false.
+          ENDIF.
+        WHEN abap_true.
+          IF lr_cell->c_row <> lr_prev_cell->c_row.
+            lv_is_same_pos = abap_false.
+          ENDIF.
+      ENDCASE.
+
       " Merge with parent level ?
-      INSERT lr_cell->c_merge_level INTO TABLE lt_level.
-      lv_is_same = abap_true.
       IF lines( lt_level ) = 1 AND lr_cell->c_merge_tabix <= lr_prev_cell->c_merge_tabix.
-        lv_is_same = abap_false.
+        lv_is_same_pos = abap_false.
       ENDIF.
 
-      IF lr_cell->c_value = lr_prev_cell->c_value AND lv_is_same = abap_true.
-        lv_clear = abap_false.
-        CASE iv_by_column.
-          WHEN abap_false.
-            IF lr_cell->c_col = lr_prev_cell->c_col.
-              lv_clear = abap_true.
-            ENDIF.
-          WHEN abap_true. " Revers c_col <---> c_row?
-            IF lr_cell->c_row = lr_prev_cell->c_row.
-              lv_clear = abap_true.
-            ENDIF.
-        ENDCASE.
-
-        IF lv_clear = abap_true.
-          CLEAR: " lr_cell->c_value, " Several times ?
-                 lr_cell->c_merge_row_dx,
-                 lr_cell->c_merge_col_dx.
-          ADD 1 TO lv_merge_cnt.
-          CONTINUE.
-        ENDIF.
+      IF lr_cell->c_value = lr_prev_cell->c_value AND lv_is_same_pos = abap_true.
+        CLEAR: " lr_cell->c_value, " Several times ?
+               lr_cell->c_merge_row_dx,
+               lr_cell->c_merge_col_dx.
+        ADD 1 TO lv_merge_cnt.
+        CONTINUE.
       ENDIF.
 
       _do_merge_me( ir_cell      = lr_prev_cell
                     iv_count     = lv_merge_cnt
                     iv_by_column = iv_by_column ).
       lr_prev_cell = lr_cell.
-      CLEAR: lt_level,
+      CLEAR: lt_level, " ***lt_unq_cell
              lv_merge_cnt.
+***      INSERT lr_cell->* INTO TABLE lt_unq_cell.
+      INSERT lr_cell->c_merge_tr_level INTO TABLE lt_level.
     ENDLOOP.
 
     _do_merge_me( ir_cell      = lr_prev_cell
@@ -1001,11 +1009,16 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     DATA lr_tree_attr     TYPE REF TO zcl_xtt_replace_block=>ts_tree_attr.
     DATA lr_tree          TYPE REF TO zcl_xtt_replace_block=>ts_tree.
 
+    DATA: lv_top                TYPE abap_bool, lv_insert_merge_index TYPE i VALUE -1.
     add_tree_data_own( EXPORTING ir_tree         = ir_tree
                                  iv_tabix        = iv_tabix
                        IMPORTING et_row_top      = lt_row_top
                                  et_row_bottom   = lt_row_bottom
+                                 ev_top          = lv_top
                        CHANGING  ct_dyn_def_name = ct_dyn_def_name ).
+    IF lv_top = abap_true.
+      lv_insert_merge_index = lines( mo_owner->_t_merge_me ).
+    ENDIF.
 
     " row before
     DATA lt_cells_ref TYPE tt_ex_cell_ref.
@@ -1043,17 +1056,26 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     " if equal then merge cells
     DATA lr_cell TYPE REF TO ts_ex_cell.
     LOOP AT lt_cells_ref INTO lr_cell WHERE table_line->c_merge_me = abap_true.
-      lr_cell->c_merge_tabix = iv_tabix.
-      lr_cell->c_merge_level = ir_tree->level.
-      APPEND lr_cell TO mo_owner->_t_merge_me.
+*      IF lines( mt_row_offset ) = ir_tree->level + 1.
+      lr_cell->c_merge_tabix    = iv_tabix.
+*      ENDIF.
+
+      lr_cell->c_merge_tr_level = ir_tree->level.
+
+      IF lv_insert_merge_index = -1.
+        APPEND lr_cell TO mo_owner->_t_merge_me.
+      ELSE.
+        lv_insert_merge_index = lv_insert_merge_index + 1.
+        INSERT lr_cell INTO mo_owner->_t_merge_me INDEX lv_insert_merge_index.
+      ENDIF.
     ENDLOOP.
   ENDMETHOD.
 
   METHOD add_tree_data_own.
     DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
-    DATA lv_top           TYPE abap_bool.
 
     " result
+    ev_top = `~`.
     CLEAR: et_row_top,
            et_row_bottom.
 
@@ -1073,6 +1095,7 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     lv_templ_lev_cnt = lines( mt_row_offset ).
 
     FIELD-SYMBOLS <lt_cell> TYPE tt_ex_cell.
+    DATA lv_top LIKE ev_top.
     DO 3 TIMES.
       CASE sy-index.
         WHEN 1.
@@ -1093,7 +1116,10 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       DATA lr_cache TYPE REF TO ts_match_cache.
       lr_cache ?= find_match( ir_tree = ir_tree
                               iv_top  = lv_top ).
+
+      " Next attempt?
       CHECK lr_cache IS NOT INITIAL.
+      ev_top = lv_top.
 
       " Merge with data
       <lt_cell>[] = lr_cache->tr_cells[].

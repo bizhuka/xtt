@@ -253,9 +253,21 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
     CLASS-DATA:
       t_demo TYPE tt_demo.
 
-    DATA t_merge_alv   TYPE tt_merge_alv.
+    DATA t_merge_alv  TYPE tt_merge_alv.
+    DATA mo_menu_docu TYPE REF TO zcl_eui_menu.
 
     METHODS:
+      _online_docu_button,
+      _on_function_selected FOR EVENT function_selected OF cl_gui_toolbar "#EC CALLED
+        IMPORTING
+          fcode,
+      _hide_online_docu,
+
+      _get_docu_url
+        IMPORTING
+                  iv_append          TYPE csequence
+        RETURNING VALUE(rv_full_url) TYPE string,
+
       _update_demo_listbox,
 
       _merge_get_sub_fields

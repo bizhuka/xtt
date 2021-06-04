@@ -36,7 +36,8 @@ METHOD constructor.
   super->constructor(
    io_file        = io_file
    iv_body_tag    = 'body'
-   iv_row_tag     = 'tr' ).
+   iv_row_tag     = 'tr'
+   iv_line_break  = '<br/>' ).
 
   " Template as email body
   mv_as_email_body = iv_as_email_body.

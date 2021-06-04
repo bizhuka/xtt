@@ -4,6 +4,7 @@
 TYPE-POOLS:
  abap,
  vrm,
+ icon,
  cntb.
 
 " Example option

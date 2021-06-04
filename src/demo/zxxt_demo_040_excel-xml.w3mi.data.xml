@@ -16,10 +16,10 @@
   <AllowPNG/>
  </OfficeDocumentSettings>
  <ExcelWorkbook xmlns="urn:schemas-microsoft-com:office:excel">
-  <WindowHeight>9660</WindowHeight>
-  <WindowWidth>24000</WindowWidth>
-  <WindowTopX>0</WindowTopX>
-  <WindowTopY>0</WindowTopY>
+  <WindowHeight>7545</WindowHeight>
+  <WindowWidth>20490</WindowWidth>
+  <WindowTopX>32767</WindowTopX>
+  <WindowTopY>32767</WindowTopY>
   <ProtectStructure>False</ProtectStructure>
   <ProtectWindows>False</ProtectWindows>
  </ExcelWorkbook>
@@ -33,7 +33,7 @@
    <NumberFormat/>
    <Protection/>
   </Style>
-  <Style ss:ID="m351629872">
+  <Style ss:ID="m320295104">
    <Alignment ss:Horizontal="Center" ss:Vertical="Bottom"/>
    <Borders>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="2"/>
@@ -43,7 +43,7 @@
    <Font ss:FontName="Calibri" x:CharSet="204" x:Family="Swiss" ss:Size="11"
     ss:Color="#000000" ss:Bold="1"/>
   </Style>
-  <Style ss:ID="m351629892">
+  <Style ss:ID="m320295124">
    <Alignment ss:Horizontal="Center" ss:Vertical="Bottom"/>
    <Borders>
     <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="2"/>
@@ -53,7 +53,7 @@
    <Font ss:FontName="Calibri" x:CharSet="204" x:Family="Swiss" ss:Size="11"
     ss:Color="#000000" ss:Bold="1"/>
   </Style>
-  <Style ss:ID="m351629912">
+  <Style ss:ID="m320295144">
    <Alignment ss:Horizontal="Center" ss:Vertical="Bottom"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
@@ -62,7 +62,7 @@
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
    </Borders>
   </Style>
-  <Style ss:ID="m351629932">
+  <Style ss:ID="m320295164">
    <Alignment ss:Horizontal="Center" ss:Vertical="Bottom"/>
    <Borders>
     <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1"/>
@@ -71,7 +71,7 @@
     <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1"/>
    </Borders>
   </Style>
-  <Style ss:ID="s62">
+  <Style ss:ID="s63">
    <Interior ss:Color="#FFFF00" ss:Pattern="Solid"/>
   </Style>
   <Style ss:ID="s64">
@@ -125,20 +125,20 @@
   </Style>
  </Styles>
  <Names>
-  <NamedRange ss:Name="COUTRY_LIST" ss:RefersTo="=Sheet1!R13C2:R14C3"/>
+  <NamedRange ss:Name="COUTRY_LIST" ss:RefersTo="=Sheet1!#REF!"/>
   <NamedRange ss:Name="COUTRY2_LIST"
    ss:RefersTo="='Same data in different sheet'!R2C2:R3C3"/>
   <NamedRange ss:Name="UNITS_LIST" ss:RefersTo="=Sheet1!R9C2:R10C9"/>
  </Names>
  <Worksheet ss:Name="Sheet1">
-  <Table ss:ExpandedColumnCount="9" ss:ExpandedRowCount="14" x:FullColumns="1"
+  <Table ss:ExpandedColumnCount="9" ss:ExpandedRowCount="10" x:FullColumns="1"
    x:FullRows="1" ss:DefaultRowHeight="15">
    <Column ss:AutoFitWidth="0" ss:Width="200.25"/>
    <Column ss:AutoFitWidth="0" ss:Width="156"/>
    <Column ss:AutoFitWidth="0" ss:Width="166.5"/>
    <Column ss:Width="117.75"/>
    <Row ss:AutoFitHeight="0">
-    <Cell ss:StyleID="s62"><Data ss:Type="String" x:Ticked="1">Use apostrophe. Do not leave blank rows between tables</Data></Cell>
+    <Cell ss:StyleID="s63"><Data ss:Type="String" x:Ticked="1">Use apostrophe. Do not leave blank rows between tables</Data></Cell>
    </Row>
    <Row ss:AutoFitHeight="0">
     <Cell ss:Index="2" ss:StyleID="s64"><Data ss:Type="String">{R-DATE}</Data></Cell>
@@ -171,37 +171,18 @@
    <Row ss:AutoFitHeight="0">
     <Cell ss:Index="2" ss:StyleID="s70"><Data ss:Type="String">Unit of Measurement</Data><NamedCell
       ss:Name="UNITS_LIST"/></Cell>
-    <Cell ss:MergeAcross="1" ss:StyleID="m351629872"><Data ss:Type="String">Text (Merged cells)</Data><NamedCell
+    <Cell ss:MergeAcross="1" ss:StyleID="m320295104"><Data ss:Type="String">Text (Merged cells)</Data><NamedCell
       ss:Name="UNITS_LIST"/></Cell>
-    <Cell ss:MergeAcross="4" ss:StyleID="m351629892"><Data ss:Type="String">Formula</Data><NamedCell
+    <Cell ss:MergeAcross="4" ss:StyleID="m320295124"><Data ss:Type="String">Formula</Data><NamedCell
       ss:Name="UNITS_LIST"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0">
     <Cell ss:Index="2" ss:StyleID="s78"><Data ss:Type="String">{R-U-MSEHI;type=mask}</Data><NamedCell
       ss:Name="UNITS_LIST"/></Cell>
-    <Cell ss:MergeAcross="1" ss:StyleID="m351629912"><Data ss:Type="String">{R-U-MSEHL}</Data><NamedCell
+    <Cell ss:MergeAcross="1" ss:StyleID="m320295144"><Data ss:Type="String">{R-U-MSEHL}</Data><NamedCell
       ss:Name="UNITS_LIST"/></Cell>
-    <Cell ss:MergeAcross="4" ss:StyleID="m351629932" ss:Formula="=ROW(RC[-3])"><Data
+    <Cell ss:MergeAcross="4" ss:StyleID="m320295164" ss:Formula="=ROW(RC[-3])"><Data
       ss:Type="Number">10</Data><NamedCell ss:Name="UNITS_LIST"/></Cell>
-   </Row>
-   <Row ss:AutoFitHeight="0">
-    <Cell ss:StyleID="s62"><Data ss:Type="String" x:Ticked="1"></Data></Cell>
-   </Row>
-   <Row ss:AutoFitHeight="0">
-    <Cell ss:StyleID="s62"><Data ss:Type="String" x:Ticked="1"></Data></Cell>
-   </Row>
-   <Row ss:AutoFitHeight="0">
-    <Cell ss:StyleID="s62"><Data ss:Type="String">Press Ctrl + F3 to see defined names</Data></Cell>
-    <Cell ss:StyleID="s86"><Data ss:Type="String">Country Key</Data><NamedCell
-      ss:Name="COUTRY_LIST"/></Cell>
-    <Cell ss:StyleID="s86"><Data ss:Type="String">Country Name</Data><NamedCell
-      ss:Name="COUTRY_LIST"/></Cell>
-   </Row>
-   <Row ss:AutoFitHeight="0">
-    <Cell ss:Index="2" ss:StyleID="s87"><Data ss:Type="String">{R-C-LAND1}</Data><NamedCell
-      ss:Name="COUTRY_LIST"/></Cell>
-    <Cell ss:StyleID="s87"><Data ss:Type="String">{R-C-LANDX50}</Data><NamedCell
-      ss:Name="COUTRY_LIST"/></Cell>
    </Row>
   </Table>
   <WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">
@@ -239,10 +220,10 @@
     <Cell ss:StyleID="s86"><Data ss:Type="String">Country Name</Data><NamedCell
       ss:Name="COUTRY2_LIST"/></Cell>
    </Row>
-   <Row ss:Height="30">
-    <Cell ss:Index="2" ss:StyleID="s87"><Data ss:Type="String">{R-W-LAND1}</Data><NamedCell
+   <Row ss:AutoFitHeight="0" ss:Height="30">
+    <Cell ss:Index="2" ss:StyleID="s87"><Data ss:Type="String">{R-C-LAND1}</Data><NamedCell
       ss:Name="COUTRY2_LIST"/></Cell>
-    <Cell ss:StyleID="s87"><Data ss:Type="String">{R-W-LANDX50;type=as_is}</Data><NamedCell
+    <Cell ss:StyleID="s87"><Data ss:Type="String">{R-C-LANDX50}</Data><NamedCell
       ss:Name="COUTRY2_LIST"/></Cell>
    </Row>
   </Table>
@@ -256,7 +237,7 @@
    <Panes>
     <Pane>
      <Number>3</Number>
-     <ActiveCol>4</ActiveCol>
+     <ActiveCol>2</ActiveCol>
     </Pane>
    </Panes>
    <ProtectObjects>False</ProtectObjects>

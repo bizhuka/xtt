@@ -44,7 +44,7 @@ TYPES:
     " if equal then merge cells
     c_merge_me       TYPE abap_bool,
     c_merge_tabix    TYPE sytabix,
-    c_merge_level    TYPE i,
+    c_merge_tr_level TYPE i,
 
     " Image, Shape, ...
     c_image          TYPE REF TO zcl_xtt_image,
@@ -413,6 +413,7 @@ CLASS lcl_tree_handler DEFINITION INHERITING FROM zcl_xtt_tree_function FINAL.
         EXPORTING
           et_row_top      TYPE tt_ex_cell
           et_row_bottom   TYPE tt_ex_cell
+          ev_top          TYPE abap_bool
         CHANGING
           ct_dyn_def_name TYPE tt_dyn_def_name,
 

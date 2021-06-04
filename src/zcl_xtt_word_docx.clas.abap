@@ -6,7 +6,11 @@ class ZCL_XTT_WORD_DOCX definition
 
 public section.
 
-  constants MC_TABLE_PAGE_BREAK type STRING value '<w:br w:type="page"/>' ##NO_TEXT.
+  constants:
+   BEGIN OF MC_BREAK,
+     LINE type STRING value '<w:br/>',
+     PAGE type STRING value '<w:br w:type="page"/>',
+   END OF MC_BREAK.
 
   methods CONSTRUCTOR
     importing
@@ -53,12 +57,13 @@ CLASS ZCL_XTT_WORD_DOCX IMPLEMENTATION.
 
 METHOD constructor.
   super->constructor(
-   io_file             = io_file
-   iv_body_tag         = 'w:body'                           "#EC NOTEXT
-   iv_row_tag          = 'w:tr'                             "#EC NOTEXT
-   iv_path             = 'word/document.xml'                "#EC NOTEXT
-   iv_skip_tags        = abap_true
-   iv_table_page_break = mc_table_page_break ).
+   io_file       = io_file
+   iv_body_tag   = 'w:body'                                 "#EC NOTEXT
+   iv_row_tag    = 'w:tr'                                   "#EC NOTEXT
+   iv_path       = 'word/document.xml'                      "#EC NOTEXT
+   iv_skip_tags  = abap_true
+   iv_line_break = mc_break-line
+   iv_page_break = mc_break-page ).
 
   DATA lo_no_check TYPE REF TO zcx_eui_no_check.
   TRY.

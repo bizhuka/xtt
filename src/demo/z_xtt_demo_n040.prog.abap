@@ -39,7 +39,6 @@ CLASS lcl_demo_040 IMPLEMENTATION.
         datetime TYPE cpet_reftimestamp, " 14 = date(8) + time(6)
         u        TYPE STANDARD TABLE OF t006a WITH DEFAULT KEY,
         c        TYPE STANDARD TABLE OF t005t WITH DEFAULT KEY,
-        w        TYPE STANDARD TABLE OF t005t WITH DEFAULT KEY, " Only for Xml Spreadsheet 2003 (*.xml)
       END OF ts_root.
     DATA ls_root TYPE ts_root.
 
@@ -61,7 +60,6 @@ CLASS lcl_demo_040 IMPLEMENTATION.
     SELECT land1 landx50 INTO CORRESPONDING FIELDS OF TABLE ls_root-c "#EC TOO_MANY_ITAB_FIELDS
     FROM t005t
     WHERE spras = sy-langu.
-    ls_root-w[] = ls_root-c[].
 
     " № 1 - Test new line delimiters -> *.xslx
     _add_delimiter( EXPORTING iv_delimiter = cl_abap_char_utilities=>cr_lf
@@ -71,11 +69,6 @@ CLASS lcl_demo_040 IMPLEMENTATION.
     _add_delimiter( EXPORTING iv_delimiter = cl_abap_char_utilities=>cr_lf
                               iv_field     = 'LANDX50'
                     CHANGING  ct_table     = ls_root-c[] ).
-
-    " Only for ZCL_XTT_EXCEL_XML
-    _add_delimiter( EXPORTING iv_delimiter = `&#10;` " ;type=as_is
-                              iv_field     = 'LANDX50'
-                    CHANGING  ct_table     = ls_root-w[] ).
 
     " Paste data
     io_report->merge_add_one( ls_root ).
@@ -96,5 +89,9 @@ CLASS lcl_demo_040 IMPLEMENTATION.
   METHOD get_templates.
     APPEND `ZXXT_DEMO_040-XLSX`      TO rt_templates.
     APPEND `ZXXT_DEMO_040_EXCEL-XML` TO rt_templates.
+    APPEND `ZXXT_DEMO_040_WORD-XML`  TO rt_templates.
+    APPEND 'ZXXT_DEMO_040-DOCX'      TO rt_templates.
+    APPEND 'ZXXT_DEMO_040-HTML'      TO rt_templates.
+    APPEND 'ZXXT_DEMO_040-XDP'       TO rt_templates.
   ENDMETHOD.
 ENDCLASS.

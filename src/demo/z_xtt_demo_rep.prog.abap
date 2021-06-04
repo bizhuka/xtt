@@ -34,7 +34,56 @@ CLASS lcl_report IMPLEMENTATION.
 
   METHOD constructor.
     mo_injection = io_injection.
+    _online_docu_button( ).
     _update_demo_listbox( ).
+  ENDMETHOD.
+
+  METHOD _online_docu_button.
+    CREATE OBJECT mo_menu_docu
+      EXPORTING
+        io_handler = me.
+
+    DATA lt_menu TYPE zcl_eui_menu=>tt_menu.
+    DATA lr_menu TYPE REF TO zcl_eui_menu=>ts_menu.
+
+    APPEND INITIAL LINE TO lt_menu REFERENCE INTO lr_menu.
+    lr_menu->function = 'ONLINE_DOCU'.
+    lr_menu->text     = 'Online documentation'(odo).
+    lr_menu->icon     = icon_message_information_small.
+
+    mo_menu_docu->create_toolbar( it_menu  = lt_menu
+                                  iv_width = 190 ).
+  ENDMETHOD.
+
+  METHOD _on_function_selected.
+    CHECK fcode = 'ONLINE_DOCU'.
+
+    DATA lv_url TYPE text255.
+    lv_url = _get_docu_url( '/xtt' ).
+
+    " Show online documentation in browser
+    CALL FUNCTION 'CALL_BROWSER'
+      EXPORTING
+        url    = lv_url
+      EXCEPTIONS
+        OTHERS = 0.
+  ENDMETHOD.
+
+  METHOD _hide_online_docu.
+    DATA lo_container TYPE REF TO cl_gui_container.
+    lo_container = mo_menu_docu->get_container( ).
+    IF lo_container IS NOT INITIAL.
+      lo_container->set_visible( abap_false ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD _get_docu_url.
+    DATA lv_prefix TYPE string VALUE 'https://bizhuka.github.io'. "#EC NOTEXT
+    IF sy-langu = 'R'.
+      CONCATENATE lv_prefix '/ru' INTO lv_prefix.
+    ENDIF.
+
+    CONCATENATE lv_prefix iv_append INTO rv_full_url.
   ENDMETHOD.
 
   METHOD _update_demo_listbox.
@@ -140,6 +189,8 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD start_of_selection.
+    _hide_online_docu( ).
+
     " Data for report & ALV items
     CLEAR: o_demo, t_merge, t_merge_alv.
 
@@ -436,15 +487,11 @@ CLASS lcl_report IMPLEMENTATION.
 
   METHOD _on_top_of_page.
     DATA: lv_full_url TYPE string, lv_text TYPE text255.
+
     lv_full_url = o_demo->get_url_base( ).
     CHECK lv_full_url IS NOT INITIAL.
+    lv_full_url = _get_docu_url( lv_full_url ).
 
-    DATA lv_prefix TYPE string VALUE 'https://bizhuka.github.io'. "#EC NOTEXT
-    IF sy-langu = 'R'.
-      CONCATENATE lv_prefix '/ru' INTO lv_prefix.
-    ENDIF.
-
-    CONCATENATE lv_prefix lv_full_url INTO lv_full_url.
     CONCATENATE 'Documentation №'(dcn)
                 p_exa
                 o_demo->v_desc INTO lv_text SEPARATED BY space.

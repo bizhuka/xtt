@@ -42,13 +42,14 @@ CLASS ZCL_XTT_WORD_XML IMPLEMENTATION.
 
 METHOD constructor.
   super->constructor(
-   io_file             = io_file
-   iv_body_tag         = 'w:body' "#EC NOTEXT
-   iv_row_tag          = 'w:tr'   "#EC NOTEXT
-   iv_ole_ext          = iv_ole_ext
-   iv_ole_ext_format   = iv_ole_ext_format
-   iv_skip_tags        = abap_true
-   iv_table_page_break = zcl_xtt_word_docx=>mc_table_page_break ).
+   io_file           = io_file
+   iv_body_tag       = 'w:body'                             "#EC NOTEXT
+   iv_row_tag        = 'w:tr'                               "#EC NOTEXT
+   iv_ole_ext        = iv_ole_ext
+   iv_ole_ext_format = iv_ole_ext_format
+   iv_skip_tags      = abap_true
+   iv_line_break     = zcl_xtt_word_docx=>mc_break-line
+   iv_page_break     = zcl_xtt_word_docx=>mc_break-page ).
 
   " REPLACE ALL OCCURRENCES OF `.xml` IN mv_file_name WITH `.doc` IGNORING CASE.
 ENDMETHOD.

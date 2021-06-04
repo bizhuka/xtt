@@ -66,10 +66,12 @@ ENDMETHOD.
 METHOD constructor.
   super->constructor(
    io_file            = io_file
-   iv_body_tag        = 'Worksheet' "#EC NOTEXT
-   iv_row_tag         = 'Row'       "#EC NOTEXT
+   iv_body_tag        = 'Worksheet'                         "#EC NOTEXT
+   iv_row_tag         = 'Row'                               "#EC NOTEXT
    iv_ole_ext         = iv_ole_ext
-   iv_ole_ext_format  = iv_ole_ext_format ).
+   iv_ole_ext_format  = iv_ole_ext_format
+   iv_line_break      = '&#10;'                             "#EC NOTEXT
+   ).
 
   " REPLACE ALL OCCURRENCES OF `.xml` IN mv_file_name WITH `.xls` IGNORING CASE.
 

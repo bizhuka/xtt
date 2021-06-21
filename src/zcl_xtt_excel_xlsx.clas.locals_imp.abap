@@ -41,6 +41,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     ELSEIF io_src IS NOT INITIAL.
       _name = io_src->_name.
     ENDIF.
+    INSERT _name INTO TABLE mo_xlsx->_all_sheet_name.
 
     DATA ls_defined_name TYPE REF TO ts_ex_defined_name.
     DATA ls_area         TYPE REF TO ts_ex_area.
@@ -860,6 +861,15 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     ro_copy->_name = zcl_xtt_html=>format( iv_template  = me->_name
                                            is_root      = is_block
                                            iv_root_name = iv_block_name ).
+
+    IF ro_copy->_name IS INITIAL.
+      zcx_xtt_exception=>raise_dump( iv_message = 'Sheet name is initial'(shi) ).
+    ENDIF.
+
+    INSERT ro_copy->_name INTO TABLE mo_xlsx->_all_sheet_name.
+    CHECK sy-subrc <> 0.
+    MESSAGE e027(zsy_xtt) WITH ro_copy->_name INTO sy-msgli.
+    zcx_xtt_exception=>raise_dump( iv_message = sy-msgli ).
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD _is_new.

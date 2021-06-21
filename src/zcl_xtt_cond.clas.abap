@@ -165,10 +165,12 @@ METHOD get_type.
   CLEAR ev_type.
   IF lo_type->is_ddic_type( ) = abap_true.
     ev_type = lo_type->get_relative_name( ).
-    IF iv_is_top = abap_true.
+    IF iv_is_top = abap_true AND ev_type IS NOT INITIAL.
       mv_top_is_ddic_type = abap_true.
     ENDIF.
-  ELSE.
+  ENDIF.
+
+  IF ev_type IS INITIAL.
     DATA lv_len TYPE string.
     DATA lv_dec TYPE string.
 

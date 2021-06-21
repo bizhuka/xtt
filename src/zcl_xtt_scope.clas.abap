@@ -223,6 +223,16 @@ METHOD _fill_t_pair.
         IF ls_pair-val = zcl_xtt_replace_block=>mc_type-block.
           lv_curr_coef = 0.
         ENDIF.
+      WHEN ''. " short form of type block
+        lv_curr_coef = 0.
+
+        DATA ls_pair2 LIKE ls_pair.
+        ls_pair2-key = 'type'.
+        ls_pair2-val = zcl_xtt_replace_block=>mc_type-block.
+        INSERT ls_pair2 INTO TABLE ir_scope->t_pair.
+
+        ls_pair-key = 'cond'.
+        REPLACE ALL OCCURRENCES OF 'v-' IN ls_pair-val WITH 'value-'.
       WHEN 'merge'.
         " Faster
         ir_scope->merge_me = ls_pair-val.

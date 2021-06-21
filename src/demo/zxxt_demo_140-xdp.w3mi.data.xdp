@@ -58,7 +58,7 @@
                <font typeface="Arial"/>
                <value>
                   <exData contentType="text/html" xliff:rid="F38BFD3D-60A4-4F36-9846-0DF0BBDD2B3E">
-                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:'Courier New';font-size:11pt;letter-spacing:0in">{R-BL2;type=block;cond=strlen( value-TITLE ) gt 0} Bottom ok:</p><p style="margin-bottom:8pt;line-height:12.95pt;font-family:'Courier New';font-size:11pt;font-weight:bold;letter-spacing:0in">{R-BOTTOM}<span style="font-weight:normal"><span style="xfa-spacerun:yes"> </span></span></p></body>
+                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="margin-bottom:8pt;line-height:12.95pt;font-family:'Courier New';font-size:11pt;letter-spacing:0in">{R-BL2;=strlen( v-TITLE ) gt 0} Bottom ok:</p><p style="margin-bottom:8pt;line-height:12.95pt;font-family:'Courier New';font-size:11pt;font-weight:bold;letter-spacing:0in">{R-BOTTOM}<span style="font-weight:normal"><span style="xfa-spacerun:yes"> </span></span></p></body>
                   </exData>
                </value>
                <ui>
@@ -80,7 +80,7 @@
                <font typeface="Courier New" size="11pt" baselineShift="0pt"/>
                <value>
                   <exData contentType="text/html" xliff:rid="38E5DB37-EFB3-470D-B738-24A1BAFDBE08">
-                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="font-family:'Courier New';letter-spacing:0in">{R-BL3;type=block;cond=strlen( value-TITLE ) eq -1}<span style="xfa-tab-count:1">         </span><br/>{R-BL3}Hide BL3</p></body>
+                     <body xmlns="http://www.w3.org/1999/xhtml" xmlns:xfa="http://www.xfa.org/schema/xfa-data/1.0/"><p style="font-family:'Courier New';letter-spacing:0in">{R-BL3;=strlen( v-TITLE ) eq -1}<span style="xfa-tab-count:1">         </span><br/>{R-BL3}Hide BL3</p></body>
                   </exData>
                </value>
                <ui>

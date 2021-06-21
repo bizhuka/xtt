@@ -170,6 +170,12 @@
      <MSGNR>026</MSGNR>
      <TEXT>Cell in &apos;&amp;1&apos; row is corrupted</TEXT>
     </T100>
+    <T100>
+     <SPRSL>E</SPRSL>
+     <ARBGB>ZSY_XTT</ARBGB>
+     <MSGNR>027</MSGNR>
+     <TEXT>Sheet name &apos;&amp;1&apos; is not unique</TEXT>
+    </T100>
    </T100>
    <I18N_LANGS>
     <LANGU>R</LANGU>

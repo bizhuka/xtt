@@ -12,7 +12,7 @@ public section.
       !IV_AS_EMAIL_BODY type ABAP_BOOL optional .
   class-methods FORMAT
     importing
-      !IV_TEMPLATE type STRING
+      !IV_TEMPLATE type CSEQUENCE
       !IT_FORMAT_FIELD type ZCL_XTT_UTIL=>TT_FORMAT_FIELD optional
       !IS_ROOT type ANY optional
       !IV_ROOT_NAME type CSEQUENCE default 'R'

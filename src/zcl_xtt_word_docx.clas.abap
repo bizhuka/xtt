@@ -285,12 +285,16 @@ METHOD _change_header_footer.
   DATA lv_prefix TYPE string.
   CONCATENATE `{` iv_block_name INTO lv_prefix.
 
+  " Footers & headers without infinite loop
+  DATA lt_path TYPE stringtab.
   FIELD-SYMBOLS <ls_file> LIKE LINE OF mo_zip->files.
   LOOP AT mo_zip->files ASSIGNING <ls_file> WHERE name CP 'word/header*.xml'
                                                OR name CP 'word/footer*.xml'.
-    DATA lv_path TYPE string.
-    lv_path = <ls_file>-name.
+    APPEND <ls_file>-name TO lt_path.
+  ENDLOOP.
 
+  DATA lv_path TYPE string.
+  LOOP AT lt_path INTO lv_path.
     " Get content as a string from file
     DATA lv_content TYPE string.
     zcl_eui_conv=>xml_from_zip( EXPORTING io_zip   = mo_zip
@@ -306,11 +310,12 @@ METHOD _change_header_footer.
         iv_string = lv_content.
 
     DATA lo_html TYPE REF TO zcl_xtt.
-    CREATE OBJECT lo_html TYPE zcl_xtt_html
+    CREATE OBJECT lo_html TYPE zcl_xtt_word_xml " zcl_xtt_html
       EXPORTING
         io_file = lo_file.
 
     " No need to show
+    lo_html->_logger->skip( iv_msgid = 'ZSY_XTT' iv_msgno = 008 iv_msgty = 'W' ).
     lo_html->_logger->skip( iv_msgid = 'ZSY_XTT' iv_msgno = 010 iv_msgty = 'W' ).
     lo_html->_logger->skip( iv_msgid = 'ZSY_XTT' iv_msgno = 012 iv_msgty = 'W' ).
 

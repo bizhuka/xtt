@@ -10,7 +10,7 @@ public section.
   methods CONSTRUCTOR
     importing
       !IV_NAME type CSEQUENCE
-      !IV_STRING type STRING optional
+      !IV_STRING type CSEQUENCE optional
       !IV_XSTRING type XSTRING optional .
 protected section.
 private section.
@@ -30,7 +30,9 @@ METHOD constructor.
   IF iv_xstring IS SUPPLIED.
     mv_xstring = iv_xstring.
   ELSEIF iv_string IS SUPPLIED.
-    mv_xstring = zcl_eui_conv=>string_to_xstring( iv_string ).
+    DATA lv_string TYPE string.
+    lv_string = iv_string.
+    mv_xstring = zcl_eui_conv=>string_to_xstring( lv_string ).
   ENDIF.
 ENDMETHOD.
 

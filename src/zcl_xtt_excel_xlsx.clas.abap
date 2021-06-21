@@ -30,6 +30,8 @@ protected section.
     redefinition .
 private section.
 
+  types TT_SHEET_NAME type SORTED TABLE OF char31 WITH UNIQUE KEY TABLE_LINE.
+
   data MT_SHEETS type LCL_EX_SHEET_TAB .
   data MO_SHEET type ref to LCL_EX_SHEET .
   data MO_ZIP type ref to CL_ABAP_ZIP .
@@ -37,6 +39,7 @@ private section.
   data _XML_XL_WORKBOOK type ref to ZCL_XTT_XML_UPDATER .
   data _XML_CONTENT_TYPES type ref to ZCL_XTT_XML_UPDATER .
   data _SHEETS_COUNTER type I value 555 ##NO_TEXT.
+  data _ALL_SHEET_NAME type TT_SHEET_NAME .
 
   methods _WORKBOOK_WRITE_XML
     importing

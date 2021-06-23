@@ -176,6 +176,7 @@ CLASS lcl_test IMPLEMENTATION.
 
       WHEN '\CLASS=ZCL_XTT_EXCEL_XLSX'.
         io_xtt->add_raw_event( 'xl/workbook.xml' ).
+        io_xtt->add_raw_event( 'xl/_rels/workbook.xml.rels' ).
 
         " Max number of sheets
         DO 12 TIMES.

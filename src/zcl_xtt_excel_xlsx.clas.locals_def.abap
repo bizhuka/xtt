@@ -191,7 +191,7 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       _index            TYPE string,
       _index_original   TYPE string,
 
-      _name             TYPE char31,
+      _name             TYPE c LENGTH 31,
       _state            TYPE string,  " `` || `hidden` || `veryHidden`
 
       mo_xlsx           TYPE REF TO zcl_xtt_excel_xlsx,

@@ -195,7 +195,8 @@ METHOD save.
     " Text mode with append
     lv_xml = str_doc.
     " Just skip saving
-    CHECK str_status = c_status-changed.
+    CHECK str_status = c_status-changed
+       OR iv_path IS NOT INITIAL.
   ENDIF.
 
   " Paste data to ZIP file

@@ -54,6 +54,7 @@ protected section.
     importing
       !IR_TREE type ref to ZCL_XTT_REPLACE_BLOCK=>TS_TREE
       !IV_TOP type ABAP_BOOL
+      !CR_FOUND type ref to ABAP_BOOL
     returning
       value(RR_DATA) type ref to DATA .
 private section.
@@ -279,7 +280,6 @@ METHOD find_match.
   FIELD-SYMBOLS:
     <ls_data>    TYPE any,
     <ls_row_off> LIKE LINE OF mt_row_offset.
-
   " Data to ANY
   ASSIGN ir_tree->data->* TO <ls_data>.
 
@@ -311,6 +311,7 @@ METHOD find_match.
     " Slow match by level and top
     CHECK <ls_row_off>-level = lv_level_index->*
       AND <ls_row_off>-top   = lv_last_top.
+    cr_found->* = abap_true.
 
     " Just get default row group
     IF <ls_row_off>-if_form IS INITIAL.

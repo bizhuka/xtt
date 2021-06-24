@@ -1104,6 +1104,9 @@ CLASS lcl_tree_handler IMPLEMENTATION.
     DATA lv_templ_lev_cnt TYPE i.
     lv_templ_lev_cnt = lines( mt_row_offset ).
 
+    DATA: lv_found TYPE abap_bool, lr_found TYPE REF TO abap_bool.
+    GET REFERENCE OF lv_found INTO lr_found.
+
     FIELD-SYMBOLS <lt_cell> TYPE tt_ex_cell.
     DATA lv_top LIKE ev_top.
     DO 3 TIMES.
@@ -1116,7 +1119,8 @@ CLASS lcl_tree_handler IMPLEMENTATION.
           lv_top = abap_false.
         WHEN 3.
           " 3-d try
-          CHECK et_row_top IS INITIAL AND et_row_bottom IS INITIAL.
+          CHECK et_row_top IS INITIAL AND et_row_bottom IS INITIAL
+            AND lv_found <> abap_true.
 
           ASSIGN et_row_top TO <lt_cell>.
           lv_top = abap_undefined.
@@ -1124,8 +1128,9 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
       " Find match
       DATA lr_cache TYPE REF TO ts_match_cache.
-      lr_cache ?= find_match( ir_tree = ir_tree
-                              iv_top  = lv_top ).
+      lr_cache ?= find_match( ir_tree  = ir_tree
+                              iv_top   = lv_top
+                              cr_found = lr_found ).
 
       " Next attempt?
       CHECK lr_cache IS NOT INITIAL.

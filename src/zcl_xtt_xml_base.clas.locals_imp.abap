@@ -154,6 +154,9 @@ CLASS lcl_tree_handler IMPLEMENTATION.
         is_block      = <ls_data>
         iv_block_name = mv_block_name.
 
+    DATA: lv_found TYPE abap_bool, lr_found TYPE REF TO abap_bool.
+    GET REFERENCE OF lv_found INTO lr_found.
+
     FIELD-SYMBOLS <lv_text> TYPE string.
     DO 3 TIMES.
       CASE sy-index.
@@ -165,7 +168,8 @@ CLASS lcl_tree_handler IMPLEMENTATION.
           lv_top = abap_false.
         WHEN 3.
           " 3-d try
-          CHECK ev_text_top IS INITIAL AND ev_text_bottom IS INITIAL.
+          CHECK ev_text_top IS INITIAL AND ev_text_bottom IS INITIAL
+            AND lv_found <> abap_true.
 
           ASSIGN ev_text_top TO <lv_text>.
           lv_top = abap_undefined.
@@ -173,8 +177,9 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
       " Find match
       DATA lr_cache TYPE REF TO ts_match_cache.
-      lr_cache ?= find_match( ir_tree = ir_tree
-                              iv_top  = lv_top ).
+      lr_cache ?= find_match( ir_tree  = ir_tree
+                              iv_top   = lv_top
+                              cr_found = lr_found ).
       CHECK lr_cache IS NOT INITIAL.
 
       " Unique ID

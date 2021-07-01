@@ -45,7 +45,8 @@ private section.
   methods _CHANGE_HEADER_FOOTER
     importing
       !IS_BLOCK type ANY
-      !IV_BLOCK_NAME type CSEQUENCE .
+      !IV_BLOCK_NAME type CSEQUENCE
+      !IO_HELPER type ref to OBJECT .
   methods _FIND_IMAGE_TEMPLATES .
   methods _CHECK_DRAWING_REL .
 ENDCLASS.
@@ -181,10 +182,12 @@ ENDMETHOD.
 
 METHOD merge.
   ro_xtt = super->merge( is_block      = is_block
-                         iv_block_name = iv_block_name ).
+                         iv_block_name = iv_block_name
+                         io_helper     = io_helper ).
 
   _change_header_footer( is_block      = is_block
-                         iv_block_name = iv_block_name ).
+                         iv_block_name = iv_block_name
+                         io_helper     = io_helper ).
 ENDMETHOD.
 
 
@@ -324,7 +327,8 @@ METHOD _change_header_footer.
 
     " Pass data
     lo_html->merge( is_block      = is_block
-                    iv_block_name = iv_block_name ).
+                    iv_block_name = iv_block_name
+                    io_helper     = io_helper ).
 
     DATA lx_content TYPE xstring.
     lx_content = lo_html->get_raw( ).

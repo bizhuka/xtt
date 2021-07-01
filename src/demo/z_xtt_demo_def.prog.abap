@@ -29,7 +29,8 @@ CLASS lcl_demo IMPLEMENTATION.
 
       io_xtt->merge( is_block      = <ls_root>
                      iv_block_name = <ls_merge>-key " <--- 'R' by defualt
-                    ).
+                     io_helper     = <ls_merge>-obj " For 160 example only
+                   ).
     ENDLOOP.
   ENDMETHOD.
 

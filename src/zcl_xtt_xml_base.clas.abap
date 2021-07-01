@@ -406,7 +406,8 @@ ENDMETHOD.
 METHOD merge.
   " For chain calls
   ro_xtt = super->merge( is_block      = is_block
-                         iv_block_name = iv_block_name ).
+                         iv_block_name = iv_block_name
+                         io_helper     = io_helper ).
 
   delete_tags_before_search( iv_block_name ).
 

@@ -43,6 +43,7 @@ public section.
     importing
       !IS_BLOCK type ANY
       !IV_BLOCK_NAME type CSEQUENCE default `R`
+      !IO_HELPER type ref to OBJECT optional
     returning
       value(RO_XTT) type ref to ZCL_XTT .
   methods GET_RAW
@@ -79,6 +80,10 @@ public section.
       !IV_TEXT type CSEQUENCE optional
       !IO_EXCEPTION type ref to CX_ROOT optional
       !IV_MSGTY type SYMSGTY optional .
+  class ZCL_XTT_COND definition load .
+  methods GET_CALLER_INFO
+    changing
+      !CS_MATCH type ZCL_XTT_COND=>TS_MATCH .
 protected section.
 
   types:
@@ -114,10 +119,11 @@ protected section.
       !EV_NEW type ABAP_BOOL
       !EO_SCOPE type ref to ZCL_XTT_SCOPE .
 private section.
-
 *"* private components of class ZCL_XTT
 *"* do not include other source files here!!!
+
   data MT_RAW_EVENT type STRINGTAB .
+  data MO_HELPER type ref to OBJECT .
   data MO_DEBUG type ref to ZCL_XTT_DEBUG .
 
   methods _INIT_LOGGER .
@@ -317,12 +323,96 @@ METHOD download.
 ENDMETHOD.
 
 
+METHOD get_caller_info.
+  cs_match-caller = mo_helper.
+
+  IF cs_match-caller IS INITIAL.
+    DATA lv_message TYPE string.
+    add_log_message( iv_text  = `Please pass IO_HELPER to MERGE( ) method`
+                     iv_msgty = 'E' ).
+    RETURN.
+  ENDIF.
+
+**********************************************************************
+* method( ) in string
+**********************************************************************
+  DATA: lv_beg TYPE i, lv_end TYPE i.
+  IF cs_match-cond CS '('.
+    lv_beg = sy-fdpos.
+  ENDIF.
+  IF cs_match-cond CP '*)'.
+    lv_end = sy-fdpos.
+  ENDIF.
+
+  IF lv_beg IS INITIAL OR lv_end IS INITIAL.
+    CONCATENATE `No method call in "` cs_match-cond `"` INTO lv_message.
+    add_log_message( iv_text  = lv_message
+                     iv_msgty = 'E' ).
+    RETURN.
+  ENDIF.
+
+**********************************************************************
+* serach method in IO_HELPER
+**********************************************************************
+  DATA lo_object TYPE REF TO cl_abap_objectdescr.
+  lo_object ?= cl_abap_objectdescr=>describe_by_object_ref( cs_match-caller ).
+
+  DATA lv_method TYPE string.
+  lv_method = cs_match-cond(lv_beg).
+  TRANSLATE lv_method TO UPPER CASE.
+
+  FIELD-SYMBOLS <ls_method> LIKE LINE OF lo_object->methods.
+  READ TABLE lo_object->methods ASSIGNING <ls_method>
+   WITH KEY name = lv_method.
+  IF sy-subrc <> 0.
+    CONCATENATE `No method "` lv_method `" in IO_HELPER` INTO lv_message.
+    add_log_message( iv_text  = lv_message
+                     iv_msgty = 'E' ).
+    RETURN.
+  ENDIF.
+
+**********************************************************************
+* Returning parameter
+**********************************************************************
+  FIELD-SYMBOLS <ls_param> LIKE LINE OF <ls_method>-parameters.
+  READ TABLE <ls_method>-parameters ASSIGNING <ls_param>
+   WITH KEY parm_kind = lo_object->returning.
+  IF sy-subrc <> 0.
+    CONCATENATE `No returning parameter in method "` lv_method `"` INTO lv_message.
+    add_log_message( iv_text  = lv_message
+                     iv_msgty = 'E' ).
+    RETURN.
+  ENDIF.
+  cs_match-type = zcl_xtt_replace_block=>get_simple_type( <ls_param>-type_kind ).
+
+  DATA lv_code_line TYPE string.
+  CONCATENATE ` RECEIVING ` <ls_param>-name ` = result` INTO lv_code_line.
+  CONCATENATE cs_match-cond(lv_end) lv_code_line INTO cs_match-cond.
+
+**********************************************************************
+* Pass optional IS_ROOT parameter
+**********************************************************************
+  CONCATENATE `CALL METHOD _caller->('` lv_method `') EXPORTING` INTO lv_code_line.
+  READ TABLE <ls_method>-parameters TRANSPORTING NO FIELDS
+   WITH KEY name      = `IS_ROOT`
+            parm_kind = lo_object->importing.
+  IF sy-subrc = 0.
+    CONCATENATE lv_code_line ` IS_ROOT = root ` INTO lv_code_line.
+  ENDIF.
+
+  CONCATENATE lv_method `(` INTO lv_method.
+  REPLACE FIRST OCCURRENCE OF lv_method IN cs_match-cond WITH lv_code_line IGNORING CASE.
+ENDMETHOD.
+
+
 METHOD merge.
   " For chain calls
   ro_xtt = me.
 
   " For each merge
   CLEAR _scopes.
+
+  mo_helper = io_helper.
 
   " Delegate to another class
   CHECK mo_debug IS NOT INITIAL.

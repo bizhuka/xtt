@@ -1,15 +1,14 @@
 class ZCL_XTT_REPLACE_BLOCK definition
   public
   final
-  create public
-
-  global friends ZCL_XTT_COND .
+  create public .
 
 public section.
+*"* public components of class ZCL_XTT_REPLACE_BLOCK
+*"* do not include other source files here!!!
   type-pools ABAP .
 
-  types:
-    ts_field TYPE zss_xtt_field .
+  types TS_FIELD type ZSS_XTT_FIELD .
   types:
     BEGIN OF ts_field_ext.
         INCLUDE TYPE ts_field AS fld.
@@ -118,12 +117,7 @@ public section.
   methods SET_ID
     importing
       !IV_ID type STRING .
-  PROTECTED SECTION.
-private section.
-
-  data MV_SUB_OFFSET type I .
-
-  class-methods _GET_FIELD_EXT
+  class-methods GET_FIELD_EXT
     importing
       !IO_XTT type ref to ZCL_XTT
       !IS_BLOCK type ANY
@@ -131,6 +125,18 @@ private section.
       !IS_FIELD type ref to TS_FIELD optional
     returning
       value(RS_FIELD_EXT) type TS_FIELD_EXT .
+  class-methods GET_SIMPLE_TYPE
+    importing
+      !IV_KIND type ABAP_TYPEKIND
+    returning
+      value(RV_TYPE) type STRING .
+  PROTECTED SECTION.
+private section.
+*"* private components of class ZCL_XTT_REPLACE_BLOCK
+*"* do not include other source files here!!!
+
+  data MV_SUB_OFFSET type I .
+
   class-methods _CHECK_OFFEST
     importing
       !IO_XTT type ref to ZCL_XTT
@@ -146,10 +152,10 @@ CLASS ZCL_XTT_REPLACE_BLOCK IMPLEMENTATION.
 
 
 METHOD constructor.
-  ms_ext = _get_field_ext( io_xtt        = io_xtt
-                           is_block      = is_block
-                           iv_block_name = iv_block_name
-                           is_field      = is_field ).
+  ms_ext = get_field_ext( io_xtt        = io_xtt
+                          is_block      = is_block
+                          iv_block_name = iv_block_name
+                          is_field      = is_field ).
 
   " Structure or object sub field
   DATA ls_sub_field          TYPE ts_field_ext.
@@ -174,9 +180,9 @@ METHOD constructor.
         CONCATENATE ms_ext-name mc_block-name_delim <ls_comp>-name INTO ls_sub_field-name.
 
         " Add sub field
-        ls_sub_field = _get_field_ext( io_xtt        = io_xtt
-                                       is_block      = <fs_sub_fld>
-                                       iv_block_name = ls_sub_field-name ).
+        ls_sub_field = get_field_ext( io_xtt        = io_xtt
+                                      is_block      = <fs_sub_fld>
+                                      iv_block_name = ls_sub_field-name ).
         CHECK ls_sub_field-desc IS NOT INITIAL.
         ls_sub_field-fl_stat = abap_true.
         INSERT ls_sub_field-fld INTO TABLE mt_fields.
@@ -225,9 +231,9 @@ METHOD constructor.
         CONCATENATE ms_ext-name mc_block-name_delim <ls_attr>-name INTO ls_sub_field-name.
 
         " Add sub field
-        ls_sub_field = _get_field_ext( io_xtt        = io_xtt
-                                       is_block      = <fs_sub_fld>
-                                       iv_block_name = ls_sub_field-name ).
+        ls_sub_field = get_field_ext( io_xtt        = io_xtt
+                                      is_block      = <fs_sub_fld>
+                                      iv_block_name = ls_sub_field-name ).
         CHECK ls_sub_field-desc IS NOT INITIAL.
         ls_sub_field-fl_stat = abap_true.
         INSERT ls_sub_field-fld INTO TABLE mt_fields.
@@ -438,6 +444,146 @@ ENDMETHOD.
       ENDIF.
     ENDIF.
   ENDMETHOD.
+
+
+METHOD get_field_ext.
+  " Result block
+  FIELD-SYMBOLS <fs_block> TYPE any.
+
+  IF is_field IS INITIAL.
+    rs_field_ext-name = iv_block_name.
+    ASSIGN is_block TO <fs_block>.
+  ELSE." ROOT-FIELD1...
+    rs_field_ext-name  = is_field->name.
+    rs_field_ext-rb_id = is_field->fl_id.
+    IF is_field->dref IS NOT INITIAL.
+      ASSIGN is_field->dref->* TO <fs_block>.
+    ELSEIF is_field->oref IS NOT INITIAL. " Objects
+      ASSIGN is_field->oref    TO <fs_block>.
+    ENDIF.
+    CHECK <fs_block> IS ASSIGNED.
+  ENDIF.
+  " Same with name by default
+  IF rs_field_ext-rb_id IS INITIAL.
+    rs_field_ext-rb_id = rs_field_ext-name.
+  ENDIF.
+
+  " Ingone option of grandchildren {R-T-FIELD}
+  FIND ALL OCCURRENCES OF mc_block-name_delim IN rs_field_ext-name MATCH COUNT rs_field_ext-rb_level.
+
+  " TODO join with ADD_2_FIELDS
+  rs_field_ext-desc = cl_abap_typedescr=>describe_by_data( <fs_block> ).
+  DO.
+    IF rs_field_ext-desc->type_kind = cl_abap_typedescr=>typekind_dref.
+      DATA lv_ref TYPE REF TO data.
+      lv_ref ?= <fs_block>.
+
+      " Oops
+      IF lv_ref IS INITIAL.
+        MESSAGE w004(zsy_xtt) WITH rs_field_ext-name INTO sy-msgli.
+        io_xtt->add_log_message( iv_syst = abap_true ).
+        RETURN.
+      ENDIF.
+
+      rs_field_ext-desc = cl_abap_typedescr=>describe_by_data_ref( lv_ref ).
+      ASSIGN lv_ref->* TO <fs_block>.
+      rs_field_ext-dref = lv_ref.
+      CONTINUE.
+    ENDIF.
+
+    CASE rs_field_ext-desc->type_kind.
+        " Structures
+      WHEN cl_abap_typedescr=>typekind_struct1 OR cl_abap_typedescr=>typekind_struct2.
+        rs_field_ext-typ = mc_type-struct.
+
+        IF rs_field_ext-desc->absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK\TYPE=TS_TREE'.
+          rs_field_ext-typ = mc_type-tree.
+        ENDIF.
+
+        " Special case for objects
+      WHEN cl_abap_typedescr=>typekind_intf OR cl_abap_typedescr=>typekind_class OR cl_abap_typedescr=>typekind_oref.
+        " Only for objects
+        IF <fs_block> IS NOT INITIAL.
+          rs_field_ext-typ  = mc_type-object.
+          rs_field_ext-oref = <fs_block>.
+          rs_field_ext-desc = cl_abap_typedescr=>describe_by_object_ref( rs_field_ext-oref ).
+
+          IF rs_field_ext-desc->absolute_name = '\CLASS=ZCL_XTT_IMAGE'.
+            rs_field_ext-typ = mc_type-image.
+          ENDIF.
+        ENDIF.
+
+        RETURN.
+
+        " Use mask and don't delete dots in ZCL_XTT_REPLACE_BLOCK=>get_as_string
+      WHEN cl_abap_typedescr=>typekind_num OR cl_abap_typedescr=>typekind_numeric.
+        DATA l_mask TYPE string.
+        DESCRIBE FIELD <fs_block> EDIT MASK l_mask.
+        IF l_mask IS INITIAL.
+          rs_field_ext-typ = mc_type-integer.
+        ELSE. " For safety
+          rs_field_ext-typ = mc_type-mask.
+        ENDIF.
+
+      WHEN OTHERS.
+        rs_field_ext-typ = get_simple_type( rs_field_ext-desc->type_kind ).
+    ENDCASE.
+
+    " 1 time only
+    EXIT.
+  ENDDO.
+
+  " Result
+  GET REFERENCE OF <fs_block> INTO rs_field_ext-dref.
+
+  " Oops
+  CHECK rs_field_ext-desc IS INITIAL.
+  IF rs_field_ext-name IS INITIAL AND is_field IS NOT INITIAL.
+    rs_field_ext-name = is_field->name.
+  ENDIF.
+  MESSAGE w004(zsy_xtt) WITH rs_field_ext-name INTO sy-msgli.
+  io_xtt->add_log_message( iv_syst = abap_true ).
+ENDMETHOD.
+
+
+METHOD get_simple_type.
+  CASE iv_kind.
+      " Tables
+    WHEN cl_abap_typedescr=>typekind_table.
+      rv_type = mc_type-table.
+
+      " Integer, byte, short
+    WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int1  OR cl_abap_typedescr=>typekind_int2.
+      rv_type = mc_type-integer.
+
+      " Double
+    WHEN cl_abap_typedescr=>typekind_packed OR cl_abap_typedescr=>typekind_float OR
+         '/' OR 'a' OR 'e'. " cl_abap_typedescr=>typekind_decfloat  OR cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
+      rv_type = mc_type-double.
+
+      " Date
+    WHEN cl_abap_typedescr=>typekind_date.
+      rv_type = mc_type-date.
+
+      " Time
+    WHEN cl_abap_typedescr=>typekind_time.
+      rv_type = mc_type-time.
+
+      " No trunsformation for STRING
+    WHEN cl_abap_typedescr=>typekind_char OR cl_abap_typedescr=>typekind_clike OR
+         cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string OR
+         cl_abap_typedescr=>typekind_w OR
+         " Binary data in template? Dump ?
+         cl_abap_typedescr=>typekind_hex OR cl_abap_typedescr=>typekind_xsequence OR cl_abap_typedescr=>typekind_xstring.
+      rv_type = mc_type-string.
+
+*TYPEKIND_IREF, TYPEKIND_BREF
+*TYPEKIND_DATA, TYPEKIND_SIMPLE, TYPEKIND_ANY
+    WHEN OTHERS.
+      MESSAGE e002(zsy_xtt) WITH iv_kind INTO sy-msgli.
+      zcx_eui_no_check=>raise_sys_error( ).
+  ENDCASE.
+ENDMETHOD.
 
 
 METHOD reuse_check.
@@ -794,137 +940,5 @@ METHOD _check_offest.
 
   " Result
   rv_offset = lv_off.
-ENDMETHOD.
-
-
-METHOD _get_field_ext.
-  " Result block
-  FIELD-SYMBOLS <fs_block> TYPE any.
-
-  IF is_field IS INITIAL.
-    rs_field_ext-name = iv_block_name.
-    ASSIGN is_block TO <fs_block>.
-  ELSE." ROOT-FIELD1...
-    rs_field_ext-name  = is_field->name.
-    rs_field_ext-rb_id = is_field->fl_id.
-    IF is_field->dref IS NOT INITIAL.
-      ASSIGN is_field->dref->* TO <fs_block>.
-    ELSEIF is_field->oref IS NOT INITIAL. " Objects
-      ASSIGN is_field->oref    TO <fs_block>.
-    ENDIF.
-    CHECK <fs_block> IS ASSIGNED.
-  ENDIF.
-  " Same with name by default
-  IF rs_field_ext-rb_id IS INITIAL.
-    rs_field_ext-rb_id = rs_field_ext-name.
-  ENDIF.
-
-  " Ingone option of grandchildren {R-T-FIELD}
-  FIND ALL OCCURRENCES OF mc_block-name_delim IN rs_field_ext-name MATCH COUNT rs_field_ext-rb_level.
-
-  " TODO join with ADD_2_FIELDS
-  rs_field_ext-desc = cl_abap_typedescr=>describe_by_data( <fs_block> ).
-  DO.
-    IF rs_field_ext-desc->type_kind = cl_abap_typedescr=>typekind_dref.
-      DATA lv_ref TYPE REF TO data.
-      lv_ref ?= <fs_block>.
-
-      " Oops
-      IF lv_ref IS INITIAL.
-        MESSAGE w004(zsy_xtt) WITH rs_field_ext-name INTO sy-msgli.
-        io_xtt->add_log_message( iv_syst = abap_true ).
-        RETURN.
-      ENDIF.
-
-      rs_field_ext-desc = cl_abap_typedescr=>describe_by_data_ref( lv_ref ).
-      ASSIGN lv_ref->* TO <fs_block>.
-      rs_field_ext-dref = lv_ref.
-      CONTINUE.
-    ENDIF.
-
-    CASE rs_field_ext-desc->type_kind.
-        " Structures
-      WHEN cl_abap_typedescr=>typekind_struct1 OR cl_abap_typedescr=>typekind_struct2.
-        rs_field_ext-typ = mc_type-struct.
-
-        IF rs_field_ext-desc->absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK\TYPE=TS_TREE'.
-          rs_field_ext-typ = mc_type-tree.
-        ENDIF.
-
-        " Special case for objects
-      WHEN cl_abap_typedescr=>typekind_intf OR cl_abap_typedescr=>typekind_class OR cl_abap_typedescr=>typekind_oref.
-        " Only for objects
-        IF <fs_block> IS NOT INITIAL.
-          rs_field_ext-typ  = mc_type-object.
-          rs_field_ext-oref = <fs_block>.
-          rs_field_ext-desc = cl_abap_typedescr=>describe_by_object_ref( rs_field_ext-oref ).
-
-          IF rs_field_ext-desc->absolute_name = '\CLASS=ZCL_XTT_IMAGE'.
-            rs_field_ext-typ = mc_type-image.
-          ENDIF.
-        ENDIF.
-
-        RETURN.
-
-        " Tables
-      WHEN cl_abap_typedescr=>typekind_table.
-        rs_field_ext-typ = mc_type-table.
-
-        " Integer, byte, short
-      WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int1  OR cl_abap_typedescr=>typekind_int2.
-        rs_field_ext-typ = mc_type-integer.
-
-        " Use mask and don't delete dots in ZCL_XTT_REPLACE_BLOCK=>get_as_string
-      WHEN cl_abap_typedescr=>typekind_num OR cl_abap_typedescr=>typekind_numeric.
-        DATA l_mask TYPE string.
-        DESCRIBE FIELD <fs_block> EDIT MASK l_mask.
-        IF l_mask IS INITIAL.
-          rs_field_ext-typ = mc_type-integer.
-        ELSE. " For safety
-          rs_field_ext-typ = mc_type-mask.
-        ENDIF.
-
-        " Double
-      WHEN cl_abap_typedescr=>typekind_packed OR cl_abap_typedescr=>typekind_float OR
-           '/' OR 'a' OR 'e'. " cl_abap_typedescr=>typekind_decfloat  OR cl_abap_typedescr=>typekind_decfloat16 OR cl_abap_typedescr=>typekind_decfloat34.
-        rs_field_ext-typ = mc_type-double.
-
-        " Date
-      WHEN cl_abap_typedescr=>typekind_date.
-        rs_field_ext-typ = mc_type-date.
-
-        " Time
-      WHEN cl_abap_typedescr=>typekind_time.
-        rs_field_ext-typ = mc_type-time.
-
-        " No trunsformation for STRING
-      WHEN cl_abap_typedescr=>typekind_char OR cl_abap_typedescr=>typekind_clike OR
-           cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string OR
-           cl_abap_typedescr=>typekind_w OR
-           " Binary data in template? Dump ?
-           cl_abap_typedescr=>typekind_hex OR cl_abap_typedescr=>typekind_xsequence OR cl_abap_typedescr=>typekind_xstring.
-        rs_field_ext-typ = mc_type-string.
-
-*TYPEKIND_IREF, TYPEKIND_BREF
-*TYPEKIND_DATA, TYPEKIND_SIMPLE, TYPEKIND_ANY
-      WHEN OTHERS.
-        MESSAGE e002(zsy_xtt) WITH rs_field_ext-desc->type_kind INTO sy-msgli.
-        zcx_eui_no_check=>raise_sys_error( ).
-    ENDCASE.
-
-    " 1 time only
-    EXIT.
-  ENDDO.
-
-  " Result
-  GET REFERENCE OF <fs_block> INTO rs_field_ext-dref.
-
-  " Oops
-  CHECK rs_field_ext-desc IS INITIAL.
-  IF rs_field_ext-name IS INITIAL AND is_field IS NOT INITIAL.
-    rs_field_ext-name = is_field->name.
-  ENDIF.
-  MESSAGE w004(zsy_xtt) WITH rs_field_ext-name INTO sy-msgli.
-  io_xtt->add_log_message( iv_syst = abap_true ).
 ENDMETHOD.
 ENDCLASS.

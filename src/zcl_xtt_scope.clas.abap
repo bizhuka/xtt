@@ -123,11 +123,10 @@ METHOD calc_cond_matches.
 *      ENDIF.
 
       " Has dynamic conditions ?
-      READ TABLE <ls_scope>-t_pair TRANSPORTING NO FIELDS
-       WITH TABLE KEY key = 'cond'.
-      CHECK sy-subrc  = 0.
-
-      INSERT <ls_scope> INTO TABLE lt_cond_scope.
+      LOOP AT <ls_scope>-t_pair TRANSPORTING NO FIELDS WHERE key = 'cond' OR key = 'call'. "#EC CI_SORTSEQ
+        INSERT <ls_scope> INTO TABLE lt_cond_scope.
+        EXIT.
+      ENDLOOP.
     ENDLOOP.
 
     " No need
@@ -217,7 +216,7 @@ METHOD _fill_t_pair.
     SPLIT lv_param AT '=' INTO ls_pair-key ls_pair-val.
 
     CASE ls_pair-key .
-      WHEN 'cond'. " +1 level
+      WHEN 'cond' or 'call'. " +1 level
         lv_next = 1.
       WHEN 'type'. " 'cond' for current levele
         IF ls_pair-val = zcl_xtt_replace_block=>mc_type-block.
@@ -259,8 +258,7 @@ ENDMETHOD.
 
 METHOD _get_scope.
   CREATE DATA rr_scope.
-
-  " 1 try
+                                                            " 1 try
   rr_scope->beg  = is_match-offset.
   FIND FIRST OCCURRENCE OF '}'
        IN SECTION OFFSET rr_scope->beg OF iv_content
@@ -268,15 +266,20 @@ METHOD _get_scope.
   CHECK sy-subrc = 0.
 
   " Get field bounds till `;` or `}`
-  DATA lv_end_char TYPE C VALUE ';'.
-
-  DATA lv_short_cond TYPE abap_bool.
-  DATA lv_index      TYPE i.
+  DATA lv_rep_char TYPE c VALUE ';'.
+  DATA lv_rep_with TYPE string.
+  DATA lv_index    TYPE i.
 
   lv_index = is_match-offset + is_match-length.
-  IF rr_scope->end > lv_index AND iv_content+lv_index(1) = ':'.
-    lv_short_cond = abap_true.
-    lv_end_char   = ':'.
+  IF rr_scope->end > lv_index.
+    CASE iv_content+lv_index(1).
+      WHEN ':'.
+        lv_rep_char = ':'.
+        lv_rep_with = ';cond='.
+      WHEN '@'.
+        lv_rep_char = '@'.
+        lv_rep_with = ';call='.
+    ENDCASE.
   ENDIF.
 
   " Read tech name
@@ -286,7 +289,7 @@ METHOD _get_scope.
   l_whole_field = iv_content+l_beg(l_cnt).
 
   DATA lv_end TYPE i.
-  FIND FIRST OCCURRENCE OF lv_end_char IN SECTION OFFSET rr_scope->beg OF iv_content
+  FIND FIRST OCCURRENCE OF lv_rep_char IN SECTION OFFSET rr_scope->beg OF iv_content
        MATCH OFFSET lv_end.
   IF sy-subrc <> 0 OR lv_end > rr_scope->end.
     lv_end = rr_scope->end.
@@ -328,7 +331,7 @@ METHOD _get_scope.
     " Ingone option of grandchildren {R-T-FIELD}
     DATA lv_name TYPE string.
     lv_name = rr_scope->field.
-    FIND FIRST OCCURRENCE OF lv_end_char IN lv_name MATCH OFFSET lv_end.
+    FIND FIRST OCCURRENCE OF lv_rep_char IN lv_name MATCH OFFSET lv_end.
     IF sy-subrc = 0.
       lv_name = lv_name(lv_end).
     ENDIF.
@@ -337,9 +340,9 @@ METHOD _get_scope.
     CHECK _is_level_norm( rr_scope ) = abap_true.
   ENDIF.
 
-  IF lv_short_cond = abap_true.
-    REPLACE FIRST OCCURRENCE OF ':' IN: l_whole_field   WITH ';cond=',
-                                        rr_scope->field WITH ';cond='.
+  IF lv_rep_with IS NOT INITIAL.
+    REPLACE FIRST OCCURRENCE OF lv_rep_char IN: l_whole_field   WITH lv_rep_with,
+                                                rr_scope->field WITH lv_rep_with.
     REPLACE ALL OCCURRENCES OF 'v-' IN: l_whole_field   WITH 'value-',
                                         rr_scope->field WITH 'value-'.
   ENDIF.

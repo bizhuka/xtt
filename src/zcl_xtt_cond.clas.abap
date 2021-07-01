@@ -4,6 +4,19 @@ class ZCL_XTT_COND definition
   create public .
 
 public section.
+*"* public components of class ZCL_XTT_COND
+*"* do not include other source files here!!!
+
+  types:
+    BEGIN OF ts_match,
+      cid    TYPE string,
+      cond   TYPE string,
+      caller TYPE REF TO object,
+      type   TYPE string,
+      form   TYPE string,
+    END OF ts_match .
+  types:
+    tt_match TYPE SORTED TABLE OF ts_match WITH UNIQUE KEY cid .
 
   data MV_ROOT_TYPE type STRING .
 
@@ -35,16 +48,8 @@ public section.
       !CT_ROW_OFFSET type ZCL_XTT_TREE_FUNCTION=>TT_ROW_OFFSET .
 protected section.
 private section.
-
-  types:
-    BEGIN OF ts_match,
-      cid  TYPE string,
-      cond TYPE string,
-      type TYPE string,
-      form TYPE string,
-    END OF ts_match .
-  types:
-    tt_match TYPE SORTED TABLE OF ts_match WITH UNIQUE KEY cid .
+*"* private components of class ZCL_XTT_COND
+*"* do not include other source files here!!!
 
   data MO_XTT type ref to ZCL_XTT .
   data MT_ABAP_CODE type STRINGTAB .
@@ -62,14 +67,15 @@ private section.
       !IV_VALUE type STRING
     returning
       value(RT_CODE) type STRINGTAB .
-  methods _702_CONCAT
+  methods _702_BLOCK
     importing
       !IV_VALUE type STRING
     returning
       value(RT_CODE) type STRINGTAB .
-  methods _702_BLOCK
+  methods _702_AS_IS
     importing
       !IV_VALUE type STRING
+      !IV_PREFIX type CSEQUENCE
     returning
       value(RT_CODE) type STRINGTAB .
 ENDCLASS.
@@ -128,6 +134,7 @@ METHOD calc_matches.
         PERFORM (<ls_match>-form) IN PROGRAM (mv_prog) IF FOUND
           USING
                 <ls_root>
+                <ls_match>-caller
           CHANGING
                 <lv_result>.
       CATCH zcx_eui_no_check INTO lo_error.
@@ -154,9 +161,9 @@ ENDMETHOD.
 
 METHOD get_type.
   DATA ls_field_ext TYPE zcl_xtt_replace_block=>ts_field_ext.
-  ls_field_ext =  zcl_xtt_replace_block=>_get_field_ext( io_xtt        = mo_xtt
-                                                         is_block      = is_data
-                                                         iv_block_name = iv_suffix ).
+  ls_field_ext =  zcl_xtt_replace_block=>get_field_ext( io_xtt        = mo_xtt
+                                                        is_block      = is_data
+                                                        iv_block_name = iv_suffix ).
 
   DATA lo_type LIKE ls_field_ext-desc.
   lo_type = ls_field_ext-desc.
@@ -362,6 +369,14 @@ METHOD unescape.
 ENDMETHOD.
 
 
+METHOD _702_as_is.
+  DATA lv_code LIKE LINE OF rt_code.
+  CONCATENATE iv_prefix iv_value `.` INTO lv_code.        "#EC NOTEXT
+
+  APPEND lv_code TO rt_code.
+ENDMETHOD.
+
+
 METHOD _702_block.
   DATA lv_code LIKE LINE OF rt_code.
 
@@ -371,21 +386,6 @@ METHOD _702_block.
   APPEND `APPEND INITIAL LINE TO result.` TO rt_code.
 
   APPEND `ENDIF.` TO rt_code.
-ENDMETHOD.
-
-
-METHOD _702_concat.
-  DATA lv_code LIKE LINE OF rt_code.
-
-  IF iv_value CS '&&'.
-    CONCATENATE `CONCATENATE ` iv_value ` INTO result.` INTO lv_code. "#EC NOTEXT
-    REPLACE ALL OCCURRENCES OF `&&` IN lv_code WITH ``.
-  ELSE.
-    " Just use =
-    CONCATENATE `result = ` iv_value `.` INTO lv_code.      "#EC NOTEXT
-  ENDIF.
-
-  APPEND lv_code TO rt_code.
 ENDMETHOD.
 
 
@@ -449,7 +449,7 @@ METHOD _make_cond_forms.
     ELSE.
       lv_line = `ANY`.
     ENDIF.
-    CONCATENATE `FORM ` <ls_match>-form ` USING ` lv_form_decl ` CHANGING result TYPE ` lv_line `.` INTO lv_line. "#EC NOTEXT
+    CONCATENATE `FORM ` <ls_match>-form ` USING ` lv_form_decl ` _caller TYPE REF TO OBJECT CHANGING result TYPE ` lv_line `.` INTO lv_line. "#EC NOTEXT
     APPEND lv_line TO mt_abap_code.
 
     " Use slow MOVE-CORRESPONDING
@@ -460,10 +460,14 @@ METHOD _make_cond_forms.
     DATA lt_line LIKE mt_abap_code.
     IF <ls_match>-type = zcl_xtt_replace_block=>mc_type-block.
       lt_line = _702_block(   <ls_match>-cond ).
+    ELSEIF <ls_match>-caller IS NOT INITIAL.
+      lt_line = _702_as_is( iv_value  = <ls_match>-cond
+                            iv_prefix = `` ).
     ELSEIF <ls_match>-cond CP 'when*'.
       lt_line = _702_cond(   <ls_match>-cond ).
     ELSE.
-      lt_line = _702_concat( <ls_match>-cond ).
+      lt_line = _702_as_is( iv_value  = <ls_match>-cond
+                            iv_prefix = `result = `  ).
     ENDIF.
 
     APPEND `DATA lo_error TYPE REF TO cx_root.` TO mt_abap_code.
@@ -501,6 +505,9 @@ METHOD _read_scopes.
           ls_match-cond = <ls_pair>-val.
         WHEN 'type'.
           ls_match-type = <ls_pair>-val.
+        WHEN 'call'.
+          ls_match-cond = <ls_pair>-val.
+          mo_xtt->get_caller_info( CHANGING cs_match = ls_match ).
         WHEN OTHERS.
           MESSAGE e017(zsy_xtt) WITH <ls_pair>-key INTO sy-msgli.
           zcx_eui_no_check=>raise_sys_error( ).

@@ -264,6 +264,9 @@ CLASS lcl_report IMPLEMENTATION.
     ASSIGN ls_merge-val->* TO <l_value>.
     <l_value> = is_root.
 
+    " № 3 - for 160 only
+    ls_merge-obj = io_helper.
+
     INSERT ls_merge INTO TABLE t_merge.
 
     " Skip for test

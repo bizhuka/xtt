@@ -41,6 +41,7 @@ INCLUDE z_xtt_demo_n130.
 INCLUDE z_xtt_demo_n131.
 INCLUDE z_xtt_demo_n140.
 INCLUDE z_xtt_demo_n150.
+INCLUDE z_xtt_demo_n160.
 
 INCLUDE z_xtt_demo_test.
 INCLUDE z_xtt_demo_evt.

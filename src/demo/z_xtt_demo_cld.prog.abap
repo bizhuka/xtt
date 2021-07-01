@@ -7,6 +7,7 @@ TYPES:
   BEGIN OF ts_merge,
     key TYPE string,
     val TYPE REF TO data,
+    obj TYPE REF TO object, " For 160 only
   END OF ts_merge,
   tt_merge TYPE STANDARD TABLE OF ts_merge WITH DEFAULT KEY, " Same order HASHED  UNIQUE KEY key,
 
@@ -220,7 +221,8 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
       merge_add_one
         IMPORTING
           is_root    TYPE any
-          iv_root_id TYPE string DEFAULT 'R',
+          iv_root_id TYPE string DEFAULT 'R'
+          io_helper  TYPE REF TO object OPTIONAL,
 
       " Random data for tables
       get_random_table

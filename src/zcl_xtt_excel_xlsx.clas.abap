@@ -1802,7 +1802,8 @@ ENDMETHOD.
 METHOD merge.
   " For chain calls
   ro_xtt = super->merge( is_block      = is_block
-                         iv_block_name = iv_block_name ).
+                         iv_block_name = iv_block_name
+                         io_helper     = io_helper ).
   CHECK mo_zip IS NOT INITIAL.
 
   " Special case
@@ -1844,8 +1845,7 @@ METHOD on_match_found.
   DATA:
     l_len       TYPE i,
     l_value     TYPE string,
-    l_date      TYPE float,
-    lv_prev_typ TYPE string.
+    l_date      TYPE float.
   FIELD-SYMBOLS:
     <l_string> TYPE csequence,
     <l_date>   TYPE d,
@@ -1909,7 +1909,9 @@ METHOD on_match_found.
       ENDIF.
 
       " Save previous type for dates only
+      DATA: lv_prev_typ TYPE string, lv_prev_val TYPE REF TO data.
       lv_prev_typ = is_field->typ.
+      lv_prev_val = is_field->dref.
 
       " Empty string
       IF     l_date IS INITIAL.
@@ -1938,7 +1940,8 @@ METHOD on_match_found.
   ENDIF.
 
   IF lv_prev_typ IS NOT INITIAL.
-    is_field->typ = lv_prev_typ.
+    is_field->typ  = lv_prev_typ.
+    is_field->dref = lv_prev_val.
   ENDIF.
 
   " Create new value

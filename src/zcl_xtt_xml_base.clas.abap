@@ -21,11 +21,11 @@ public section.
       !IV_LINE_BREAK type STRING optional
       !IV_PAGE_BREAK type STRING optional .
 
-  methods DOWNLOAD
+  methods ZIF_XTT~DOWNLOAD
     redefinition .
-  methods GET_RAW
+  methods ZIF_XTT~GET_RAW
     redefinition .
-  methods MERGE
+  methods ZIF_XTT~MERGE
     redefinition .
 protected section.
 
@@ -299,54 +299,6 @@ METHOD delete_tags_before_search.
 ENDMETHOD.
 
 
-METHOD download.
-  " If need saveAs
-  DATA lv_open TYPE string.
-  lv_open = iv_open.
-  IF iv_open IS NOT SUPPLIED AND mv_ole_ext IS NOT INITIAL AND mv_ole_ext_format IS NOT INITIAL.
-    lv_open = mc_by-ole.
-  ENDIF.
-
-  super->download(
-   EXPORTING
-     iv_open     = lv_open
-     iv_zip      = iv_zip
-   CHANGING
-     cv_ole_app  = cv_ole_app
-     cv_ole_doc  = cv_ole_doc
-     cv_fullpath = cv_fullpath ).
-
-  " If opened as OLE
-  CHECK lv_open CP 'OLE*'.
-
-  " New file name
-  DATA lv_path   TYPE string.
-  DATA lv_no_ext TYPE string.
-  zcl_eui_file=>split_file_path(
-    EXPORTING
-      iv_fullpath   = cv_fullpath
-    IMPORTING
-      ev_file_noext = lv_no_ext
-      ev_path       = lv_path ).
-  CONCATENATE lv_path lv_no_ext `.` mv_ole_ext INTO cv_fullpath.
-
-  " Already exist. Add date and time
-  IF zcl_eui_file=>file_exist( cv_fullpath ) = abap_true.
-    CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` mv_ole_ext INTO cv_fullpath.
-  ENDIF.
-
-  CALL METHOD OF cv_ole_doc 'SaveAs'
-    EXPORTING
-      #1 = cv_fullpath
-      #2 = mv_ole_ext_format.
-
-  IF lv_open = mc_by-ole_hide.
-    CALL METHOD OF cv_ole_app 'QUIT'.
-    FREE OBJECT: cv_ole_doc, cv_ole_app.
-  ENDIF.
-ENDMETHOD.
-
-
 METHOD do_merge.
   IF iv_root_is_table <> abap_true.
     DATA lo_scope TYPE REF TO zcl_xtt_scope.
@@ -386,75 +338,6 @@ METHOD do_merge.
                      CHANGING  cv_content       = cv_content ).
     ENDCASE.
   ENDLOOP.
-ENDMETHOD.
-
-
-METHOD get_raw.
-  " Can convert XML or HTML result to pdf or attach to email for example
-  rv_content = zcl_eui_conv=>string_to_xstring( mv_file_content ).
-
-  " Change content in special cases
-  DATA lr_content TYPE REF TO xstring.
-  GET REFERENCE OF rv_content INTO lr_content.
-  RAISE EVENT prepare_raw
-   EXPORTING
-     iv_path    = mv_path
-     ir_content = lr_content.
-ENDMETHOD.
-
-
-METHOD merge.
-  " For chain calls
-  ro_xtt = super->merge( is_block      = is_block
-                         iv_block_name = iv_block_name
-                         io_helper     = io_helper ).
-
-  delete_tags_before_search( iv_block_name ).
-
-  " Special case
-  DATA lv_root_is_table TYPE abap_bool.
-  lv_root_is_table = zcl_xtt_util=>is_table( is_block ).
-
-  DATA ls_bounds TYPE ts_bounds.
-  ls_bounds = bounds_from_body( iv_context       = mv_file_content
-                                iv_root_is_table = lv_root_is_table
-                                iv_block_name    = iv_block_name ).
-
-  " Divide to 3 parts
-  bounds_split( EXPORTING iv_name   = iv_block_name
-                CHANGING  cs_bounds = ls_bounds
-                          cv_middle = mv_file_content ).
-
-  " Update middle part (Body)
-  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
-  TRY.
-      " Prepare for replacement
-      DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
-      CREATE OBJECT lo_replace_block
-        EXPORTING
-          io_xtt        = me
-          is_block      = is_block
-          iv_block_name = iv_block_name.
-
-      do_merge(
-       EXPORTING
-        iv_root_is_table = lv_root_is_table
-        io_block         = lo_replace_block
-       CHANGING
-        cv_content       = mv_file_content ).
-    CATCH zcx_eui_no_check INTO lo_no_check.
-      add_log_message( io_exception = lo_no_check ).
-  ENDTRY.
-
-  " And just concatenate
-  CONCATENATE ls_bounds-text_before
-              mv_file_content
-              ls_bounds-text_after INTO mv_file_content RESPECTING BLANKS.
-
-  " Move from get_raw
-  IF lv_root_is_table = abap_true.
-    delete_last_page_break( ).
-  ENDIF.
 ENDMETHOD.
 
 
@@ -651,5 +534,122 @@ METHOD read_scopes.
                                io_block = io_block
                                iv_tabix = iv_tabix
                                iv_init  = lv_new ).
+ENDMETHOD.
+
+
+METHOD zif_xtt~download.
+  " If need saveAs
+  DATA lv_open TYPE string.
+  lv_open = iv_open.
+  IF iv_open IS NOT SUPPLIED AND mv_ole_ext IS NOT INITIAL AND mv_ole_ext_format IS NOT INITIAL.
+    lv_open = mc_by-ole.
+  ENDIF.
+
+  super->download(
+   EXPORTING
+     iv_open     = lv_open
+     iv_zip      = iv_zip
+   CHANGING
+     cv_ole_app  = cv_ole_app
+     cv_ole_doc  = cv_ole_doc
+     cv_fullpath = cv_fullpath ).
+
+  " If opened as OLE
+  CHECK lv_open CP 'OLE*'.
+
+  " New file name
+  DATA lv_path   TYPE string.
+  DATA lv_no_ext TYPE string.
+  zcl_eui_file=>split_file_path(
+    EXPORTING
+      iv_fullpath   = cv_fullpath
+    IMPORTING
+      ev_file_noext = lv_no_ext
+      ev_path       = lv_path ).
+  CONCATENATE lv_path lv_no_ext `.` mv_ole_ext INTO cv_fullpath.
+
+  " Already exist. Add date and time
+  IF zcl_eui_file=>file_exist( cv_fullpath ) = abap_true.
+    CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` mv_ole_ext INTO cv_fullpath.
+  ENDIF.
+
+  CALL METHOD OF cv_ole_doc 'SaveAs'
+    EXPORTING
+      #1 = cv_fullpath
+      #2 = mv_ole_ext_format.
+
+  IF lv_open = mc_by-ole_hide.
+    CALL METHOD OF cv_ole_app 'QUIT'.
+    FREE OBJECT: cv_ole_doc, cv_ole_app.
+  ENDIF.
+ENDMETHOD.
+
+
+METHOD zif_xtt~get_raw.
+  " Can convert XML or HTML result to pdf or attach to email for example
+  rv_content = zcl_eui_conv=>string_to_xstring( mv_file_content ).
+
+  " Change content in special cases
+  DATA lr_content TYPE REF TO xstring.
+  GET REFERENCE OF rv_content INTO lr_content.
+  RAISE EVENT prepare_raw
+   EXPORTING
+     iv_path    = mv_path
+     ir_content = lr_content.
+ENDMETHOD.
+
+
+METHOD zif_xtt~merge.
+  " For chain calls
+  ro_xtt = super->merge( is_block      = is_block
+                         iv_block_name = iv_block_name
+                         io_helper     = io_helper ).
+
+  delete_tags_before_search( iv_block_name ).
+
+  " Special case
+  DATA lv_root_is_table TYPE abap_bool.
+  lv_root_is_table = zcl_xtt_util=>is_table( is_block ).
+
+  DATA ls_bounds TYPE ts_bounds.
+  ls_bounds = bounds_from_body( iv_context       = mv_file_content
+                                iv_root_is_table = lv_root_is_table
+                                iv_block_name    = iv_block_name ).
+
+  " Divide to 3 parts
+  bounds_split( EXPORTING iv_name   = iv_block_name
+                CHANGING  cs_bounds = ls_bounds
+                          cv_middle = mv_file_content ).
+
+  " Update middle part (Body)
+  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+  TRY.
+      " Prepare for replacement
+      DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
+      CREATE OBJECT lo_replace_block
+        EXPORTING
+          io_xtt        = me
+          is_block      = is_block
+          iv_block_name = iv_block_name.
+
+      do_merge(
+       EXPORTING
+        iv_root_is_table = lv_root_is_table
+        io_block         = lo_replace_block
+       CHANGING
+        cv_content       = mv_file_content ).
+    CATCH zcx_eui_no_check INTO lo_no_check.
+      add_log_message( io_exception = lo_no_check ).
+  ENDTRY.
+
+  " And just concatenate
+  CONCATENATE ls_bounds-text_before
+              mv_file_content
+              ls_bounds-text_after INTO mv_file_content RESPECTING BLANKS.
+
+  " Move from get_raw
+  IF lv_root_is_table = abap_true.
+    delete_last_page_break( ).
+  ENDIF.
 ENDMETHOD.
 ENDCLASS.

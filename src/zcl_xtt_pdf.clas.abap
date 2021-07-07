@@ -10,7 +10,7 @@ public section.
     importing
       !IO_FILE type ref to ZIF_XTT_FILE .
 
-  methods GET_RAW
+  methods ZIF_XTT~GET_RAW
     redefinition .
 protected section.
 
@@ -76,40 +76,6 @@ METHOD constructor.
 
   " Change extension
   REPLACE ALL OCCURRENCES OF `.xdp` IN mv_file_name WITH `.pdf` IGNORING CASE. "#EC NOTEXT
-ENDMETHOD.
-
-
-METHOD get_raw.
-  DATA:
-    lo_fp     TYPE REF TO if_fp,
-    lo_pdfobj TYPE REF TO if_fp_pdf_object,
-    lo_err    TYPE REF TO cx_fp_exception.
-  " Get ready XML file
-  rv_content = super->get_raw( ).
-
-  " Create an instance
-  lo_fp = cl_fp=>get_reference( ).
-  TRY.
-      " Create an object
-      lo_pdfobj = lo_fp->create_pdf_object( ).
-
-      " Set template
-      lo_pdfobj->set_template( xftdata = rv_content ).
-
-      "Data in XML format ->set_data( formdata = ). But data already set in XDP file itself
-
-      " New task
-      lo_pdfobj->set_task_renderpdf( )." changesrestricted = 'F' printable = abap_false
-
-      " Execute of action
-      lo_pdfobj->execute( ).
-    CATCH cx_fp_exception INTO lo_err.
-      zcx_eui_no_check=>raise_sys_error( io_error = lo_err ).
-  ENDTRY.
-
-  " Return as xstring
-  CLEAR rv_content.
-  lo_pdfobj->get_pdf( IMPORTING pdfdata = rv_content ).
 ENDMETHOD.
 
 
@@ -238,5 +204,39 @@ METHOD on_match_found.
     iv_pos_end = iv_pos_end
    CHANGING
     cv_content = cv_content ).
+ENDMETHOD.
+
+
+METHOD zif_xtt~get_raw.
+  DATA:
+    lo_fp     TYPE REF TO if_fp,
+    lo_pdfobj TYPE REF TO if_fp_pdf_object,
+    lo_err    TYPE REF TO cx_fp_exception.
+  " Get ready XML file
+  rv_content = super->get_raw( ).
+
+  " Create an instance
+  lo_fp = cl_fp=>get_reference( ).
+  TRY.
+      " Create an object
+      lo_pdfobj = lo_fp->create_pdf_object( ).
+
+      " Set template
+      lo_pdfobj->set_template( xftdata = rv_content ).
+
+      "Data in XML format ->set_data( formdata = ). But data already set in XDP file itself
+
+      " New task
+      lo_pdfobj->set_task_renderpdf( )." changesrestricted = 'F' printable = abap_false
+
+      " Execute of action
+      lo_pdfobj->execute( ).
+    CATCH cx_fp_exception INTO lo_err.
+      zcx_eui_no_check=>raise_sys_error( io_error = lo_err ).
+  ENDTRY.
+
+  " Return as xstring
+  CLEAR rv_content.
+  lo_pdfobj->get_pdf( IMPORTING pdfdata = rv_content ).
 ENDMETHOD.
 ENDCLASS.

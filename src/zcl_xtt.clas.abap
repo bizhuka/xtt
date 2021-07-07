@@ -11,24 +11,26 @@ public section.
 *"* do not include other source files here!!!
   type-pools ABAP .
   type-pools OLE2 .
+  class ZCL_XTT_COND definition load .
 
-  types:
-    BEGIN OF TS_RECIPIENT_BCS,
-      RECIPIENT  TYPE REF TO IF_RECIPIENT_BCS,
-      EXPRESS    TYPE OS_BOOLEAN,
-      COPY       TYPE OS_BOOLEAN,
-      BLIND_COPY TYPE OS_BOOLEAN,
-      NO_FORWARD TYPE OS_BOOLEAN,
-   END OF TS_RECIPIENT_BCS .
-  types:
-    TT_RECIPIENTS_BCS type STANDARD TABLE OF TS_RECIPIENT_BCS WITH DEFAULT KEY .
+  interfaces ZIF_XTT .
 
-  constants:
-    BEGIN OF MC_BY,
-     ole        type STRING value 'OLE',
-     ole_hide   type STRING value 'OLE_HIDE',
-     app_server type STRING value 'APP_SERVER',
-   END OF MC_BY .
+  aliases MC_BY
+    for ZIF_XTT~MC_BY .
+  aliases DOWNLOAD
+    for ZIF_XTT~DOWNLOAD .
+  aliases GET_RAW
+    for ZIF_XTT~GET_RAW .
+  aliases MERGE
+    for ZIF_XTT~MERGE .
+  aliases SEND
+    for ZIF_XTT~SEND .
+  aliases SHOW
+    for ZIF_XTT~SHOW .
+  aliases TS_RECIPIENT_BCS
+    for ZIF_XTT~TS_RECIPIENT_BCS .
+  aliases TT_RECIPIENTS_BCS
+    for ZIF_XTT~TT_RECIPIENTS_BCS .
 
   events PREPARE_RAW
     exporting
@@ -39,38 +41,6 @@ public section.
     importing
       !IO_FILE type ref to ZIF_XTT_FILE
       !IV_OLE_EXT type STRING optional .
-  methods MERGE
-    importing
-      !IS_BLOCK type ANY
-      !IV_BLOCK_NAME type CSEQUENCE default `R`
-      !IO_HELPER type ref to OBJECT optional
-    returning
-      value(RO_XTT) type ref to ZCL_XTT .
-  methods GET_RAW
-  abstract
-    returning
-      value(RV_CONTENT) type XSTRING .
-  methods DOWNLOAD
-    importing
-      !IV_OPEN type CSEQUENCE default ABAP_TRUE
-      !IV_ZIP type ABAP_BOOL optional
-    changing
-      !CV_OLE_APP type OLE2_OBJECT optional
-      !CV_OLE_DOC type OLE2_OBJECT optional
-      !CV_FULLPATH type CSEQUENCE optional .
-  methods SHOW
-  final
-    importing
-      !IO_HANDLER type ref to OBJECT optional .
-  methods SEND
-    importing
-      !IT_RECIPIENTS type RMPS_RECIPIENT_BCS optional
-      !IT_RECIPIENTS_BCS type TT_RECIPIENTS_BCS optional
-      !IV_SUBJECT type SO_OBJ_DES
-      !IV_BODY type CSEQUENCE
-      !IV_EXPRESS type ABAP_BOOL default ABAP_TRUE
-      !IO_SENDER type ref to IF_SENDER_BCS optional
-      !IV_COMMIT type ABAP_BOOL default ABAP_FALSE .
   methods ADD_RAW_EVENT
     importing
       !IV_PATH type CSEQUENCE .
@@ -80,7 +50,6 @@ public section.
       !IV_TEXT type CSEQUENCE optional
       !IO_EXCEPTION type ref to CX_ROOT optional
       !IV_MSGTY type SYMSGTY optional .
-  class ZCL_XTT_COND definition load .
   methods GET_CALLER_INFO
     changing
       !CS_MATCH type ZCL_XTT_COND=>TS_MATCH .
@@ -198,7 +167,115 @@ METHOD constructor.
 ENDMETHOD.
 
 
-METHOD download.
+METHOD get_caller_info.
+  cs_match-caller = mo_helper.
+
+  IF cs_match-caller IS INITIAL.
+    DATA lv_message TYPE string.
+    add_log_message( iv_text  = `Please pass IO_HELPER to MERGE( ) method`
+                     iv_msgty = 'E' ).
+    RETURN.
+  ENDIF.
+
+**********************************************************************
+* method( ) in string
+**********************************************************************
+  DATA: lv_beg TYPE i, lv_end TYPE i.
+  IF cs_match-cond CS '('.
+    lv_beg = sy-fdpos.
+  ENDIF.
+  IF cs_match-cond CP '*)'.
+    lv_end = sy-fdpos.
+  ENDIF.
+
+  IF lv_beg IS INITIAL OR lv_end IS INITIAL.
+    CONCATENATE `No method call in "` cs_match-cond `"` INTO lv_message.
+    add_log_message( iv_text  = lv_message
+                     iv_msgty = 'E' ).
+    RETURN.
+  ENDIF.
+
+**********************************************************************
+* serach method in IO_HELPER
+**********************************************************************
+  DATA lo_object TYPE REF TO cl_abap_objectdescr.
+  lo_object ?= cl_abap_objectdescr=>describe_by_object_ref( cs_match-caller ).
+
+  DATA lv_method TYPE string.
+  lv_method = cs_match-cond(lv_beg).
+  TRANSLATE lv_method TO UPPER CASE.
+
+  FIELD-SYMBOLS <ls_method> LIKE LINE OF lo_object->methods.
+  READ TABLE lo_object->methods ASSIGNING <ls_method>
+   WITH KEY name = lv_method.
+  IF sy-subrc <> 0.
+    CONCATENATE `No method "` lv_method `" in IO_HELPER` INTO lv_message.
+    add_log_message( iv_text  = lv_message
+                     iv_msgty = 'E' ).
+    RETURN.
+  ENDIF.
+
+**********************************************************************
+* Returning parameter
+**********************************************************************
+  FIELD-SYMBOLS <ls_param> LIKE LINE OF <ls_method>-parameters.
+  READ TABLE <ls_method>-parameters ASSIGNING <ls_param>
+   WITH KEY parm_kind = lo_object->returning.
+  IF sy-subrc <> 0.
+    CONCATENATE `No returning parameter in method "` lv_method `"` INTO lv_message.
+    add_log_message( iv_text  = lv_message
+                     iv_msgty = 'E' ).
+    RETURN.
+  ENDIF.
+  cs_match-type = zcl_xtt_replace_block=>get_simple_type( <ls_param>-type_kind ).
+
+  DATA lv_code_line TYPE string.
+  CONCATENATE ` RECEIVING ` <ls_param>-name ` = result` INTO lv_code_line.
+  CONCATENATE cs_match-cond(lv_end) lv_code_line INTO cs_match-cond.
+
+**********************************************************************
+* Pass optional IS_ROOT parameter
+**********************************************************************
+  CONCATENATE `CALL METHOD _caller->('` lv_method `') EXPORTING` INTO lv_code_line.
+  READ TABLE <ls_method>-parameters TRANSPORTING NO FIELDS
+   WITH KEY name      = `IS_ROOT`
+            parm_kind = lo_object->importing.
+  IF sy-subrc = 0.
+    CONCATENATE lv_code_line ` IS_ROOT = root ` INTO lv_code_line.
+  ENDIF.
+
+  CONCATENATE lv_method `(` INTO lv_method.
+  REPLACE FIRST OCCURRENCE OF lv_method IN cs_match-cond WITH lv_code_line IGNORING CASE.
+ENDMETHOD.
+
+
+METHOD raise_raw_events.
+  DATA lv_path    TYPE string.
+  DATA lv_content TYPE xstring.
+  DATA lr_content TYPE REF TO xstring.
+
+  LOOP AT mt_raw_event INTO lv_path.
+    io_zip->get( EXPORTING name    = lv_path
+                 IMPORTING content = lv_content
+                 EXCEPTIONS OTHERS = 1 ).
+    CHECK sy-subrc = 0.
+
+    GET REFERENCE OF lv_content INTO lr_content.
+    RAISE EVENT prepare_raw
+     EXPORTING
+       iv_path    = lv_path
+       ir_content = lr_content.
+
+    " Replace XML file
+    zcl_eui_conv=>xml_to_zip(
+     io_zip  = io_zip
+     iv_name = lv_path
+     iv_xdoc = lv_content ).
+  ENDLOOP.
+ENDMETHOD.
+
+
+METHOD zif_xtt~download.
   DATA lv_filename  TYPE string.
   DATA lv_no_ext    TYPE string.
   DATA lv_ext       TYPE string.
@@ -323,89 +400,12 @@ METHOD download.
 ENDMETHOD.
 
 
-METHOD get_caller_info.
-  cs_match-caller = mo_helper.
-
-  IF cs_match-caller IS INITIAL.
-    DATA lv_message TYPE string.
-    add_log_message( iv_text  = `Please pass IO_HELPER to MERGE( ) method`
-                     iv_msgty = 'E' ).
-    RETURN.
-  ENDIF.
-
-**********************************************************************
-* method( ) in string
-**********************************************************************
-  DATA: lv_beg TYPE i, lv_end TYPE i.
-  IF cs_match-cond CS '('.
-    lv_beg = sy-fdpos.
-  ENDIF.
-  IF cs_match-cond CP '*)'.
-    lv_end = sy-fdpos.
-  ENDIF.
-
-  IF lv_beg IS INITIAL OR lv_end IS INITIAL.
-    CONCATENATE `No method call in "` cs_match-cond `"` INTO lv_message.
-    add_log_message( iv_text  = lv_message
-                     iv_msgty = 'E' ).
-    RETURN.
-  ENDIF.
-
-**********************************************************************
-* serach method in IO_HELPER
-**********************************************************************
-  DATA lo_object TYPE REF TO cl_abap_objectdescr.
-  lo_object ?= cl_abap_objectdescr=>describe_by_object_ref( cs_match-caller ).
-
-  DATA lv_method TYPE string.
-  lv_method = cs_match-cond(lv_beg).
-  TRANSLATE lv_method TO UPPER CASE.
-
-  FIELD-SYMBOLS <ls_method> LIKE LINE OF lo_object->methods.
-  READ TABLE lo_object->methods ASSIGNING <ls_method>
-   WITH KEY name = lv_method.
-  IF sy-subrc <> 0.
-    CONCATENATE `No method "` lv_method `" in IO_HELPER` INTO lv_message.
-    add_log_message( iv_text  = lv_message
-                     iv_msgty = 'E' ).
-    RETURN.
-  ENDIF.
-
-**********************************************************************
-* Returning parameter
-**********************************************************************
-  FIELD-SYMBOLS <ls_param> LIKE LINE OF <ls_method>-parameters.
-  READ TABLE <ls_method>-parameters ASSIGNING <ls_param>
-   WITH KEY parm_kind = lo_object->returning.
-  IF sy-subrc <> 0.
-    CONCATENATE `No returning parameter in method "` lv_method `"` INTO lv_message.
-    add_log_message( iv_text  = lv_message
-                     iv_msgty = 'E' ).
-    RETURN.
-  ENDIF.
-  cs_match-type = zcl_xtt_replace_block=>get_simple_type( <ls_param>-type_kind ).
-
-  DATA lv_code_line TYPE string.
-  CONCATENATE ` RECEIVING ` <ls_param>-name ` = result` INTO lv_code_line.
-  CONCATENATE cs_match-cond(lv_end) lv_code_line INTO cs_match-cond.
-
-**********************************************************************
-* Pass optional IS_ROOT parameter
-**********************************************************************
-  CONCATENATE `CALL METHOD _caller->('` lv_method `') EXPORTING` INTO lv_code_line.
-  READ TABLE <ls_method>-parameters TRANSPORTING NO FIELDS
-   WITH KEY name      = `IS_ROOT`
-            parm_kind = lo_object->importing.
-  IF sy-subrc = 0.
-    CONCATENATE lv_code_line ` IS_ROOT = root ` INTO lv_code_line.
-  ENDIF.
-
-  CONCATENATE lv_method `(` INTO lv_method.
-  REPLACE FIRST OCCURRENCE OF lv_method IN cs_match-cond WITH lv_code_line IGNORING CASE.
+METHOD zif_xtt~get_raw.
+  zcx_xtt_exception=>raise_dump( iv_message = 'Implementation is missing' ).
 ENDMETHOD.
 
 
-METHOD merge.
+METHOD zif_xtt~merge.
   " For chain calls
   ro_xtt = me.
 
@@ -421,33 +421,7 @@ METHOD merge.
 ENDMETHOD.
 
 
-METHOD raise_raw_events.
-  DATA lv_path    TYPE string.
-  DATA lv_content TYPE xstring.
-  DATA lr_content TYPE REF TO xstring.
-
-  LOOP AT mt_raw_event INTO lv_path.
-    io_zip->get( EXPORTING name    = lv_path
-                 IMPORTING content = lv_content
-                 EXCEPTIONS OTHERS = 1 ).
-    CHECK sy-subrc = 0.
-
-    GET REFERENCE OF lv_content INTO lr_content.
-    RAISE EVENT prepare_raw
-     EXPORTING
-       iv_path    = lv_path
-       ir_content = lr_content.
-
-    " Replace XML file
-    zcl_eui_conv=>xml_to_zip(
-     io_zip  = io_zip
-     iv_name = lv_path
-     iv_xdoc = lv_content ).
-  ENDLOOP.
-ENDMETHOD.
-
-
-METHOD send.
+METHOD zif_xtt~send.
   DATA:
     lo_mail      TYPE REF TO cl_bcs,
     lo_doc       TYPE REF TO cl_document_bcs,
@@ -557,7 +531,7 @@ METHOD send.
 ENDMETHOD.
 
 
-METHOD show.
+METHOD zif_xtt~show.
   DATA lv_content   TYPE xstring.
   DATA lv_file_name TYPE string.
   DATA lo_eui_file  TYPE REF TO zcl_eui_file.

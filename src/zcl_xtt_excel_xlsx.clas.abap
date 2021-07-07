@@ -20,9 +20,9 @@ public section.
     raising
       ZCX_XTT_EXCEPTION .
 
-  methods GET_RAW
+  methods ZIF_XTT~GET_RAW
     redefinition .
-  methods MERGE
+  methods ZIF_XTT~MERGE
     redefinition .
 protected section.
 
@@ -1610,49 +1610,6 @@ METHOD formula_shift.
 ENDMETHOD.
 
 
-METHOD get_raw.
-  CHECK mo_zip IS NOT INITIAL.
-
-***************************************
-  shared_strings_save( ).
-
-***************************************
-  " Save every sheet
-  DATA lt_sheets        TYPE stringtab.
-  DATA lt_defined_names TYPE tt_ex_defined_name.
-  _sheet_save( IMPORTING et_defined_names = lt_defined_names
-                         et_new_tags      = lt_sheets ).
-
-***************************************
-  " Save cell movements
-  DATA lt_def_names TYPE stringtab.
-  lt_def_names = defined_name_save_xml( lt_defined_names ).
-
-***************************************
-  _workbook_write_xml( it_tags_sheets    = lt_sheets
-                       it_tags_def_names = lt_def_names ).
-
-***************************************
-  " Remove from ZIP
-  mo_zip->delete( EXPORTING name    = 'xl/calcChain.xml'    "#EC NOTEXT
-                  EXCEPTIONS OTHERS = 0 ).
-
-  " 1-st process additional files
-  raise_raw_events( mo_zip ).
-
-  " ZIP archive as xstring
-  rv_content = mo_zip->save( ).
-
-  " Change content in special cases
-  DATA lr_content TYPE REF TO xstring.
-  GET REFERENCE OF rv_content INTO lr_content.
-  RAISE EVENT prepare_raw
-   EXPORTING
-     iv_path    = '' " Entire file
-     ir_content = lr_content.
-ENDMETHOD.
-
-
 METHOD get_without_t.
   DATA:
    l_len TYPE i.
@@ -1795,45 +1752,6 @@ METHOD list_object_save_xml.
      io_zip     = mo_zip
      iv_name    = lv_path
      io_xmldoc  = ls_list_object->dom ).
-  ENDLOOP.
-ENDMETHOD.
-
-
-METHOD merge.
-  " For chain calls
-  ro_xtt = super->merge( is_block      = is_block
-                         iv_block_name = iv_block_name
-                         io_helper     = io_helper ).
-  CHECK mo_zip IS NOT INITIAL.
-
-  " Special case
-  DATA lv_root_is_table TYPE abap_bool.
-  lv_root_is_table = zcl_xtt_util=>is_table( is_block ).
-  IF lv_root_is_table = abap_true.
-    CHECK _sheet_merge( iv_block_name = iv_block_name
-                        it_block      = is_block ) <> abap_true.
-  ENDIF.
-
-  " Update each sheet
-  DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
-  LOOP AT mt_sheets INTO mo_sheet.
-    DATA lo_no_check TYPE REF TO zcx_eui_no_check.
-    TRY.
-        " Prepare for replacement
-        CREATE OBJECT lo_replace_block
-          EXPORTING
-            io_xtt        = me
-            is_block      = is_block
-            iv_block_name = iv_block_name.
-
-        " Find trees in file
-        mo_sheet->merge( EXPORTING io_block = lo_replace_block
-                         CHANGING  ct_cells = mo_sheet->mt_cells ).
-      CATCH zcx_eui_no_check INTO lo_no_check.
-        add_log_message( io_exception = lo_no_check ).
-    ENDTRY.
-
-    CLEAR _scopes.
   ENDLOOP.
 ENDMETHOD.
 
@@ -2123,6 +2041,88 @@ METHOD shared_strings_save.
    io_zip   = mo_zip
    iv_name  = `xl/sharedStrings.xml`
    iv_sdoc  = lv_val_txt ).
+ENDMETHOD.
+
+
+METHOD zif_xtt~get_raw.
+  CHECK mo_zip IS NOT INITIAL.
+
+***************************************
+  shared_strings_save( ).
+
+***************************************
+  " Save every sheet
+  DATA lt_sheets        TYPE stringtab.
+  DATA lt_defined_names TYPE tt_ex_defined_name.
+  _sheet_save( IMPORTING et_defined_names = lt_defined_names
+                         et_new_tags      = lt_sheets ).
+
+***************************************
+  " Save cell movements
+  DATA lt_def_names TYPE stringtab.
+  lt_def_names = defined_name_save_xml( lt_defined_names ).
+
+***************************************
+  _workbook_write_xml( it_tags_sheets    = lt_sheets
+                       it_tags_def_names = lt_def_names ).
+
+***************************************
+  " Remove from ZIP
+  mo_zip->delete( EXPORTING name    = 'xl/calcChain.xml'    "#EC NOTEXT
+                  EXCEPTIONS OTHERS = 0 ).
+
+  " 1-st process additional files
+  raise_raw_events( mo_zip ).
+
+  " ZIP archive as xstring
+  rv_content = mo_zip->save( ).
+
+  " Change content in special cases
+  DATA lr_content TYPE REF TO xstring.
+  GET REFERENCE OF rv_content INTO lr_content.
+  RAISE EVENT prepare_raw
+   EXPORTING
+     iv_path    = '' " Entire file
+     ir_content = lr_content.
+ENDMETHOD.
+
+
+METHOD zif_xtt~merge.
+  " For chain calls
+  ro_xtt = super->merge( is_block      = is_block
+                         iv_block_name = iv_block_name
+                         io_helper     = io_helper ).
+  CHECK mo_zip IS NOT INITIAL.
+
+  " Special case
+  DATA lv_root_is_table TYPE abap_bool.
+  lv_root_is_table = zcl_xtt_util=>is_table( is_block ).
+  IF lv_root_is_table = abap_true.
+    CHECK _sheet_merge( iv_block_name = iv_block_name
+                        it_block      = is_block ) <> abap_true.
+  ENDIF.
+
+  " Update each sheet
+  DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
+  LOOP AT mt_sheets INTO mo_sheet.
+    DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+    TRY.
+        " Prepare for replacement
+        CREATE OBJECT lo_replace_block
+          EXPORTING
+            io_xtt        = me
+            is_block      = is_block
+            iv_block_name = iv_block_name.
+
+        " Find trees in file
+        mo_sheet->merge( EXPORTING io_block = lo_replace_block
+                         CHANGING  ct_cells = mo_sheet->mt_cells ).
+      CATCH zcx_eui_no_check INTO lo_no_check.
+        add_log_message( io_exception = lo_no_check ).
+    ENDTRY.
+
+    CLEAR _scopes.
+  ENDLOOP.
 ENDMETHOD.
 
 

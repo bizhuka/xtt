@@ -19,7 +19,7 @@ public section.
     returning
       value(RV_TEXT) type STRING .
 
-  methods SEND
+  methods ZIF_XTT~SEND
     redefinition .
 protected section.
 private section.
@@ -92,7 +92,7 @@ METHOD format.
 ENDMETHOD.
 
 
-METHOD send.
+METHOD zif_xtt~send.
   DATA:
     lv_body      TYPE string,
     lv_raw       TYPE xstring,

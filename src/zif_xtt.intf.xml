@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_INTF" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOINTERF>
+    <CLSNAME>ZIF_XTT</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Base methods of XTT</DESCRIPT>
+    <EXPOSURE>2</EXPOSURE>
+    <STATE>1</STATE>
+    <UNICODE>X</UNICODE>
+   </VSEOINTERF>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_XTT</CLSNAME>
+     <CMPNAME>DOWNLOAD</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Download to frontend</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_XTT</CLSNAME>
+     <CMPNAME>GET_RAW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>File content (for archive files a ZIP archive)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_XTT</CLSNAME>
+     <CMPNAME>MC_BY</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>For download( ) method</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_XTT</CLSNAME>
+     <CMPNAME>MERGE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Merge data with template</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_XTT</CLSNAME>
+     <CMPNAME>SEND</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Send to email OR sap user</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZIF_XTT</CLSNAME>
+     <CMPNAME>SHOW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Show inplace (@see PBO and PAI events)</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

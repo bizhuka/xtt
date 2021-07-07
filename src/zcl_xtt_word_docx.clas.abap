@@ -7,10 +7,10 @@ class ZCL_XTT_WORD_DOCX definition
 public section.
 
   constants:
-   BEGIN OF MC_BREAK,
+    BEGIN OF MC_BREAK,
      LINE type STRING value '<w:br/>',
      PAGE type STRING value '<w:br w:type="page"/>',
-   END OF MC_BREAK.
+   END OF MC_BREAK .
 
   methods CONSTRUCTOR
     importing
@@ -24,9 +24,9 @@ public section.
       !EV_TAG type STRING
       !EV_NAME type STRING .
 
-  methods GET_RAW
+  methods ZIF_XTT~GET_RAW
     redefinition .
-  methods MERGE
+  methods ZIF_XTT~MERGE
     redefinition .
 protected section.
 
@@ -148,49 +148,6 @@ METHOD get_image_tag.
 ENDMETHOD.
 
 
-METHOD get_raw.
-  " 1-st process additional files
-  raise_raw_events( mo_zip ).
-
-  " Raise from parent method
-  super->get_raw( ). " rv_content
-
-**********************************************************************
-  " Raise evant with whole archive
-
-  " for images
-  _check_drawing_rel( ).
-
-  " Replace XML file
-  zcl_eui_conv=>xml_to_zip(
-   io_zip  = mo_zip
-   iv_name = mv_path
-   iv_sdoc = mv_file_content ).
-
-  " ZIP archive as xstring
-  rv_content = mo_zip->save( ).
-
-  " Change content in special cases
-  DATA lr_content TYPE REF TO xstring.
-  GET REFERENCE OF rv_content INTO lr_content.
-  RAISE EVENT prepare_raw
-   EXPORTING
-     iv_path    = '' " <--- whole archive
-     ir_content = lr_content.
-ENDMETHOD.
-
-
-METHOD merge.
-  ro_xtt = super->merge( is_block      = is_block
-                         iv_block_name = iv_block_name
-                         io_helper     = io_helper ).
-
-  _change_header_footer( is_block      = is_block
-                         iv_block_name = iv_block_name
-                         io_helper     = io_helper ).
-ENDMETHOD.
-
-
 METHOD on_match_found.
   DATA lv_skip TYPE abap_bool.
 
@@ -281,6 +238,49 @@ METHOD on_match_found.
     iv_pos_end = iv_pos_end
    CHANGING
     cv_content = cv_content ).
+ENDMETHOD.
+
+
+METHOD zif_xtt~get_raw.
+  " 1-st process additional files
+  raise_raw_events( mo_zip ).
+
+  " Raise from parent method
+  super->get_raw( ). " rv_content
+
+**********************************************************************
+  " Raise evant with whole archive
+
+  " for images
+  _check_drawing_rel( ).
+
+  " Replace XML file
+  zcl_eui_conv=>xml_to_zip(
+   io_zip  = mo_zip
+   iv_name = mv_path
+   iv_sdoc = mv_file_content ).
+
+  " ZIP archive as xstring
+  rv_content = mo_zip->save( ).
+
+  " Change content in special cases
+  DATA lr_content TYPE REF TO xstring.
+  GET REFERENCE OF rv_content INTO lr_content.
+  RAISE EVENT prepare_raw
+   EXPORTING
+     iv_path    = '' " <--- whole archive
+     ir_content = lr_content.
+ENDMETHOD.
+
+
+METHOD zif_xtt~merge.
+  ro_xtt = super->merge( is_block      = is_block
+                         iv_block_name = iv_block_name
+                         io_helper     = io_helper ).
+
+  _change_header_footer( is_block      = is_block
+                         iv_block_name = iv_block_name
+                         io_helper     = io_helper ).
 ENDMETHOD.
 
 

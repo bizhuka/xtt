@@ -134,7 +134,7 @@ METHOD get_image_tag.
 
     CONCATENATE `<v:imagedata src="` ev_name `"/>` INTO lv_value2.
   ELSE.
-    CONCATENATE `<v:imagedata r:id="_P` io_image->mv_index_txt `"/>` INTO lv_value2.
+    CONCATENATE `<v:imagedata r:id="_P` io_image->mv_index_txt `" o:title=""/>` INTO lv_value2.
   ENDIF.
 
   " Final merge

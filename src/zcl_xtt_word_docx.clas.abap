@@ -160,27 +160,36 @@ METHOD on_match_found.
     lo_image ?= is_field->oref.
 
 **********************************************************************
-
     " Is image based ?
-    DATA lv_id_in_alter_text TYPE abap_bool.
-    " Previous 5 CHARs
-    DATA lv_alt_pos TYPE i.
-    lv_alt_pos = iv_pos_beg - 5.
+    DATA: lv_from TYPE string, lv_to TYPE string, lv_alt_pos TYPE i.
+    " Previous 7 CHARs
+    lv_alt_pos = iv_pos_beg - 7.
 
     " Yes image id {R-T-IMG} in alternative text
-    IF iv_pos_beg > 0 AND strlen( cv_content ) > iv_pos_beg AND cv_content+lv_alt_pos(5) = `alt="`.
-      lv_id_in_alter_text = abap_true.
+    IF iv_pos_beg > 0 AND strlen( cv_content ) > iv_pos_beg.
+      CASE cv_content+lv_alt_pos(7).
+        WHEN `" alt="`  " Old images tags
+          OR `descr="`  " New images tags
+          OR `t_alt="`. " Use comments
+
+          " v:imagedata r:i{{d="rId}}   OR    a:blip r:embe{{d="rId}}
+          lv_from   = `d="\brId[^"]*"`.
+          CONCATENATE `d="_P` lo_image->mv_index_txt `"` INTO lv_to.
+*          lv_from   = `<v:imagedata r:id="\b[^"]*"`.
+*          CONCATENATE `<v:imagedata r:id="_P` lo_image->mv_index_txt `"` INTO lv_to.
+*        WHEN `descr="`.
+*          lv_from   = `<a:blip r:embed="\b[^"]*"`.
+*          CONCATENATE `<a:blip r:embed="_P` lo_image->mv_index_txt `"` INTO lv_to.
+      ENDCASE.
     ENDIF.
 
     " Create tag (just insert as new value)
-    IF lv_id_in_alter_text <> abap_true.
+    IF lv_from IS INITIAL.
       get_image_tag( EXPORTING io_image = lo_image
-                     IMPORTING ev_tag       = mv_value ).
+                     IMPORTING ev_tag   = mv_value ).
     ELSE.
       " Change image ID only
-      DATA lv_to TYPE string.
-      CONCATENATE `<v:imagedata r:id="_P` lo_image->mv_index_txt `"` INTO lv_to.
-      zcl_xtt_util=>replace_1st( EXPORTING iv_from     = `<v:imagedata r:id="\b[^"]*"`
+      zcl_xtt_util=>replace_1st( EXPORTING iv_from     = lv_from
                                            iv_to       = lv_to
                                            iv_pos      = iv_pos_beg
                                            iv_keep_len = abap_true
@@ -195,10 +204,10 @@ METHOD on_match_found.
     DATA lv_mime_text TYPE string.
     DATA lv_rewrite   TYPE abap_bool.
     lo_image->save_in_archive( EXPORTING io_zip       = mo_zip
-                                             iv_prefix    = 'word/media/' "#EC NOTEXT
-                                   IMPORTING ev_file_name = lv_file_name
-                                             ev_mime_text = lv_mime_text
-                                             ev_rewrite   = lv_rewrite ).
+                                         iv_prefix    = 'word/media/' "#EC NOTEXT
+                               IMPORTING ev_file_name = lv_file_name
+                                         ev_mime_text = lv_mime_text
+                                         ev_rewrite   = lv_rewrite ).
     INSERT lv_mime_text INTO TABLE mt_required.
 
     " Already have in releations
@@ -285,6 +294,8 @@ ENDMETHOD.
 
 
 METHOD _change_header_footer.
+  CHECK mo_zip IS NOT INITIAL.
+
   DATA lv_prefix TYPE string.
   CONCATENATE `{` iv_block_name INTO lv_prefix.
 

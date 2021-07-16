@@ -36,8 +36,9 @@ CLASS lcl_demo_110 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_templates.
-    APPEND 'ZXXT_DEMO_110-XLSX' TO rt_templates.
-    APPEND 'ZXXT_DEMO_110-DOCX' TO rt_templates.
-    APPEND 'ZXXT_DEMO_110-XDP'  TO rt_templates.
+    APPEND 'ZXXT_DEMO_110-XLSX'   TO rt_templates.
+    APPEND 'ZXXT_DEMO_110-DOCX'   TO rt_templates. " Compatibility mode
+    APPEND 'ZXXT_DEMO_110_N-DOCX' TO rt_templates. " New word tags
+    APPEND 'ZXXT_DEMO_110-XDP'    TO rt_templates.
   ENDMETHOD.
 ENDCLASS.

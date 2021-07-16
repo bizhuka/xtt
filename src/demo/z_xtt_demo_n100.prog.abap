@@ -125,7 +125,8 @@ CLASS lcl_demo_100 IMPLEMENTATION.
 
   METHOD get_templates.
     APPEND 'ZXXT_DEMO_100-XLSX'     TO rt_templates.
-    APPEND 'ZXXT_DEMO_100-DOCX'     TO rt_templates.
+    APPEND 'ZXXT_DEMO_100-DOCX'     TO rt_templates. " Compatibility mode
+    APPEND 'ZXXT_DEMO_100_N-DOCX'   TO rt_templates. " New word tags
     APPEND 'ZXXT_DEMO_100_WORD-XML' TO rt_templates.
     APPEND 'ZXXT_DEMO_100-XDP'      TO rt_templates.
   ENDMETHOD.

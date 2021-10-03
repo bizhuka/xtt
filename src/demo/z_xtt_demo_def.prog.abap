@@ -184,7 +184,9 @@ CLASS lcl_demo IMPLEMENTATION.
     ENDIF.
 
     " Show popup
-    lo_screen->popup( iv_col_end = 114 ).
+    DATA lv_col_end TYPE i.
+    lo_screen->get_dimension( IMPORTING ev_col_end = lv_col_end ).
+    lo_screen->popup( iv_col_end = lv_col_end ).
     CHECK lo_screen->show( ) = 'OK'.
 
     " Return template from screen

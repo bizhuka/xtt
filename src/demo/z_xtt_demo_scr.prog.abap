@@ -36,7 +36,7 @@ SELECTION-SCREEN END OF   BLOCK bl_example.
 
 * download method
 SELECTION-SCREEN BEGIN OF: SCREEN 1010 AS SUBSCREEN,
-                           BLOCK bl_dwn WITH FRAME TITLE text-dwn.
+                           BLOCK bl_dwn. " WITH FRAME TITLE text-dwn.
 PARAMETERS:
   p_dtempl TYPE vrm_value-key AS LISTBOX VISIBLE LENGTH 80,
   p_path   TYPE text255,
@@ -54,7 +54,7 @@ SELECTION-SCREEN END OF: BLOCK bl_dwn,
 
 * send method
 SELECTION-SCREEN BEGIN OF: SCREEN 1020 AS SUBSCREEN,
-                           BLOCK bl_snd WITH FRAME TITLE text-snd.
+                           BLOCK bl_snd. " WITH FRAME TITLE text-snd.
 PARAMETERS:
   p_stempl TYPE vrm_value-key AS LISTBOX VISIBLE LENGTH 80,
   p_email TYPE adr6-smtp_addr,

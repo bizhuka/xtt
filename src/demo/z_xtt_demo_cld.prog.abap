@@ -153,6 +153,7 @@ CLASS lcl_demo DEFINITION ABSTRACT.
         IMPORTING
                   iv_dynnr           TYPE sydynnr
                   iv_lb_id           TYPE vrm_id
+                  iv_title           TYPE csequence
         RETURNING VALUE(rv_template) TYPE string,
 
       _get_template_lisbox

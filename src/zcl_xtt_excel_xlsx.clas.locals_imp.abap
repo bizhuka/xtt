@@ -33,6 +33,8 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     " later in merge write_cells_offset( ).
 ***************************************
     mr_drawing = mo_xlsx->drawing_read_xml( io_sheet = me ).
+***************************************
+    io_xlsx->autofilter_read_xml( io_sheet = me ).
   ENDMETHOD. "constructor
   METHOD defined_names_read.
     IF io_node IS NOT INITIAL.
@@ -171,6 +173,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 ***************************************
     " Data validation (Use dom)
     mo_xlsx->data_validation_save_xml( io_sheet = me  ).
+    mo_xlsx->autofilter_save_xml( io_sheet = me  ).
 ***************************************
     _replace_by_transmit( ls_transmit ).
 ***************************************

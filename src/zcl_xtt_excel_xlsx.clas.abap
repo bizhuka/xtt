@@ -152,6 +152,12 @@ PRIVATE SECTION.
   CLASS-METHODS data_validation_save_xml
     IMPORTING
       !io_sheet TYPE REF TO lcl_ex_sheet .
+  class-methods autofilter_read_xml
+    importing
+      !io_sheet TYPE REF TO lcl_ex_sheet .
+  class-methods autofilter_save_xml
+    importing
+      !io_sheet TYPE REF TO lcl_ex_sheet .
   CLASS-METHODS get_without_t
     IMPORTING
       !iv_text       TYPE string
@@ -307,6 +313,46 @@ METHOD area_read_xml.
     ENDIF.
   ENDLOOP.
 ENDMETHOD.                    "area_read_xml
+
+
+METHOD autofilter_read_xml.
+  DATA lo_autofilter   TYPE REF TO if_ixml_element.
+  lo_autofilter ?= io_sheet->mo_document->find_from_name( 'autoFilter' ). "#EC NOTEXT
+  CHECK lo_autofilter IS BOUND.
+
+  " Get REF area
+  DATA l_val TYPE string.
+  l_val = lo_autofilter->get_attribute( 'ref' ).            "#EC NOTEXT
+
+  CREATE DATA io_sheet->mr_autofilter.
+  area_read_xml(
+     iv_value = l_val
+     is_area  = io_sheet->mr_autofilter ).
+
+  DATA lr_cell TYPE REF TO ts_ex_cell.
+  LOOP AT io_sheet->mr_autofilter->a_cells REFERENCE INTO lr_cell.
+    io_sheet->find_cell( lr_cell->* ).
+  ENDLOOP.
+ENDMETHOD.
+
+
+METHOD autofilter_save_xml.
+  " Change
+  CHECK io_sheet->mr_autofilter IS NOT INITIAL.
+  io_sheet->replace_with_new( ir_area = io_sheet->mr_autofilter ).
+
+  " What to update
+  DATA lo_autofilter   TYPE REF TO if_ixml_element.
+  lo_autofilter ?= io_sheet->mo_document->find_from_name( 'autoFilter' ). "#EC NOTEXT
+  CHECK lo_autofilter IS NOT INITIAL.
+
+  DATA lv_address TYPE string.
+  lv_address = zcl_xtt_excel_xlsx=>area_get_address(
+    is_area     = io_sheet->mr_autofilter
+    iv_no_bucks = abap_true ).
+
+  lo_autofilter->set_attribute( name = 'ref' value = lv_address ). "#EC NOTEXT
+ENDMETHOD.
 
 
 METHOD cell_init.

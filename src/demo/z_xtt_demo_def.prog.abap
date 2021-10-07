@@ -69,7 +69,8 @@ CLASS lcl_demo IMPLEMENTATION.
       " Prepare screen '1010'
       CLEAR p_path.
       lv_template = _show_screen( iv_dynnr = '1010'
-                                  iv_lb_id = 'P_DTEMPL' ).
+                                  iv_lb_id = 'P_DTEMPL'
+                                  iv_title = 'Download'(dwn) ).
     ENDIF.
 
     get_from_template( EXPORTING iv_template = lv_template
@@ -115,7 +116,8 @@ CLASS lcl_demo IMPLEMENTATION.
     WHERE usr21~bname = sy-uname.                       "#EC CI_NOORDER
 
     lv_template = _show_screen( iv_dynnr = '1020'
-                                iv_lb_id = 'P_STEMPL' ).
+                                iv_lb_id = 'P_STEMPL'
+                                iv_title = 'Send options'(snd) ).
     get_from_template( EXPORTING iv_template = lv_template
                        IMPORTING eo_xtt      = lo_xtt ).
     CHECK lo_xtt IS NOT INITIAL.
@@ -182,6 +184,11 @@ CLASS lcl_demo IMPLEMENTATION.
     IF sy-subrc = 0.
       <lv_template> = <ls_template>-key.
     ENDIF.
+
+    " Instead of 'WITH FRAME TITLE'
+    DATA ls_status TYPE zif_eui_manager=>ts_status.
+    ls_status-title = iv_title.
+    lo_screen->set_status( ls_status ).
 
     " Show popup
     DATA lv_col_end TYPE i.

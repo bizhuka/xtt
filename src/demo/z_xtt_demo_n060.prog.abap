@@ -75,6 +75,10 @@ CLASS lcl_demo_060 IMPLEMENTATION.
           RETURN.
       ENDTRY.
 
+      " Make obligatory
+      lo_screen->customize( name     = 'P_R_PATH'
+                            required = '1' ).
+
       " Choose folder
       DATA lv_col_end TYPE i.
       lo_screen->get_dimension( IMPORTING ev_col_end = lv_col_end ).

@@ -204,6 +204,7 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       mt_columns        TYPE tt_ex_column,
       mt_list_objects   TYPE tt_ex_list_object,
       mt_data_valid     TYPE tt_ex_area,
+      mr_autofilter     TYPE REF TO ts_ex_area,
       _t_defined_names  TYPE tt_ex_defined_name,
 
       " Current cell. For event handler

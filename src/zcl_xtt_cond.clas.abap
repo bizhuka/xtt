@@ -48,9 +48,9 @@ public section.
       !CT_ROW_OFFSET type ZCL_XTT_TREE_FUNCTION=>TT_ROW_OFFSET .
 protected section.
 private section.
+
 *"* private components of class ZCL_XTT_COND
 *"* do not include other source files here!!!
-
   data MO_XTT type ref to ZCL_XTT .
   data MT_ABAP_CODE type STRINGTAB .
   data MT_MATCH type TT_MATCH .
@@ -78,6 +78,11 @@ private section.
       !IV_PREFIX type CSEQUENCE
     returning
       value(RT_CODE) type STRINGTAB .
+  methods _GET_TEXT_TYPE
+    importing
+      !IO_TYPE type ref to CL_ABAP_TYPEDESCR
+    returning
+      value(RV_TYPE) type STRING .
 ENDCLASS.
 
 
@@ -164,17 +169,12 @@ METHOD get_type.
   ls_field_ext =  zcl_xtt_replace_block=>get_field_ext( io_xtt        = mo_xtt
                                                         is_block      = is_data
                                                         iv_block_name = iv_suffix ).
-
   DATA lo_type LIKE ls_field_ext-desc.
   lo_type = ls_field_ext-desc.
 
-  " Simple case declared in SE11
-  CLEAR ev_type.
-  IF lo_type->is_ddic_type( ) = abap_true.
-    ev_type = lo_type->get_relative_name( ).
-    IF iv_is_top = abap_true AND ev_type IS NOT INITIAL.
-      mv_top_is_ddic_type = abap_true.
-    ENDIF.
+  ev_type = _get_text_type( lo_type ).
+  IF iv_is_top = abap_true AND ev_type IS NOT INITIAL.
+    mv_top_is_ddic_type = abap_true.
   ENDIF.
 
   IF ev_type IS INITIAL.
@@ -419,6 +419,32 @@ METHOD _generate.
 ENDMETHOD.
 
 
+METHOD _get_text_type.
+  " Simple case declared in SE11
+  IF io_type->is_ddic_type( ) = abap_true.
+    rv_type = io_type->get_relative_name( ).
+    RETURN.
+  ENDIF.
+
+  IF io_type->absolute_name CP '\CLASS=*'.
+    DATA lv_type TYPE string.
+    lv_type = io_type->absolute_name+7.
+
+    REPLACE FIRST OCCURRENCE OF '\TYPE=' IN lv_type WITH '=>'.
+    CHECK sy-subrc = 0.
+
+    " Private type ?
+    TRY.
+        DATA lr_type TYPE REF TO data.
+        CREATE DATA lr_type TYPE (lv_type).
+        rv_type = lv_type.
+      CATCH cx_sy_create_error.
+        CLEAR rv_type.
+    ENDTRY.
+  ENDIF.
+ENDMETHOD.
+
+
 METHOD _make_cond_forms.
   " No dynamic fields
   CHECK mt_match[] IS NOT INITIAL.
@@ -454,7 +480,11 @@ METHOD _make_cond_forms.
 
     " Use slow MOVE-CORRESPONDING
     IF mv_top_is_ddic_type <> abap_true.
-      APPEND 'MOVE-CORRESPONDING root TO value.' TO mt_abap_code. "#EC NOTEXT
+      IF sy-saprl >= '740'.
+        APPEND 'value = CORRESPONDING #( root ).'  TO mt_abap_code. "#EC NOTEXT
+      ELSE.
+        APPEND 'MOVE-CORRESPONDING root TO value.' TO mt_abap_code. "#EC NOTEXT
+      ENDIF.
     ENDIF.
 
     DATA lt_line LIKE mt_abap_code.

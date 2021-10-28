@@ -270,6 +270,8 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       cells_create_refs,
       _cells_write_xml
         RETURNING VALUE(rs_transmit) TYPE ts_transmit,
+      _add_end_of_row
+        CHANGING cs_transmit TYPE ts_transmit,
       _replace_by_transmit
         IMPORTING
           is_transmit TYPE ts_transmit,

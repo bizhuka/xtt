@@ -28,174 +28,177 @@ protected section.
 
   methods ON_MATCH_FOUND
     redefinition .
-PRIVATE SECTION.
+private section.
 
-  TYPES tv_sheet_name TYPE c LENGTH 31.
-  TYPES tt_sheet_name TYPE SORTED TABLE OF tv_sheet_name WITH UNIQUE KEY table_line.
+  types:
+    tv_sheet_name TYPE c LENGTH 31 .
+  types:
+    tt_sheet_name TYPE SORTED TABLE OF tv_sheet_name WITH UNIQUE KEY table_line .
 
-  DATA mt_sheets TYPE lcl_ex_sheet_tab .
-  DATA mo_sheet TYPE REF TO lcl_ex_sheet .
-  DATA mo_zip TYPE REF TO cl_abap_zip .
-  DATA mt_shared_strings TYPE stringtab .
-  DATA _xml_xl_workbook TYPE REF TO zcl_xtt_xml_updater .
-  DATA _xml_content_types TYPE REF TO zcl_xtt_xml_updater .
-  DATA _sheets_counter TYPE i VALUE 555 ##NO_TEXT.
-  DATA _all_sheet_name TYPE tt_sheet_name .
+  data MT_SHEETS type LCL_EX_SHEET_TAB .
+  data MO_SHEET type ref to LCL_EX_SHEET .
+  data MO_ZIP type ref to CL_ABAP_ZIP .
+  data MT_SHARED_STRINGS type STRINGTAB .
+  data _XML_XL_WORKBOOK type ref to ZCL_XTT_XML_UPDATER .
+  data _XML_CONTENT_TYPES type ref to ZCL_XTT_XML_UPDATER .
+  data _SHEETS_COUNTER type I value 555 ##NO_TEXT.
+  data _ALL_SHEET_NAME type TT_SHEET_NAME .
 
-  METHODS _workbook_write_xml
-    IMPORTING
-      !it_tags_sheets    TYPE stringtab
-      !it_tags_def_names TYPE stringtab .
-  METHODS _sheet_merge
-    IMPORTING
-      !iv_block_name   TYPE csequence
-      !it_block        TYPE ANY TABLE
-    RETURNING
-      VALUE(rv_merged) TYPE abap_bool .
-  METHODS _sheet_save
-    EXPORTING
-      !et_defined_names TYPE tt_ex_defined_name
-      !et_new_tags      TYPE stringtab .
-  METHODS shared_strings_read .
-  METHODS shared_strings_save .
-  CLASS-METHODS column_read_xml
-    IMPORTING
-      !io_sheet TYPE REF TO lcl_ex_sheet .
-  CLASS-METHODS column_write_xml
-    IMPORTING
-      !it_columns       TYPE tt_ex_column
-    RETURNING
-      VALUE(rt_columns) TYPE stringtab .
-  CLASS-METHODS cell_init
-    IMPORTING
-      !is_cell       TYPE REF TO ts_ex_cell
-      !iv_coordinate TYPE string
-    EXCEPTIONS
-      wrong_format .
-  CLASS-METHODS cell_is_string
-    IMPORTING
-      !is_cell            TYPE REF TO ts_ex_cell
-    RETURNING
-      VALUE(rv_is_string) TYPE abap_bool .
-  CLASS-METHODS cell_read_xml
-    IMPORTING
-      !io_sheet          TYPE REF TO lcl_ex_sheet
-      !io_node           TYPE REF TO if_ixml_element
-      !it_shared_strings TYPE stringtab
-      !iv_row            TYPE i .
-  CLASS-METHODS cell_write_new_row
-    IMPORTING
-      !is_cell        TYPE REF TO ts_ex_cell
-      !io_sheet       TYPE REF TO lcl_ex_sheet
-    CHANGING
-      !cs_transmit    TYPE ts_transmit
-      !cv_current_row TYPE i
-      !cv_current_col TYPE i .
-  CLASS-METHODS cell_write_new_col
-    IMPORTING
-      !is_cell        TYPE REF TO ts_ex_cell
-      !io_sheet       TYPE REF TO lcl_ex_sheet
-    CHANGING
-      !ct_columns     TYPE tt_ex_column
-      !cv_current_col TYPE i .
-  METHODS cell_write_xml
-    IMPORTING
-      !io_sheet       TYPE REF TO lcl_ex_sheet
-      !is_cell        TYPE REF TO ts_ex_cell
-      !iv_new_row     TYPE i
-      !iv_new_col_ind TYPE i
-    CHANGING
-      !cs_transmit    TYPE ts_transmit .
-  CLASS-METHODS row_read_xml
-    IMPORTING
-      !io_sheet          TYPE REF TO lcl_ex_sheet
-      !it_shared_strings TYPE stringtab .
-  CLASS-METHODS row_write_xml
-    IMPORTING
-      !is_row           TYPE REF TO ts_ex_row
-      !iv_new_row       TYPE i
-      !iv_outline_level TYPE i
-    CHANGING
-      !cs_transmit      TYPE ts_transmit .
-  CLASS-METHODS area_read_xml
-    IMPORTING
-      !iv_value TYPE string
-      !is_area  TYPE REF TO ts_ex_area OPTIONAL
-    CHANGING
-      !ct_areas TYPE tt_ex_area OPTIONAL .
-  CLASS-METHODS area_get_address
-    IMPORTING
-      !is_area          TYPE REF TO ts_ex_area
-      !iv_no_bucks      TYPE abap_bool
-    RETURNING
-      VALUE(rv_address) TYPE string .
-  METHODS defined_name_read_xml
-    IMPORTING
-      !io_sheet               TYPE REF TO lcl_ex_sheet
-    RETURNING
-      VALUE(rt_defined_names) TYPE tt_ex_defined_name .
-  CLASS-METHODS defined_name_save_xml
-    IMPORTING
-      !it_defined_names  TYPE tt_ex_defined_name
-    RETURNING
-      VALUE(rt_new_name) TYPE stringtab .
-  METHODS list_object_read_xml
-    IMPORTING
-      !io_sheet TYPE REF TO lcl_ex_sheet .
-  METHODS list_object_save_xml
-    IMPORTING
-      !io_sheet TYPE REF TO lcl_ex_sheet
-      !iv_sid   TYPE i .
-  CLASS-METHODS data_validation_read_xml
-    IMPORTING
-      !io_sheet TYPE REF TO lcl_ex_sheet .
-  CLASS-METHODS data_validation_save_xml
-    IMPORTING
-      !io_sheet TYPE REF TO lcl_ex_sheet .
-  class-methods autofilter_read_xml
+  methods _WORKBOOK_WRITE_XML
     importing
-      !io_sheet TYPE REF TO lcl_ex_sheet .
-  class-methods autofilter_save_xml
+      !IT_TAGS_SHEETS type STRINGTAB
+      !IT_TAGS_DEF_NAMES type STRINGTAB .
+  methods _SHEET_MERGE
     importing
-      !io_sheet TYPE REF TO lcl_ex_sheet .
-  CLASS-METHODS get_without_t
-    IMPORTING
-      !iv_text       TYPE string
-    RETURNING
-      VALUE(rv_text) TYPE string .
-  METHODS drawing_read_xml
-    IMPORTING
-      !io_sheet    TYPE REF TO lcl_ex_sheet
-    RETURNING
-      VALUE(rr_me) TYPE REF TO ts_drawing .
-  METHODS drawing_add
-    IMPORTING
-      !ir_me            TYPE REF TO ts_drawing
-      !ir_cell          TYPE REF TO ts_ex_cell
-      VALUE(iv_new_row) TYPE i
-      VALUE(iv_new_col) TYPE i .
-  CLASS-METHODS drawing_get_image_template
-    IMPORTING
-      !ir_me               TYPE REF TO ts_drawing
-      !ir_cell             TYPE REF TO ts_ex_cell
-      VALUE(iv_new_row)    TYPE i
-      VALUE(iv_new_col)    TYPE i
-    RETURNING
-      VALUE(rv_comp_value) TYPE string .
-  CLASS-METHODS drawing_get_image_basic
-    IMPORTING
-      !ir_cell             TYPE REF TO ts_ex_cell
-      VALUE(iv_new_row)    TYPE i
-      VALUE(iv_new_col)    TYPE i
-    RETURNING
-      VALUE(rv_comp_value) TYPE string .
-  METHODS drawing_save_xml
-    IMPORTING
-      !ir_me               TYPE REF TO ts_drawing
-      !iv_path             TYPE string
-      !iv_path_rel         TYPE string
-      !io_xml_xl_worksheet TYPE REF TO zcl_xtt_xml_updater
-      !io_xml_sheet_rels   TYPE REF TO zcl_xtt_xml_updater .
+      !IV_BLOCK_NAME type CSEQUENCE
+      !IT_BLOCK type ANY TABLE
+    returning
+      value(RV_MERGED) type ABAP_BOOL .
+  methods _SHEET_SAVE
+    exporting
+      !ET_DEFINED_NAMES type TT_EX_DEFINED_NAME
+      !ET_NEW_TAGS type STRINGTAB .
+  methods SHARED_STRINGS_READ .
+  methods SHARED_STRINGS_SAVE .
+  class-methods COLUMN_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET .
+  class-methods COLUMN_WRITE_XML
+    importing
+      !IT_COLUMNS type TT_EX_COLUMN
+    returning
+      value(RT_COLUMNS) type STRINGTAB .
+  class-methods CELL_INIT
+    importing
+      !IS_CELL type ref to TS_EX_CELL
+      !IV_COORDINATE type STRING
+    exceptions
+      WRONG_FORMAT .
+  class-methods CELL_IS_STRING
+    importing
+      !IS_CELL type ref to TS_EX_CELL
+    returning
+      value(RV_IS_STRING) type ABAP_BOOL .
+  class-methods CELL_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET
+      !IO_NODE type ref to IF_IXML_ELEMENT
+      !IT_SHARED_STRINGS type STRINGTAB
+      !IV_ROW type I .
+  class-methods CELL_WRITE_NEW_ROW
+    importing
+      !IS_CELL type ref to TS_EX_CELL
+      !IO_SHEET type ref to LCL_EX_SHEET
+    changing
+      !CS_TRANSMIT type TS_TRANSMIT
+      !CV_CURRENT_ROW type I
+      !CV_CURRENT_COL type I .
+  class-methods CELL_WRITE_NEW_COL
+    importing
+      !IS_CELL type ref to TS_EX_CELL
+      !IO_SHEET type ref to LCL_EX_SHEET
+    changing
+      !CT_COLUMNS type TT_EX_COLUMN
+      !CV_CURRENT_COL type I .
+  methods CELL_WRITE_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET
+      !IS_CELL type ref to TS_EX_CELL
+      !IV_NEW_ROW type I
+      !IV_NEW_COL_IND type I
+    changing
+      !CS_TRANSMIT type TS_TRANSMIT .
+  class-methods ROW_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET
+      !IT_SHARED_STRINGS type STRINGTAB .
+  class-methods ROW_WRITE_XML
+    importing
+      !IS_ROW type ref to TS_EX_ROW
+      !IV_NEW_ROW type I
+      !IV_OUTLINE_LEVEL type I
+    changing
+      !CS_TRANSMIT type TS_TRANSMIT .
+  class-methods AREA_READ_XML
+    importing
+      !IV_VALUE type STRING
+      !IS_AREA type ref to TS_EX_AREA optional
+    changing
+      !CT_AREAS type TT_EX_AREA optional .
+  class-methods AREA_GET_ADDRESS
+    importing
+      !IS_AREA type ref to TS_EX_AREA
+      !IV_NO_BUCKS type ABAP_BOOL
+      !IV_EXT type ABAP_BOOL optional
+    returning
+      value(RV_ADDRESS) type STRING .
+  methods DEFINED_NAME_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET
+    returning
+      value(RT_DEFINED_NAMES) type TT_EX_DEFINED_NAME .
+  class-methods DEFINED_NAME_SAVE_XML
+    importing
+      !IT_DEFINED_NAMES type TT_EX_DEFINED_NAME
+    returning
+      value(RT_NEW_NAME) type STRINGTAB .
+  methods LIST_OBJECT_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET .
+  methods LIST_OBJECT_SAVE_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET
+      !IV_SID type I .
+  class-methods DATA_VALIDATION_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET .
+  class-methods DATA_VALIDATION_SAVE_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET .
+  class-methods AUTOFILTER_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET .
+  class-methods AUTOFILTER_SAVE_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET .
+  class-methods GET_WITHOUT_T
+    importing
+      !IV_TEXT type STRING
+    returning
+      value(RV_TEXT) type STRING .
+  methods DRAWING_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET
+    returning
+      value(RR_ME) type ref to TS_DRAWING .
+  methods DRAWING_ADD
+    importing
+      !IR_ME type ref to TS_DRAWING
+      !IR_CELL type ref to TS_EX_CELL
+      value(IV_NEW_ROW) type I
+      value(IV_NEW_COL) type I .
+  class-methods DRAWING_GET_IMAGE_TEMPLATE
+    importing
+      !IR_ME type ref to TS_DRAWING
+      !IR_CELL type ref to TS_EX_CELL
+      value(IV_NEW_ROW) type I
+      value(IV_NEW_COL) type I
+    returning
+      value(RV_COMP_VALUE) type STRING .
+  class-methods DRAWING_GET_IMAGE_BASIC
+    importing
+      !IR_CELL type ref to TS_EX_CELL
+      value(IV_NEW_ROW) type I
+      value(IV_NEW_COL) type I
+    returning
+      value(RV_COMP_VALUE) type STRING .
+  methods DRAWING_SAVE_XML
+    importing
+      !IR_ME type ref to TS_DRAWING
+      !IV_PATH type STRING
+      !IV_PATH_REL type STRING
+      !IO_XML_XL_WORKSHEET type ref to ZCL_XTT_XML_UPDATER
+      !IO_XML_SHEET_RELS type ref to ZCL_XTT_XML_UPDATER .
 ENDCLASS.
 
 
@@ -215,8 +218,19 @@ METHOD area_get_address.
     RETURN.
   ENDIF.
 
-  CLEAR rv_address.
+  DATA lv_delim TYPE string.
   LOOP AT is_area->a_cells REFERENCE INTO ls_cell.
+    IF sy-tabix = 1.
+      lv_delim = ``.  " Not space
+    ELSE.
+      lv_delim = `:`. " Old method for 1 area only. Always `:`
+
+      " If several cell pairs in area
+      IF iv_ext = abap_true AND sy-tabix MOD 2 = 1.
+        lv_delim = ` `. " space
+      ENDIF.
+    ENDIF.
+
     " As string
     int_2_text ls_cell->c_row l_row.
 
@@ -228,11 +242,7 @@ METHOD area_get_address.
     ENDIF.
 
     " Concatenate 2 cells
-    IF rv_address IS INITIAL.
-      rv_address = l_part.
-    ELSE.
-      CONCATENATE rv_address `:` l_part INTO rv_address.
-    ENDIF.
+    CONCATENATE rv_address lv_delim l_part INTO rv_address.
   ENDLOOP.
 
   " Add sheet name
@@ -545,7 +555,7 @@ METHOD cell_write_new_row.
 
   " Closing tag
   IF cs_transmit-rows_cells IS NOT INITIAL.
-    APPEND `</row>` TO cs_transmit-rows_cells.
+    io_sheet->_add_end_of_row( CHANGING cs_transmit = cs_transmit ).
   ENDIF.
 
   " Read by previous key
@@ -840,6 +850,7 @@ METHOD data_validation_read_xml.
   DATA lo_data_valid   TYPE REF TO if_ixml_element.
   DATA ls_area         TYPE REF TO ts_ex_area.
   DATA ls_cell         TYPE REF TO ts_ex_cell.
+  DATA lt_val          TYPE stringtab.
   DATA l_val           TYPE string.
 
   lo_data_valid ?= io_sheet->mo_document->find_from_name( 'dataValidation' ). "#EC NOTEXT
@@ -848,9 +859,13 @@ METHOD data_validation_read_xml.
 
     " Create new area
     l_val = lo_data_valid->get_attribute( 'sqref' ).        "#EC NOTEXT
-    area_read_xml(
-       iv_value = l_val
-       is_area  = ls_area ).
+    CLEAR lt_val.
+    SPLIT l_val AT space INTO TABLE lt_val.
+    LOOP AT lt_val INTO l_val.
+      area_read_xml(
+        iv_value = l_val
+        is_area  = ls_area ).
+    ENDLOOP.
 
     LOOP AT ls_area->a_cells REFERENCE INTO ls_cell.
       " Get existing cell Or insert new one
@@ -877,9 +892,10 @@ METHOD data_validation_save_xml.
     " Change
     io_sheet->replace_with_new( ir_area = ls_area ).
 
-    lv_address = zcl_xtt_excel_xlsx=>area_get_address(
+    lv_address = area_get_address(
       is_area     = ls_area
-      iv_no_bucks = abap_true ).
+      iv_no_bucks = abap_true
+      iv_ext      = abap_true ).
 
     lo_data_valid->set_attribute( name = 'sqref' value = lv_address ). "#EC NOTEXT
 

@@ -311,7 +311,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     ENDLOOP.
 
     " Rows & cells Closing tag
-    APPEND `</row>` TO rs_transmit-rows_cells.
+    _add_end_of_row( CHANGING cs_transmit = rs_transmit ).
 
     " Columns
     rs_transmit-cols = mo_xlsx->column_write_xml( lt_columns ).
@@ -320,6 +320,21 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       DELETE mt_columns WHERE min = <ls_column>-min.
       INSERT <ls_column> INTO TABLE mt_columns.
     ENDLOOP.
+  ENDMETHOD.
+*--------------------------------------------------------------------*
+  METHOD _add_end_of_row.
+    DATA: lv_last_row   TYPE string,
+          lv_last_index TYPE i.
+    lv_last_index = lines( cs_transmit-rows_cells ).
+    READ TABLE cs_transmit-rows_cells INTO lv_last_row INDEX lv_last_index.
+    CHECK sy-subrc = 0.
+
+    IF lv_last_row CS `<row r="`.
+      DELETE cs_transmit-rows_cells INDEX lv_last_index.
+      RETURN.
+    ENDIF.
+
+    APPEND `</row>` TO cs_transmit-rows_cells.
   ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD _replace_by_transmit.

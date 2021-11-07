@@ -95,7 +95,6 @@ ENDMETHOD.
 METHOD zif_xtt~send.
   DATA:
     lv_body      TYPE string,
-    lv_raw       TYPE xstring,
     lv_file_name LIKE mv_file_name.
 
   " Default body
@@ -103,9 +102,13 @@ METHOD zif_xtt~send.
 
   " Only if no body
   IF lv_body IS INITIAL AND mv_as_email_body = abap_true.
-    " Get as HTML text
-    lv_raw = get_raw( ).
-    lv_body = zcl_eui_conv=>xstring_to_string( lv_raw ).
+    " Get as HTML text. lv_raw =
+    " Raise events to change content
+    get_raw( ).
+
+    " None UTF-8 system?
+    " lv_body = zcl_eui_conv=>xstring_to_string( lv_raw ).
+    lv_body = mv_file_content.
 
     " Do not have any attachments
     lv_file_name = mv_file_name.

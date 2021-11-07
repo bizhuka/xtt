@@ -430,16 +430,11 @@ METHOD zif_xtt~send.
     ls_header    TYPE REF TO soli,
     lv_subject   TYPE sood-objdes,
     lv_ext       TYPE soodk-objtp,
-    lv_size      TYPE sood-objlen,
     lv_file_size TYPE i,
     lt_data      TYPE solix_tab,
     lo_error     TYPE REF TO cx_bcs,
-    lt_body      TYPE solix_tab,
     lv_value     TYPE xstring,
-    lv_filename  TYPE string,
-    lv_body      TYPE string,
-    lx_body      TYPE xstring,
-    lv_len       TYPE i.
+    lv_filename  TYPE string.
   FIELD-SYMBOLS:
     <ls_recipient> LIKE LINE OF it_recipients_bcs.
 
@@ -448,16 +443,18 @@ METHOD zif_xtt~send.
       lo_mail = cl_bcs=>create_persistent( ).
 
       " Body
+      DATA: lv_body TYPE string,
+            lt_body TYPE soli_tab, " SOLIX_TAB
+            lv_len  TYPE i.
       lv_body = iv_body.
-      " i_text = cl_document_bcs=>string_to_soli( lv_body ).
-      lx_body = zcl_eui_conv=>string_to_xstring( lv_body ).
-      zcl_eui_conv=>xstring_to_binary( EXPORTING iv_xstring = lx_body
-                                       IMPORTING et_table   = lt_body
-                                                 ev_length  = lv_len ).
+      zcl_eui_conv=>string_to_text_table( EXPORTING iv_string = lv_body
+                                          IMPORTING et_text   = lt_body
+                                                    ev_length = lv_len ).
+      DATA lv_size TYPE sood-objlen.
       lv_size = lv_len.
       lo_doc  = cl_document_bcs=>create_document(
        i_type    = 'HTM'
-       i_hex     = lt_body
+       i_text    = lt_body  " I_HEX
        i_length  = lv_size
        i_subject = iv_subject ).
 

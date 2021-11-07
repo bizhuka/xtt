@@ -84,11 +84,11 @@ METHOD format.
                   iv_block_name = iv_root_name
                 ).
 
-  DATA lv_text TYPE xstring.
-  lv_text = lo_html->get_raw( ).
+  " DATA lv_text TYPE xstring. lv_text =
+  lo_html->get_raw( ).
 
   " Convert
-  rv_text = zcl_eui_conv=>xstring_to_string( lv_text ).
+  rv_text = lo_html->mv_file_content. " zcl_eui_conv=>xstring_to_string( lv_text ).
 ENDMETHOD.
 
 

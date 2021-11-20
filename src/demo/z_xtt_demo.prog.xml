@@ -90,6 +90,12 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>091</KEY>
+     <ENTRY>3D example (sheets, columns &amp; rows)</ENTRY>
+     <LENGTH>70</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>100</KEY>
      <ENTRY>Images</ENTRY>
      <LENGTH>16</LENGTH>
@@ -114,6 +120,12 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>131</KEY>
+     <ENTRY>Shorthand for COND #( )</ENTRY>
+     <LENGTH>46</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>140</KEY>
      <ENTRY>;type=block</ENTRY>
      <LENGTH>21</LENGTH>
@@ -126,15 +138,45 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>160</KEY>
+     <ENTRY>;call</ENTRY>
+     <LENGTH>15</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>BOT</KEY>
+     <ENTRY>bottom</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>BTT</KEY>
+     <ENTRY>Bottom</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>CDR</KEY>
      <ENTRY>Cannot detect IS_ROOT type</ENTRY>
      <LENGTH>52</LENGTH>
     </item>
     <item>
      <ID>I</ID>
+     <KEY>CDS</KEY>
+     <ENTRY>Check data structure</ENTRY>
+     <LENGTH>40</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>DCN</KEY>
      <ENTRY>Documentation №</ENTRY>
      <LENGTH>25</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>DOT</KEY>
+     <ENTRY>Document title</ENTRY>
+     <LENGTH>24</LENGTH>
     </item>
     <item>
      <ID>I</ID>
@@ -168,9 +210,63 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>FIT</KEY>
+     <ENTRY>First title</ENTRY>
+     <LENGTH>21</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>FSP</KEY>
+     <ENTRY>From SAP</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>GP1</KEY>
+     <ENTRY>Group by _GROUP1</ENTRY>
+     <LENGTH>26</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>GP2</KEY>
+     <ENTRY>Group by LandTo &amp; Airline</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>GR1</KEY>
+     <ENTRY>Group flights by Departure - Arrival</ENTRY>
+     <LENGTH>72</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>JUS</KEY>
+     <ENTRY>Just string</ENTRY>
+     <LENGTH>21</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>LAT</KEY>
+     <ENTRY>Last title</ENTRY>
+     <LENGTH>20</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>LCN</KEY>
      <ENTRY>Lines count =</ENTRY>
      <LENGTH>23</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>LES</KEY>
+     <ENTRY>Letter subject</ENTRY>
+     <LENGTH>24</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>MPN</KEY>
+     <ENTRY>Max. Personnel Number</ENTRY>
+     <LENGTH>42</LENGTH>
     </item>
     <item>
      <ID>I</ID>
@@ -180,9 +276,33 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>NGR</KEY>
+     <ENTRY>No group</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>NSM</KEY>
+     <ENTRY>No sum</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>ODO</KEY>
      <ENTRY>Online documentation</ENTRY>
      <LENGTH>29</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>OLE</KEY>
+     <ENTRY>OLE Call</ENTRY>
+     <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>SHT</KEY>
+     <ENTRY>Sheet</ENTRY>
+     <LENGTH>15</LENGTH>
     </item>
     <item>
      <ID>I</ID>
@@ -198,6 +318,12 @@
     </item>
     <item>
      <ID>I</ID>
+     <KEY>STR</KEY>
+     <ENTRY>String</ENTRY>
+     <LENGTH>16</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>TBR</KEY>
      <ENTRY>Activate &quot;ZXTT_BREAK_POINT&quot; in tr. SAAB</ENTRY>
      <LENGTH>78</LENGTH>
@@ -207,6 +333,12 @@
      <KEY>TEM</KEY>
      <ENTRY>Template</ENTRY>
      <LENGTH>18</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>THB</KEY>
+     <ENTRY>The body of the letter</ENTRY>
+     <LENGTH>44</LENGTH>
     </item>
     <item>
      <ID>I</ID>
@@ -424,6 +556,12 @@
       </item>
       <item>
        <ID>I</ID>
+       <KEY>091</KEY>
+       <ENTRY>Пример 3D (листы, столбцы и строки)</ENTRY>
+       <LENGTH>70</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>100</KEY>
        <ENTRY>Изображения</ENTRY>
        <LENGTH>16</LENGTH>
@@ -448,6 +586,12 @@
       </item>
       <item>
        <ID>I</ID>
+       <KEY>131</KEY>
+       <ENTRY>Сокращение для COND #( )</ENTRY>
+       <LENGTH>46</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>140</KEY>
        <ENTRY>Блоки по условию</ENTRY>
        <LENGTH>21</LENGTH>
@@ -460,15 +604,45 @@
       </item>
       <item>
        <ID>I</ID>
+       <KEY>160</KEY>
+       <ENTRY>;call</ENTRY>
+       <LENGTH>15</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>BOT</KEY>
+       <ENTRY>нижний</ENTRY>
+       <LENGTH>16</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>BTT</KEY>
+       <ENTRY>Нижний</ENTRY>
+       <LENGTH>16</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>CDR</KEY>
        <ENTRY>Не удается определить тип IS_ROOT</ENTRY>
        <LENGTH>52</LENGTH>
       </item>
       <item>
        <ID>I</ID>
+       <KEY>CDS</KEY>
+       <ENTRY>Проверьте структуру данных</ENTRY>
+       <LENGTH>40</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>DCN</KEY>
        <ENTRY>Документация №</ENTRY>
        <LENGTH>25</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>DOT</KEY>
+       <ENTRY>Название документа</ENTRY>
+       <LENGTH>24</LENGTH>
       </item>
       <item>
        <ID>I</ID>
@@ -502,9 +676,63 @@
       </item>
       <item>
        <ID>I</ID>
+       <KEY>FIT</KEY>
+       <ENTRY>Первый заголовок</ENTRY>
+       <LENGTH>21</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>FSP</KEY>
+       <ENTRY>Из SAP</ENTRY>
+       <LENGTH>18</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>GP1</KEY>
+       <ENTRY>Группировать по _GROUP1</ENTRY>
+       <LENGTH>26</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>GP2</KEY>
+       <ENTRY>Группировать по LandTo &amp; Airline</ENTRY>
+       <LENGTH>50</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>GR1</KEY>
+       <ENTRY>Групповые рейсы по Вылету - Прилету</ENTRY>
+       <LENGTH>72</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>JUS</KEY>
+       <ENTRY>Просто строка</ENTRY>
+       <LENGTH>21</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>LAT</KEY>
+       <ENTRY>Последний заголовок</ENTRY>
+       <LENGTH>20</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>LCN</KEY>
        <ENTRY>Количество строк =</ENTRY>
        <LENGTH>23</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>LES</KEY>
+       <ENTRY>Тема письма</ENTRY>
+       <LENGTH>24</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>MPN</KEY>
+       <ENTRY>Макс. табельный номер</ENTRY>
+       <LENGTH>42</LENGTH>
       </item>
       <item>
        <ID>I</ID>
@@ -514,9 +742,33 @@
       </item>
       <item>
        <ID>I</ID>
+       <KEY>NGR</KEY>
+       <ENTRY>Нет группы</ENTRY>
+       <LENGTH>18</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>NSM</KEY>
+       <ENTRY>Нет суммы</ENTRY>
+       <LENGTH>16</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>ODO</KEY>
        <ENTRY>Онлайн документация</ENTRY>
        <LENGTH>29</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>OLE</KEY>
+       <ENTRY>Вызов OLE</ENTRY>
+       <LENGTH>18</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>SHT</KEY>
+       <ENTRY>Лист</ENTRY>
+       <LENGTH>15</LENGTH>
       </item>
       <item>
        <ID>I</ID>
@@ -532,6 +784,12 @@
       </item>
       <item>
        <ID>I</ID>
+       <KEY>STR</KEY>
+       <ENTRY>Строка</ENTRY>
+       <LENGTH>16</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
        <KEY>TBR</KEY>
        <ENTRY>Активируйте &quot;ZXTT_BREAK_POINT&quot; в тр. SAAB</ENTRY>
        <LENGTH>78</LENGTH>
@@ -541,6 +799,12 @@
        <KEY>TEM</KEY>
        <ENTRY>Шаблон</ENTRY>
        <LENGTH>18</LENGTH>
+      </item>
+      <item>
+       <ID>I</ID>
+       <KEY>THB</KEY>
+       <ENTRY>Тело письма</ENTRY>
+       <LENGTH>44</LENGTH>
       </item>
       <item>
        <ID>I</ID>

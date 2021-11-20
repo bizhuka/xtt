@@ -104,17 +104,17 @@ CLASS lcl_demo_150 IMPLEMENTATION.
     APPEND INITIAL LINE TO rt_toolbar ASSIGNING <ls_button>.
     <ls_button>-function = 'NO_SUM'.
     <ls_button>-icon     = icon_wd_table.
-    <ls_button>-text     = 'No sum'(ngr).
+    <ls_button>-text     = 'No sum'(nsm).
 
     APPEND INITIAL LINE TO rt_toolbar ASSIGNING <ls_button>.
     <ls_button>-function  = '_GROUP_1_FIELD'.
     <ls_button>-icon      = icon_wd_tree.
-    <ls_button>-quickinfo = <ls_button>-text = 'Group by _GROUP1'.
+    <ls_button>-quickinfo = <ls_button>-text = 'Group by _GROUP1'(gp1).
 
     APPEND INITIAL LINE TO rt_toolbar ASSIGNING <ls_button>.
     <ls_button>-function  = '_GROUP_2_FIELD'.
     <ls_button>-icon      = icon_wd_tree.
-    <ls_button>-quickinfo = <ls_button>-text = 'Group by LandTo & Airline'.
+    <ls_button>-quickinfo = <ls_button>-text = 'Group by LandTo & Airline'(gp2).
   ENDMETHOD.
 
   METHOD on_user_command.
@@ -155,7 +155,7 @@ CLASS lcl_demo_150 IMPLEMENTATION.
     DATA lr_field TYPE REF TO lvc_s_fcat.
     APPEND INITIAL LINE TO rt_catalog REFERENCE INTO lr_field.
     lr_field->fieldname = '_GROUP1'.
-    lr_field->coltext   = 'Group flights by Departure - Arrival'.
+    lr_field->coltext   = 'Group flights by Departure - Arrival'(gr1).
 
     " Check hide fields
     APPEND INITIAL LINE TO rt_catalog REFERENCE INTO lr_field.

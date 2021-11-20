@@ -642,7 +642,7 @@ CLASS lcl_report IMPLEMENTATION.
         " Exist ?
         ASSIGN COMPONENT lv_column OF STRUCTURE <ls_item> TO <lv_sum>.
         IF sy-subrc <> 0.
-          zcx_xtt_exception=>raise_dump( iv_message = `Check data structure` ). "#EC NOTEXT
+          zcx_xtt_exception=>raise_dump( iv_message = 'Check data structure'(cds) ).
         ENDIF.
 
         " Show with decimals

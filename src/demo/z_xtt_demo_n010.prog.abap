@@ -32,10 +32,10 @@ CLASS lcl_demo_010 IMPLEMENTATION.
 
     " Init document structure
     DATA ls_root TYPE ts_root.
-    ls_root-title   = 'Document title'.                     "#EC NOTEXT
-    ls_root-text    = 'Just string'.                        "#EC NOTEXT
+    ls_root-title   = 'Document title'(dot).
+    ls_root-text    = 'Just string'(jus).
     ls_root-int     = 3.
-    ls_root-bottom  = 'bottom'.                             "#EC NOTEXT
+    ls_root-bottom  = 'bottom'(bot).
 
     io_report->merge_add_one( ls_root ).
   ENDMETHOD.

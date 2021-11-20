@@ -149,10 +149,10 @@ CLASS lcl_demo_070 IMPLEMENTATION.
 
       EXPORTING
         #1         = 'MAIN.start'
-        #2         = 'From SAP'.                            "#EC NOTEXT
+        #2         = 'From SAP'(fsp).
 
     " OR Call OLE like that
-    SET PROPERTY OF io_ole_app 'StatusBar' = 'OLE Call'.    "#EC NOTEXT
+    SET PROPERTY OF io_ole_app 'StatusBar' = 'OLE Call'(ole).
 
     GET PROPERTY OF io_ole_app 'Charts' = lv_charts.
     CALL METHOD OF

@@ -30,14 +30,14 @@ CLASS lcl_demo_091 IMPLEMENTATION.
     DATA lt_merge TYPE lcl_demo_090=>tt_merge.
 
     DO p_b_cnt TIMES.
-      DATA lv_index TYPE STRING.
+      DATA lv_index TYPE string.
       lv_index = sy-index.
       CONDENSE lv_index.
 
       DATA ls_merge LIKE LINE OF lt_merge.
       ls_merge = lcl_demo_090=>get_one_merge( io_report ).
 
-      CONCATENATE `Sheet ` lv_index INTO ls_merge-title.
+      CONCATENATE 'Sheet'(sht) lv_index INTO ls_merge-title SEPARATED BY ` `.
 
       APPEND ls_merge TO lt_merge.
     ENDDO.

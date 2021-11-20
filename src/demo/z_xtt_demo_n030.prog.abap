@@ -55,8 +55,8 @@ CLASS lcl_demo_030 IMPLEMENTATION.
       lv_rem = sy-index MOD 4.
 
       APPEND INITIAL LINE TO lt_root REFERENCE INTO ls_root.
-      CONCATENATE `Title ` lv_num INTO ls_root->title.      "#EC NOTEXT
-      CONCATENATE `Bottom ` lv_num INTO ls_root->bottom.    "#EC NOTEXT
+      CONCATENATE 'Title'(tit)  lv_num INTO ls_root->title  SEPARATED BY ` `.
+      CONCATENATE 'Bottom'(btt) lv_num INTO ls_root->bottom SEPARATED BY ` `.
 
       " @see get_random_table description
       io_report->get_random_table( IMPORTING et_table = ls_root->t ).
@@ -76,8 +76,8 @@ CLASS lcl_demo_030 IMPLEMENTATION.
     ENDDO.
 
     " second merge
-    ls_doc-f_title = `First title`.                         "#EC NOTEXT
-    ls_doc-l_title = `Last title`.                          "#EC NOTEXT
+    ls_doc-f_title = 'First title'(fit).
+    ls_doc-l_title = 'Last title'(lat).
 
     " Faster if the begining
     io_report->merge_add_one(

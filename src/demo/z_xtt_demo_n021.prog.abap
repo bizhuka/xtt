@@ -33,7 +33,7 @@ CLASS lcl_demo_021 IMPLEMENTATION.
     DATA ls_add TYPE ts_add.
     DO 3 TIMES.
       ls_add-info = sy-index.
-      CONCATENATE `String ` ls_add-info INTO ls_add-info.
+      CONCATENATE 'String'(str) ls_add-info INTO ls_add-info SEPARATED BY ` `.
       APPEND ls_add TO lt_add.
     ENDDO.
 

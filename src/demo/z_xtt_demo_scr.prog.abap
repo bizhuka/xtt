@@ -59,8 +59,8 @@ PARAMETERS:
   p_stempl TYPE vrm_value-key AS LISTBOX VISIBLE LENGTH 80,
   p_email TYPE adr6-smtp_addr,
   p_user  TYPE syuname             DEFAULT sy-uname,
-  p_title TYPE so_obj_des          DEFAULT 'Letter subject', "#EC NOTEXT
-  p_text  TYPE text255             DEFAULT 'The body of the letter'. "#EC NOTEXT
+  p_title TYPE so_obj_des          DEFAULT 'Letter subject'(les),
+  p_text  TYPE text255             DEFAULT 'The body of the letter'(thb).
 SELECTION-SCREEN END OF: BLOCK bl_snd,
                          SCREEN 1020.
 

@@ -94,7 +94,7 @@ CLASS lcl_demo_060 IMPLEMENTATION.
     DATA ls_root    TYPE ts_root.
     DATA lt_folders TYPE REF TO tt_tree_06.
 
-    ls_root-title = `Title`.                                "#EC NOTEXT
+    ls_root-title = 'Title'(tit).
     CREATE DATA lt_folders.
 
     " Delete file separator

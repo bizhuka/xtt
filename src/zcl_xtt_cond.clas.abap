@@ -481,7 +481,7 @@ METHOD _make_cond_forms.
     " Use slow MOVE-CORRESPONDING
     IF mv_top_is_ddic_type <> abap_true.
       IF sy-saprl >= '740'.
-        APPEND 'value = CORRESPONDING #( root ).'  TO mt_abap_code. "#EC NOTEXT
+        APPEND 'value = CORRESPONDING #( DEEP root ).'  TO mt_abap_code. "#EC NOTEXT
       ELSE.
         APPEND 'MOVE-CORRESPONDING root TO value.' TO mt_abap_code. "#EC NOTEXT
       ENDIF.

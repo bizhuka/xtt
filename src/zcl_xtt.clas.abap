@@ -397,6 +397,8 @@ METHOD zif_xtt~download.
 
   " And finally show logs
   _logger->show_as_button( iv_write_message = 'Please read logs for finding issues'(prl) ).
+  CHECK _logger->has_messages( iv_msg_types = zcl_eui_logger=>mc_msg_types-error ) = abap_true.
+  _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup ).
 ENDMETHOD.
 
 
@@ -541,8 +543,11 @@ METHOD zif_xtt~show.
     CATCH zcx_eui_no_check INTO lo_no_check.
       add_log_message( io_exception = lo_no_check ).
   ENDTRY.
-  " If has los show them
+  " If has logs show them
   _logger->show_as_button( ).
+  IF _logger->has_messages( iv_msg_types = zcl_eui_logger=>mc_msg_types-error ) = abap_true.
+    _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup ).
+  ENDIF.
 
   " Get from file name
   IF mv_ole_ext IS NOT INITIAL.

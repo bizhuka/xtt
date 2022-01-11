@@ -976,6 +976,7 @@ METHOD defined_name_save_xml.
     add_attr lv_name <ls_item>-d_name      `name`.            "#EC NOTEXT
     add_attr lv_name <ls_item>-d_local_sid `localSheetId`.    "#EC NOTEXT
 
+    l_ref = cl_http_utility=>escape_html( l_ref ).
     CONCATENATE lv_name  `>` l_ref `</definedName>` INTO lv_name RESPECTING BLANKS.
     APPEND lv_name TO rt_new_name.
   ENDLOOP.

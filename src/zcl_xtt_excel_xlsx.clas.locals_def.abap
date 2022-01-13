@@ -42,7 +42,7 @@ TYPES:
     c_merge_row_dx   TYPE i,
     c_merge_col_dx   TYPE i,
     " if equal then merge cells
-    c_merge_me       TYPE abap_bool,
+    c_merge_me       TYPE char2,
     c_merge_tabix    TYPE sytabix,
     c_merge_tr_level TYPE i,
 
@@ -169,7 +169,16 @@ TYPES:
     cols        TYPE stringtab,
     merge_cells TYPE stringtab,
     iv_sid      TYPE i,
-  END OF ts_transmit.
+  END OF ts_transmit,
+
+  BEGIN OF ts_mrg_grp,
+    c_merge_me    TYPE ts_ex_cell-c_merge_me,
+    c_merge_tabix TYPE ts_ex_cell-c_merge_tabix,
+*    c_row         TYPE ts_ex_cell-c_row,
+*    c_col         TYPE ts_ex_cell-c_col,
+*    c_value       TYPE ts_ex_cell-c_value,
+  END OF ts_mrg_grp,
+  tt_mrg_grp TYPE SORTED TABLE OF ts_mrg_grp WITH UNIQUE KEY table_line.
 **********************************************************************
 **********************************************************************
 

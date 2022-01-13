@@ -734,7 +734,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 
     ev_by_column = io_scope->is_by_column( ir_field->name ).
     IF ev_by_column = abap_true.
-      SORT ct_cells STABLE BY c_col_ind c_row.
+      SORT ct_cells STABLE BY c_col_ind c_row.  " c_row ?
     ENDIF.
 
     " CONCATENATE zcl_xtt_replace_block=>mc_char_block_begin iv_fld_name INTO lv_find_str.
@@ -902,25 +902,20 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
 
     CHECK _t_merge_me[] IS NOT INITIAL.
 
-    """ DATA(lt_ex_cell1) = VALUE tt_ex_cell( FOR lr_cell_line IN _t_merge_me ( lr_cell_line->* ) ). BREAK-POINT.
+***    DATA(lt_ex_cell1) = VALUE tt_ex_cell( FOR lr_cell_line IN _t_merge_me ( lr_cell_line->* ) ). BREAK-POINT.
     CASE iv_by_column.
       WHEN abap_false.
-        SORT  _t_merge_me STABLE BY table_line->c_col.
-      WHEN abap_true. " Revers c_col <---> c_row?
+        SORT  _t_merge_me STABLE BY table_line->c_col_ind. " and c_row. ?
+      WHEN abap_true. " Revers c_col_ind <---> c_row?
         SORT  _t_merge_me STABLE BY table_line->c_row.
     ENDCASE.
-    """ DATA(lt_ex_cell2) = VALUE tt_ex_cell( FOR lr_cell_line IN _t_merge_me ( lr_cell_line->* ) ). BREAK-POINT.
+***     DATA(lt_ex_cell2) = VALUE tt_ex_cell( FOR lr_cell_line IN _t_merge_me ( lr_cell_line->* ) ). BREAK-POINT.
 
-    "DATA lt_unq_cell TYPE SORTED TABLE OF ts_ex_cell WITH UNIQUE KEY table_line.
     DATA lt_level TYPE SORTED TABLE OF i WITH UNIQUE KEY table_line.
     DATA: lv_is_same_pos TYPE abap_bool.
 
     LOOP AT _t_merge_me INTO lr_cell.
       lv_is_same_pos = abap_true.
-***      INSERT lr_cell->* INTO TABLE lt_unq_cell.
-***      IF sy-subrc <> 0.
-***        lv_is_same_pos = abap_false.
-***      ENDIF.
 
       INSERT lr_cell->c_merge_tr_level INTO TABLE lt_level.
 
@@ -945,6 +940,22 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         lv_is_same_pos = abap_false.
       ENDIF.
 
+      " Merge by group
+      DO 1 TIMES.
+        CHECK lr_cell->c_merge_me CP 'G*'.
+
+        DATA lt_mrg_grp TYPE tt_mrg_grp.
+        DATA ls_mrg_grp TYPE ts_mrg_grp.
+
+        MOVE-CORRESPONDING lr_cell->* TO ls_mrg_grp.
+        READ TABLE lt_mrg_grp TRANSPORTING NO FIELDS " BINARY SEARCH
+         WITH TABLE KEY c_merge_me    = ls_mrg_grp-c_merge_me
+                        c_merge_tabix = ls_mrg_grp-c_merge_tabix.
+        CHECK sy-subrc = 0.
+
+        lv_is_same_pos = abap_false.
+      ENDDO.
+
       IF lr_cell->c_value = lr_prev_cell->c_value AND lv_is_same_pos = abap_true.
         CLEAR: " lr_cell->c_value, " Several times ?
                lr_cell->c_merge_row_dx,
@@ -957,10 +968,14 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
                     iv_count     = lv_merge_cnt
                     iv_by_column = iv_by_column ).
       lr_prev_cell = lr_cell.
-      CLEAR: lt_level, " ***lt_unq_cell
+      CLEAR: lt_level,
              lv_merge_cnt.
-***      INSERT lr_cell->* INTO TABLE lt_unq_cell.
       INSERT lr_cell->c_merge_tr_level INTO TABLE lt_level.
+
+*******************
+      " Merge by group
+      CHECK lr_cell->c_merge_me CP 'G*'.
+      INSERT ls_mrg_grp INTO TABLE lt_mrg_grp.
     ENDLOOP.
 
     _do_merge_me( ir_cell      = lr_prev_cell
@@ -1083,7 +1098,8 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
     " if equal then merge cells
     DATA lr_cell TYPE REF TO ts_ex_cell.
-    LOOP AT lt_cells_ref INTO lr_cell WHERE table_line->c_merge_me = abap_true.
+    LOOP AT lt_cells_ref INTO lr_cell WHERE table_line->c_merge_me EQ abap_true
+                                         OR table_line->c_merge_me CP 'G*'.
 *      IF lines( mt_row_offset ) = ir_tree->level + 1.
       lr_cell->c_merge_tabix    = iv_tabix.
 *      ENDIF.

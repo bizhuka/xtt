@@ -52,7 +52,7 @@ CLASS lcl_test IMPLEMENTATION.
         io_injection = me.
 
     " Folders for report
-    p_r_path = 'C:\Users\moldab\Desktop\arc\xtt-image\'.
+    p_r_path = 'D:\Users\moldab\Desktop\arc\xtt-image\'.
 
     p_r_cnt = 15.
     p_c_cnt = 36.
@@ -226,7 +226,7 @@ CLASS lcl_test IMPLEMENTATION.
 
     DATA lv_path TYPE string.
     "TODO check path
-    CONCATENATE `C:\Users\moldab\AppData\Local\SAP\SAP GUI\tmp\` _raw_folder `\` iv_path INTO lv_path.
+    CONCATENATE `D:\Users\moldab\AppData\Local\SAP\SAP GUI\tmp\` _raw_folder `\` iv_path INTO lv_path.
     REPLACE ALL OCCURRENCES OF `/` IN lv_path WITH `\`.
 
     " Export file

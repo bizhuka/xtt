@@ -75,6 +75,17 @@ CLASS lcl_test IMPLEMENTATION.
           ''                                     2   5       '',                          " Empty
           'A1+$A1+A$1+$A$1+B2'                  -1   0       '#REF!+$A1+#REF!+$A$1+A2',   " Referencing error , column only    , underflow
           'A1+$A1+A$1+$A$1+B2'                   0  -1       '#REF!+#REF!+A$1+$A$1+B1',   " Referencing error , row only       , underflow
-          'A1+$A1+A$1+$A$1+B2'                  -1  -1       '#REF!+#REF!+#REF!+$A$1+A1'. " Referencing error , row and column , underflow
+          'A1+$A1+A$1+$A$1+B2'                  -1  -1       '#REF!+#REF!+#REF!+$A$1+A1', " Referencing error , row and column , underflow
+
+          'Sheet!A1'                           1      1      'Sheet!B2',
+          'Sheet2!A1'                          1      1      'Sheet2!B2',
+          `'Sheet name'!A1`                    1      1      `'Sheet name'!B2`,
+          'SUBTOTAL(109,Table1[SUM 1])'        1      1      'SUBTOTAL(109,Table1[SUM 1])',
+          'SUM(F_1,F_2)'                       1      1      'SUM(F_1,F_2)',
+          'INDIRECT("RC[4]",FALSE)'            1      1      'INDIRECT("RC[4]",FALSE)',
+          `'A1'!$A$1`                          1      1      `'A1'!$A$1`,
+          'Tbl[[#This Row],[Air fare]]'        1      1      'Tbl[[#This Row],[Air fare]]',
+          'Tbl[[#This Row],[Air]]+A1'          1      1      'Tbl[[#This Row],[Air]]+B2'
+          .
   ENDMETHOD.
 ENDCLASS.

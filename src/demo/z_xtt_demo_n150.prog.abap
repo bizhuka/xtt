@@ -15,11 +15,10 @@ CLASS lcl_demo_150 DEFINITION FINAL INHERITING FROM lcl_demo_022.
       c_sum_fields TYPE string VALUE 'PRICE,SEATSMAX,SEATSOCC'.
 
     DATA:
-      mo_alv          TYPE REF TO zcl_eui_alv,
+      mo_alv         TYPE REF TO zcl_eui_alv,
 
       " Unit test mode
-      mt_test_catalog TYPE lvc_t_fcat,
-      mt_test_sort    TYPE lvc_t_sort.
+      ms_test_params TYPE ts_grid_params.
 
     METHODS:
       _get_grid_params
@@ -54,16 +53,42 @@ CLASS lcl_demo_150 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD _get_grid_params.
-    DATA lr_flight_info TYPE REF TO tt_flight_info.
+    DATA lt_flight_info TYPE REF TO tt_flight_info.
+    DATA ls_flight_info TYPE REF TO ts_flight_info.
 
     " Result table
-    CREATE DATA lr_flight_info.
-    lr_flight_info->* = _get_flight_info( ).
+    CREATE DATA lt_flight_info.
+    lt_flight_info->* = _get_flight_info( ).
+
+    DATA ls_color TYPE lvc_s_scol.
+    LOOP AT lt_flight_info->* REFERENCE INTO ls_flight_info.
+      DATA lv_tabix TYPE sytabix.
+      lv_tabix = sy-tabix.
+
+      IF lv_tabix MOD 3 = 0.
+        ls_color-color-col = col_positive.
+        ls_color-fname     = 'PRICE'.
+        APPEND ls_color TO ls_flight_info->t_color[].
+      ENDIF.
+
+      IF lv_tabix MOD 5 = 0.
+        ls_color-color-col = col_negative.
+        ls_color-fname     = 'SEATSMAX'.
+        APPEND ls_color TO ls_flight_info->t_color[].
+      ENDIF.
+
+      IF lv_tabix MOD 7 = 0.
+        ls_color-color-col = col_total.
+        ls_color-fname     = 'SEATSMAX'.
+        APPEND ls_color TO ls_flight_info->t_color[].
+      ENDIF.
+    ENDLOOP.
 
     " ALV grid data
-    rs_gp-r_table = lr_flight_info.
+    rs_gp-r_table = lt_flight_info.
 
     " Layout
+    rs_gp-s_layout-ctab_fname = 'T_COLOR'.
     CONCATENATE me->v_desc ` - №` p_exa INTO rs_gp-s_layout-grid_title.
 
     " What fields to change in field catalog
@@ -211,8 +236,9 @@ CLASS lcl_demo_150 IMPLEMENTATION.
 
     " For test mode
     IF io_report->mo_injection IS NOT INITIAL.
-      mt_test_catalog = _get_test_catalog( ls_grid_params-r_table ).
-      mt_test_sort    = _group_by( '_GROUP1' ).
+      ms_test_params  = ls_grid_params.
+*      mt_test_catalog = _get_test_catalog( ls_grid_params-r_table ).
+*      mt_test_sort    = _group_by( '_GROUP1' ).
       RETURN.
     ENDIF.
 
@@ -241,12 +267,19 @@ CLASS lcl_demo_150 IMPLEMENTATION.
       lo_grid = mo_alv->get_grid( ).
     ENDIF.
 
+    IF lo_grid IS NOT INITIAL.
     CREATE OBJECT eo_file TYPE zcl_xtt_file_grid
       EXPORTING
-        io_grid    = lo_grid
-        " For test mode only
-        it_catalog = mt_test_catalog
-        it_sort    = mt_test_sort.
+        io_grid    = lo_grid.
+    else.
+      " For test mode only
+      eo_file = zcl_xtt_file_grid=>create(
+        ir_table   = ms_test_params-r_table
+        it_catalog = ms_test_params-t_catalog
+        it_sort    = ms_test_params-t_sort
+        is_layout  = ms_test_params-s_layout ).
+    ENDIF.
+
 
     CHECK eo_xtt IS REQUESTED.
     CREATE OBJECT eo_xtt TYPE zcl_xtt_excel_xlsx

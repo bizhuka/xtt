@@ -263,6 +263,7 @@ METHOD get_xml_matches.
 
     READ TABLE lt_match ASSIGNING <ls_match_beg> INDEX lv_index.
     lv_index = lv_index - 1.
+    CHECK sy-subrc = 0.
 
     " Get tag from match
     ls_xml_match-beg = <ls_match_beg>-offset.

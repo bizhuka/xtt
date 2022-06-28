@@ -5,7 +5,8 @@ TYPE-POOLS:
  abap,
  vrm,
  icon,
- cntb.
+ cntb,
+ col.
 
 " Example option
 SELECTION-SCREEN BEGIN OF BLOCK bl_example WITH FRAME TITLE text-exa.

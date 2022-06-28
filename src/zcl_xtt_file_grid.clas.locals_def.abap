@@ -2,6 +2,9 @@
 *"* definitions, interfaces or type declarations) you need for
 *"* components in the private section
 
+CLASS lcl_xtt_styles DEFINITION DEFERRED.
+CLASS zcl_xtt_file_grid DEFINITION LOCAL FRIENDS lcl_xtt_styles.
+
 " TODO global
 CLASS lcl_xtt_styles DEFINITION FINAL.
   PUBLIC SECTION.
@@ -24,12 +27,13 @@ CLASS lcl_xtt_styles DEFINITION FINAL.
       END OF c_border.
 
     DATA:
-      t_styles   TYPE tt_collection,
+      t_styles     TYPE tt_collection,
 
-      t_num_fmts TYPE tt_collection,
-      t_fonts    TYPE tt_collection,
-      t_fills    TYPE tt_collection,
-      t_borders  TYPE tt_collection.
+      t_num_fmts   TYPE tt_collection,
+      t_fonts      TYPE tt_collection,
+      t_fills      TYPE tt_collection,
+      t_borders    TYPE tt_collection,
+      t_cond_rules TYPE tt_collection.
 
     METHODS:
       read_all
@@ -39,6 +43,9 @@ CLASS lcl_xtt_styles DEFINITION FINAL.
       save_all
         IMPORTING
           io_zip TYPE REF TO cl_abap_zip,
+
+      fill_cond_rules_index
+        CHANGING ct_unq_color TYPE zcl_xtt_file_grid=>tt_unq_color,
 
       _read_collection
         IMPORTING

@@ -61,6 +61,7 @@ public section.
         as_is    TYPE string VALUE 'as_is',    " Do not convert to any format
         image    TYPE string VALUE 'image',
         block    TYPE string VALUE 'block',
+        color_t  TYPE string VALUE 'color_tab',
       END OF mc_type .
   data MT_FIELDS type TT_FIELD .
   data MS_EXT type TS_FIELD_EXT read-only .
@@ -132,9 +133,9 @@ public section.
       value(RV_TYPE) type STRING .
   PROTECTED SECTION.
 private section.
+
 *"* private components of class ZCL_XTT_REPLACE_BLOCK
 *"* do not include other source files here!!!
-
   data MV_SUB_OFFSET type I .
 
   class-methods _CHECK_OFFEST
@@ -144,6 +145,11 @@ private section.
       !IV_CONTENT type STRING
     returning
       value(RV_OFFSET) type I .
+  class-methods _GET_COLOR_TAB
+    importing
+      !IV_DREF type ref to DATA
+    returning
+      value(RV_TEXT) type STRING .
 ENDCLASS.
 
 
@@ -420,6 +426,9 @@ ENDMETHOD.
         rv_result = is_field->name.
         RETURN.
 
+      WHEN mc_type-color_t.
+        rv_result = _get_color_tab( is_field->dref ).
+
       WHEN OTHERS.
         MESSAGE e002(zsy_xtt) WITH is_field->typ is_field->name INTO sy-msgli.
         zcx_eui_no_check=>raise_sys_error( ).
@@ -527,6 +536,10 @@ METHOD get_field_ext.
 
       WHEN OTHERS.
         rs_field_ext-typ = get_simple_type( rs_field_ext-desc->type_kind ).
+
+        IF rs_field_ext-desc->absolute_name = '\TYPE=LVC_T_SCOL'.
+          rs_field_ext-typ = mc_type-color_t.
+        ENDIF.
     ENDCASE.
 
     " 1 time only
@@ -940,5 +953,21 @@ METHOD _check_offest.
 
   " Result
   rv_offset = lv_off.
+ENDMETHOD.
+
+
+METHOD _get_color_tab.
+  DATA lr_table TYPE REF TO lvc_t_scol.
+  DATA lr_line  TYPE REF TO lvc_s_scol.
+
+  lr_table ?= iv_dref.
+  LOOP AT lr_table->* REFERENCE INTO lr_line WHERE color IS NOT INITIAL.
+    DATA lv_part TYPE string.
+    lv_part = lr_line->color-col.
+    CONDENSE lv_part.
+
+    CONCATENATE '-' lr_line->fname '#' lv_part INTO lv_part.
+    CONCATENATE rv_text lv_part INTO rv_text.
+  ENDLOOP.
 ENDMETHOD.
 ENDCLASS.

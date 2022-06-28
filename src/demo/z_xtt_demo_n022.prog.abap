@@ -25,6 +25,9 @@ CLASS lcl_demo_022 DEFINITION INHERITING FROM lcl_demo_020.
         seatsmax  TYPE sflight-seatsmax,
         seatsocc  TYPE sflight-seatsocc,
         _group1   TYPE string,
+
+        " Color cell for example №150
+        t_color   TYPE lvc_t_scol,
       END OF ts_flight_info,
       tt_flight_info TYPE STANDARD TABLE OF ts_flight_info WITH DEFAULT KEY.
 

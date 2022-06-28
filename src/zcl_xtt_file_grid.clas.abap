@@ -5,50 +5,76 @@ class ZCL_XTT_FILE_GRID definition
 
 public section.
   type-pools ABAP .
+  type-pools COL .
 
   interfaces ZIF_XTT_FILE .
 
   methods CONSTRUCTOR
     importing
-      !IO_GRID type ref to CL_GUI_ALV_GRID optional
+      !IO_GRID type ref to CL_GUI_ALV_GRID
+      !IV_NAME type CSEQUENCE optional .
+  class-methods CREATE
+    importing
+      !IR_TABLE type ref to DATA optional
       !IT_CATALOG type LVC_T_FCAT optional
       !IT_SORT type LVC_T_SORT optional
-      !IV_NAME type CSEQUENCE optional .
+      !IS_LAYOUT type LVC_S_LAYO optional
+    returning
+      value(RO_FILE) type ref to ZCL_XTT_FILE_GRID .
 protected section.
-private section.
+PRIVATE SECTION.
 
-  data MV_NAME type STRING .
-  data MT_CATALOG type LVC_T_FCAT .
-  data MT_SORT type LVC_T_SORT .
-  data MO_ZIP type ref to CL_ABAP_ZIP .
+  TYPES:
+    BEGIN OF ts_unq_color,
+      fname          TYPE lvc_s_scol-fname,
+      sap_color_ind  TYPE string,
+      cond_frmt_ind  TYPE string,
+    END OF ts_unq_color .
+  TYPES:
+    tt_unq_color TYPE SORTED TABLE OF ts_unq_color WITH UNIQUE KEY fname sap_color_ind.
 
-  methods _GET_TEMPLATE_TABLE
-    importing
-      !IV_IS_TREE type ABAP_BOOL
-    exporting
-      !ER_TABLE type ref to DATA .
-  methods _ADD_ROW
-    importing
-      !IR_TABLE type ref to DATA
-      !IV_LEVEL type I
-      !IV_SUM_ONLY type ABAP_BOOL optional
-      !IT_GR_FIELD type STRINGTAB optional .
-  methods _NEW_CATALOG
-    importing
-      !IR_TABLE type ref to DATA
-    returning
-      value(RT_CATALOG) type LVC_T_FCAT .
-  methods _FIX_CURLY_BRACES .
-  methods _ADD_STYLES_ROW
-    importing
-      !IO_STYLES type ref to LCL_XTT_STYLES
-      !IV_IS_TREE type ABAP_BOOL
-    returning
-      value(RO_SHEET) type ref to IF_IXML_DOCUMENT .
-  methods _ADD_GROUP_BY_CELL
-    importing
-      !IO_SHEET type ref to IF_IXML_DOCUMENT
-      !IV_IS_TREE type ABAP_BOOL .
+  DATA mv_name TYPE string .
+  DATA mr_table TYPE REF TO data .
+  DATA mt_catalog TYPE lvc_t_fcat .
+  DATA mt_sort TYPE lvc_t_sort .
+  DATA ms_layout TYPE lvc_s_layo .
+  DATA mo_zip TYPE REF TO cl_abap_zip .
+  DATA _styles TYPE REF TO lcl_xtt_styles .
+
+  METHODS _get_template_table
+    IMPORTING
+      !iv_is_tree TYPE abap_bool
+    EXPORTING
+      !er_table   TYPE REF TO data .
+  METHODS _add_row
+    IMPORTING
+      !ir_table    TYPE REF TO data
+      !iv_level    TYPE i
+      !iv_sum_only TYPE abap_bool OPTIONAL
+      !it_gr_field TYPE stringtab OPTIONAL .
+  METHODS _new_catalog
+    IMPORTING
+      !ir_table         TYPE REF TO data
+    RETURNING
+      VALUE(rt_catalog) TYPE lvc_t_fcat .
+  METHODS _fix_curly_braces .
+  METHODS _add_styles_row
+    IMPORTING
+      !iv_is_tree     TYPE abap_bool
+    RETURNING
+      VALUE(ro_sheet) TYPE REF TO if_ixml_document .
+  METHODS _add_group_by_cell
+    IMPORTING
+      !io_sheet   TYPE REF TO if_ixml_document
+      !iv_is_tree TYPE abap_bool .
+  METHODS _cond_format_field_is
+    IMPORTING
+      !is_field    TYPE lvc_s_fcat
+    RETURNING
+      VALUE(rv_ok) TYPE abap_bool .
+  METHODS _cond_format_add_rules
+    CHANGING
+      !cv_xml TYPE string .
 ENDCLASS.
 
 
@@ -59,22 +85,45 @@ CLASS ZCL_XTT_FILE_GRID IMPLEMENTATION.
 METHOD constructor.
   mv_name = iv_name.
   IF mv_name IS INITIAL.
-    CONCATENATE sy-cprog '.xlsx' INTO mv_name. "#EC NOTEXT
+    CONCATENATE sy-cprog '.xlsx' INTO mv_name.              "#EC NOTEXT
   ENDIF.
 
-  " If has no grid
-  mt_catalog = it_catalog.
-  mt_sort    = it_sort.
-
   " Usual way of initialization
-  CHECK io_grid IS NOT INITIAL.
+  CHECK io_grid IS BOUND.
+  mr_table = zcl_eui_conv=>get_grid_table( io_grid ).
   io_grid->get_frontend_fieldcatalog( IMPORTING et_fieldcatalog = mt_catalog[] ).
   io_grid->get_sort_criteria(         IMPORTING et_sort         = mt_sort[] ).
+
+  io_grid->get_frontend_layout(       IMPORTING es_layout       = ms_layout ).
+  CHECK ms_layout-ctab_fname IS NOT INITIAL.
+
+  DATA ls_field TYPE lvc_s_fcat.
+  ls_field-fieldname = ms_layout-ctab_fname.
+  ls_field-coltext   = 'Color field'(clf).
+  INSERT ls_field INTO mt_catalog[] INDEX 1.
+ENDMETHOD.
+
+
+METHOD create.
+  DATA lo_grid TYPE REF TO cl_gui_alv_grid.
+  CREATE OBJECT ro_file
+    EXPORTING
+      io_grid = lo_grid.
+
+  " If has no grid
+  ro_file->mr_table   = ir_table.
+  ro_file->mt_catalog = it_catalog.
+  ro_file->mt_sort    = it_sort.
+  ro_file->ms_layout  = is_layout.
 ENDMETHOD.
 
 
 METHOD zif_xtt_file~get_content.
+  CLEAR: ev_as_string,
+         ev_as_xstring.
+
   DELETE mt_catalog WHERE tech = 'X' OR no_out = 'X'.
+  CHECK mt_catalog IS NOT INITIAL.
 
   DELETE mt_sort WHERE subtot <> 'X'.
   SORT mt_sort BY spos DESCENDING.
@@ -117,19 +166,17 @@ METHOD zif_xtt_file~get_content.
   _fix_curly_braces( ).
 
 **********************************************************************
-  DATA lo_styles TYPE REF TO lcl_xtt_styles.
-  CREATE OBJECT lo_styles.
+  CREATE OBJECT _styles.
 
-  lo_styles->read_all( mo_zip ).
+  _styles->read_all( mo_zip ).
 
   " Change sheet row & cells
   DATA lo_sheet TYPE REF TO if_ixml_document.
-  lo_sheet = _add_styles_row( io_styles  = lo_styles
-                              iv_is_tree = lv_is_tree ).
+  lo_sheet = _add_styles_row( iv_is_tree = lv_is_tree ).
   _add_group_by_cell( io_sheet   = lo_sheet
                       iv_is_tree = lv_is_tree ).
 
-  lo_styles->save_all( mo_zip ).
+  _styles->save_all( mo_zip ).
 **********************************************************************
 
   " write back
@@ -154,6 +201,15 @@ METHOD _add_group_by_cell.
   DATA lv_xml TYPE string.
   zcl_eui_conv=>xml_to_str( EXPORTING io_doc = io_sheet
                             IMPORTING ev_str = lv_xml ).
+
+**********************************************************************
+
+  DATA ls_field TYPE REF TO lvc_s_fcat.
+  READ TABLE mt_catalog INDEX 1 REFERENCE INTO ls_field.
+  IF sy-subrc = 0 AND _cond_format_field_is( ls_field->* ) = abap_true.
+    REPLACE FIRST OCCURRENCE OF `<cols><col ` IN lv_xml WITH `<cols><col hidden="1" `.
+    _cond_format_add_rules( CHANGING cv_xml = lv_xml ).
+  ENDIF.
 
 **********************************************************************
   DATA lv_column_ind TYPE i.
@@ -197,26 +253,32 @@ METHOD _add_row.
   ASSIGN ir_table->* TO <lt_table>.
   APPEND INITIAL LINE TO <lt_table> ASSIGNING <ls_row>.
 
-  LOOP AT mt_catalog ASSIGNING <ls_field>. " TODO no_out,tech ?
+  DATA lv_caption_ind TYPE i VALUE 1.
+  LOOP AT mt_catalog ASSIGNING <ls_field>. " without no_out = 'X' & tech = 'X'
     DATA lv_prefix TYPE string.
     CLEAR lv_prefix.
 
-    DO 1 TIMES.
-      " Level of group
-      CHECK sy-tabix = 1.
+    " Level of group
+    IF sy-tabix = 1.
       int_2_text iv_level lv_prefix.
       CONCATENATE `{R;level=` lv_prefix `}` INTO lv_prefix.
 
-      CHECK iv_sum_only = abap_true.
+      " 1st column is color table
+      IF _cond_format_field_is( <ls_field> ) = abap_true.
+        lv_caption_ind = 2.
+      ENDIF.
+    ENDIF.
+    " set captions
+    IF sy-tabix = lv_caption_ind AND iv_sum_only = abap_true.
       IF it_gr_field IS INITIAL.
         CONCATENATE lv_prefix 'Grand totals'(tot) INTO lv_prefix.
-        CONTINUE.
+      ELSE.
+        DATA lv_gr_field LIKE LINE OF it_gr_field.
+        READ TABLE it_gr_field INTO lv_gr_field INDEX 1.
+        CONCATENATE lv_prefix 'Totals by'(tby) ` {R-` lv_gr_field `}` INTO lv_prefix.
       ENDIF.
+    ENDIF.
 
-      DATA lv_gr_field LIKE LINE OF it_gr_field.
-      READ TABLE it_gr_field INTO lv_gr_field INDEX 1.
-      CONCATENATE lv_prefix 'Totals by'(tby) ` {R-` lv_gr_field `}` INTO lv_prefix.
-    ENDDO.
 
     ASSIGN COMPONENT <ls_field>-fieldname OF STRUCTURE <ls_row> TO <lv_value>.
 
@@ -295,10 +357,10 @@ METHOD _add_styles_row.
     lv_num_fmt_id = lv_style_id = lv_font_id = lv_border_id = lv_fill_id = '0'.
 
     IF lv_is_header = abap_true.
-      lv_fill_id   = io_styles->get_fill_index( iv_color = io_styles->c_theme-gray ).
+      lv_fill_id   = _styles->get_fill_index( iv_color = _styles->c_theme-gray ).
     ELSE.
       lv_percent   = lv_percent - 20.
-      lv_fill_id   = io_styles->get_fill_index( iv_color   = io_styles->c_theme-blue
+      lv_fill_id   = _styles->get_fill_index( iv_color   = _styles->c_theme-blue
                                                 iv_percent = lv_percent ).
     ENDIF.
 
@@ -314,19 +376,19 @@ METHOD _add_styles_row.
 
       CASE lv_cell_index.
         WHEN 1.
-          lv_border_kind = io_styles->c_border-beg.
+          lv_border_kind = _styles->c_border-beg.
         WHEN lv_last_cell_index.
-          lv_border_kind = io_styles->c_border-end.
+          lv_border_kind = _styles->c_border-end.
         WHEN OTHERS.
           IF lv_is_data_row = abap_true.
-            lv_border_kind = io_styles->c_border-all.
+            lv_border_kind = _styles->c_border-all.
           ELSE.
-            lv_border_kind = io_styles->c_border-mid.
+            lv_border_kind = _styles->c_border-mid.
           ENDIF.
       ENDCASE.
 
       IF lv_is_data_row <> abap_true.
-        lv_font_id = io_styles->get_font_index( iv_opt = `<b/>` ).
+        lv_font_id = _styles->get_font_index( iv_opt = `<b/>` ).
       ENDIF.
 
       IF lv_is_header = abap_true.
@@ -337,21 +399,21 @@ METHOD _add_styles_row.
         FIELD-SYMBOLS <ls_field> LIKE LINE OF mt_catalog.
         READ TABLE mt_catalog ASSIGNING <ls_field> INDEX lv_cell_index.
         IF <ls_field>-do_sum = 'X'.
-          lv_num_fmt_id = io_styles->get_num_format_index( iv_number = abap_true ).
+          lv_num_fmt_id = _styles->get_num_format_index( iv_number = abap_true ).
         ENDIF.
 
         CASE <ls_field>-inttype.
           WHEN cl_abap_typedescr=>typekind_date.
-            lv_num_fmt_id = io_styles->get_num_format_index( iv_date = abap_true ).
+            lv_num_fmt_id = _styles->get_num_format_index( iv_date = abap_true ).
           WHEN cl_abap_typedescr=>typekind_time.
-            lv_num_fmt_id = io_styles->get_num_format_index( iv_time = abap_true ).
+            lv_num_fmt_id = _styles->get_num_format_index( iv_time = abap_true ).
         ENDCASE.
       ENDIF.
 
-      lv_border_id = io_styles->get_border_index( iv_kind  = lv_border_kind
+      lv_border_id = _styles->get_border_index( iv_kind  = lv_border_kind
                                                   iv_style = lv_border_style ).
 
-      lv_style_id = io_styles->get_style_index( iv_num_fmt_id = lv_num_fmt_id
+      lv_style_id = _styles->get_style_index( iv_num_fmt_id = lv_num_fmt_id
                                                 iv_font_id    = lv_font_id
                                                 iv_fill_id    = lv_fill_id
                                                 iv_border_id  = lv_border_id ).
@@ -364,6 +426,69 @@ METHOD _add_styles_row.
     " Next row
     lo_row ?= lo_row->get_next( ).
   ENDWHILE.
+ENDMETHOD.
+
+
+METHOD _cond_format_add_rules.
+  CHECK mr_table IS NOT INITIAL.
+  FIELD-SYMBOLS <lt_table> TYPE ANY TABLE.
+  ASSIGN mr_table->* TO <lt_table>.
+
+  DATA(lt_unq_color) = VALUE tt_unq_color( ).
+
+  FIELD-SYMBOLS <ls_item> TYPE any.
+  LOOP AT <lt_table> ASSIGNING <ls_item>.
+    FIELD-SYMBOLS <lt_color_tab> TYPE lvc_t_scol.
+    ASSIGN COMPONENT ms_layout-ctab_fname OF STRUCTURE <ls_item> TO <lt_color_tab>.
+    CHECK <lt_color_tab> IS NOT INITIAL.
+
+    FIELD-SYMBOLS <ls_unq_color_tab> TYPE lvc_s_scol.
+    LOOP AT <lt_color_tab> ASSIGNING <ls_unq_color_tab> WHERE color-col = col_positive   " only green
+                                                           OR color-col = col_negative   " red &
+                                                           OR color-col = col_total.     " yellow
+      DATA ls_unq_color TYPE ts_unq_color.
+      ls_unq_color-fname         = <ls_unq_color_tab>-fname.
+      ls_unq_color-sap_color_ind = <ls_unq_color_tab>-color-col.
+      CONDENSE ls_unq_color-sap_color_ind.
+
+      INSERT ls_unq_color INTO TABLE lt_unq_color.
+    ENDLOOP.
+  ENDLOOP.
+
+  _styles->fill_cond_rules_index( CHANGING ct_unq_color = lt_unq_color ).
+
+  DATA lv_rules TYPE string.
+  LOOP AT lt_unq_color INTO ls_unq_color.
+    READ TABLE mt_catalog TRANSPORTING NO FIELDS
+     WITH KEY fieldname = ls_unq_color-fname.
+    CHECK sy-subrc = 0.
+
+    DATA lv_index TYPE i.
+    lv_index = sy-tabix.
+    TRY.
+        DATA lv_column TYPE string.
+        lv_column = zcl_eui_file_io=>int_2_column( lv_index ).
+      CATCH zcx_eui_exception.
+        CONTINUE.
+    ENDTRY.
+
+    DATA lv_rule TYPE string.
+    CONCATENATE `<conditionalFormatting sqref="` lv_column `1:` lv_column `1048576">`
+                `<cfRule type="expression" dxfId="` ls_unq_color-cond_frmt_ind `" priority="1">`
+                `<formula>`
+                   `FIND("-` ls_unq_color-fname `#` ls_unq_color-sap_color_ind `",$A1)`
+                `</formula></cfRule></conditionalFormatting>` INTO lv_rule.
+    CONCATENATE lv_rules lv_rule INTO lv_rules.
+  ENDLOOP.
+
+  CONCATENATE lv_rules `<pageMargins ` INTO lv_rules.
+  REPLACE FIRST OCCURRENCE OF `<pageMargins ` IN cv_xml WITH lv_rules.
+ENDMETHOD.
+
+
+METHOD _cond_format_field_is.
+  CHECK is_field-fieldname = ms_layout-ctab_fname AND is_field-coltext = 'Color field'(clf).
+  rv_ok = abap_true.
 ENDMETHOD.
 
 

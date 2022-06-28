@@ -10,10 +10,11 @@ CLASS lcl_xtt_styles IMPLEMENTATION.
                                           iv_name = 'xl/styles.xml' "#EC NOTEXT
                                 IMPORTING ev_sdoc = lv_xml ).
 
-    t_num_fmts = _read_collection( iv_xml  = lv_xml iv_name = `numFmt` ). "#EC NOTEXT
-    t_fonts    = _read_collection( iv_xml  = lv_xml iv_name = `font` ). "#EC NOTEXT
-    t_fills    = _read_collection( iv_xml  = lv_xml iv_name = `fill` ). "#EC NOTEXT
-    t_borders  = _read_collection( iv_xml  = lv_xml iv_name = `border` ). "#EC NOTEXT
+    t_num_fmts   = _read_collection( iv_xml  = lv_xml iv_name = `numFmt` ). "#EC NOTEXT
+    t_fonts      = _read_collection( iv_xml  = lv_xml iv_name = `font` ). "#EC NOTEXT
+    t_fills      = _read_collection( iv_xml  = lv_xml iv_name = `fill` ). "#EC NOTEXT
+    t_borders    = _read_collection( iv_xml  = lv_xml iv_name = `border` ). "#EC NOTEXT
+    t_cond_rules = _read_collection( iv_xml  = lv_xml iv_name = `dxfs` ). "#EC NOTEXT
 
     " Parent styles
     DATA lt_xml_match TYPE zcl_xtt_util=>tt_xml_match.
@@ -37,13 +38,39 @@ CLASS lcl_xtt_styles IMPLEMENTATION.
         io_zip  = io_zip
         iv_path = 'xl/styles.xml'. "#EC NOTEXT
 
-    _paste( io_xml = lo_xml it_collection = t_num_fmts iv_root_tag   = `numFmts` iv_relat_tag  = `-fonts` ). "#EC NOTEXT
-    _paste( io_xml = lo_xml it_collection = t_fonts    iv_root_tag   = `fonts` ). "#EC NOTEXT
-    _paste( io_xml = lo_xml it_collection = t_fills    iv_root_tag   = `fills` ). "#EC NOTEXT
-    _paste( io_xml = lo_xml it_collection = t_borders  iv_root_tag   = `borders` ). "#EC NOTEXT
-    _paste( io_xml = lo_xml it_collection = t_styles   iv_root_tag   = `cellXfs` ). "#EC NOTEXT
+    _paste( io_xml = lo_xml it_collection = t_num_fmts   iv_root_tag   = `numFmts` iv_relat_tag  = `-fonts` ). "#EC NOTEXT
+    _paste( io_xml = lo_xml it_collection = t_fonts      iv_root_tag   = `fonts` ). "#EC NOTEXT
+    _paste( io_xml = lo_xml it_collection = t_fills      iv_root_tag   = `fills` ). "#EC NOTEXT
+    _paste( io_xml = lo_xml it_collection = t_borders    iv_root_tag   = `borders` ). "#EC NOTEXT
+    _paste( io_xml = lo_xml it_collection = t_styles     iv_root_tag   = `cellXfs` ). "#EC NOTEXT
+    _paste( io_xml = lo_xml it_collection = t_cond_rules iv_root_tag   = `dxfs`  iv_relat_tag = `+cellStyles` ). "#EC NOTEXT After cellStyles
 
     lo_xml->save( ).
+  ENDMETHOD.
+
+  METHOD fill_cond_rules_index.
+    DATA lv_from_index TYPE i.
+
+    lv_from_index = lines( t_cond_rules ).
+    APPEND: `<dxf><fill><patternFill><bgColor rgb="FFFF988C"/></patternFill></fill></dxf>` TO t_cond_rules, " red
+            `<dxf><fill><patternFill><bgColor rgb="FFFFFDBF"/></patternFill></fill></dxf>` TO t_cond_rules, " yellow
+            `<dxf><fill><patternFill><bgColor rgb="FFC6F9C1"/></patternFill></fill></dxf>` TO t_cond_rules. " green
+
+    FIELD-SYMBOLS <ls_unq_color> LIKE LINE OF ct_unq_color.
+    LOOP AT ct_unq_color ASSIGNING <ls_unq_color>.
+      CASE <ls_unq_color>-sap_color_ind.
+        WHEN col_negative.
+          <ls_unq_color>-cond_frmt_ind = lv_from_index.
+        WHEN col_total.
+          <ls_unq_color>-cond_frmt_ind = lv_from_index + 1.
+        WHEN col_positive.
+          <ls_unq_color>-cond_frmt_ind = lv_from_index + 2.
+        WHEN OTHERS.
+          zcx_xtt_exception=>raise_dump( iv_message = `Wrong color` ).
+      ENDCASE.
+
+      CONDENSE <ls_unq_color>-cond_frmt_ind.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD _paste.

@@ -14,6 +14,12 @@
    <TPOOL>
     <item>
      <ID>I</ID>
+     <KEY>CLF</KEY>
+     <ENTRY>Color field</ENTRY>
+     <LENGTH>21</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
      <KEY>TBY</KEY>
      <ENTRY>Totals by</ENTRY>
      <LENGTH>19</LENGTH>
@@ -31,6 +37,12 @@
      <CMPNAME>CONSTRUCTOR</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>CONSTRUCTOR</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT_FILE_GRID</CLSNAME>
+     <CMPNAME>CREATE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>alternative way of creating (for internal use only)</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_XTT_FILE_GRID</CLSNAME>

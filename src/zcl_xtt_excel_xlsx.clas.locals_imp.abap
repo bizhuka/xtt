@@ -541,8 +541,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       ms_cell->c_merge_me = <ls_scope>-merge_me.
 
       " @see match_found
-      io_block->find_match( EXPORTING io_xtt     = mo_xlsx
-                                      is_scope   = <ls_scope>
+      io_block->find_match( EXPORTING is_scope   = <ls_scope>
                             CHANGING  cv_content = ms_cell->c_value ).
     ENDLOOP.
 
@@ -598,7 +597,6 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     ENDIF.
 
     eo_scope->calc_cond_matches( io_xtt   = mo_xlsx
-                                 io_block = io_block
                                  iv_tabix = iv_tabix
                                  iv_init  = lv_new ).
   ENDMETHOD.

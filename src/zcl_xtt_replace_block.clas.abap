@@ -86,7 +86,6 @@ public section.
       value(RV_OK) type ABAP_BOOL .
   methods FIND_MATCH
     importing
-      !IO_XTT type ref to ZCL_XTT
       !IS_SCOPE type ZSS_XTT_SCOPE
     changing
       !CV_CONTENT type STRING .
@@ -134,13 +133,13 @@ public section.
   PROTECTED SECTION.
 private section.
 
+  data MO_XTT type ref to ZCL_XTT .
 *"* private components of class ZCL_XTT_REPLACE_BLOCK
 *"* do not include other source files here!!!
   data MV_SUB_OFFSET type I .
 
-  class-methods _CHECK_OFFEST
+  methods _CHECK_OFFEST
     importing
-      !IO_XTT type ref to ZCL_XTT
       !IS_SCOPE type ZSS_XTT_SCOPE
       !IV_CONTENT type STRING
     returning
@@ -150,6 +149,18 @@ private section.
       !IV_DREF type ref to DATA
     returning
       value(RV_TEXT) type STRING .
+  methods _ADD_STRUCT
+    importing
+      !IS_EXT type TS_FIELD_EXT
+      !IV_LEVEL type I optional .
+  methods _ADD_OBJECT
+    importing
+      !IS_EXT type TS_FIELD_EXT .
+  methods _IS_PLAIN_STRUCTURE
+    importing
+      !IS_FIELD_EXT type TS_FIELD_EXT
+    returning
+      value(RV_PLANE) type ABAP_BOOL .
 ENDCLASS.
 
 
@@ -158,41 +169,17 @@ CLASS ZCL_XTT_REPLACE_BLOCK IMPLEMENTATION.
 
 
 METHOD constructor.
+  mo_xtt = io_xtt.
   ms_ext = get_field_ext( io_xtt        = io_xtt
                           is_block      = is_block
                           iv_block_name = iv_block_name
                           is_field      = is_field ).
 
-  " Structure or object sub field
-  DATA ls_sub_field          TYPE ts_field_ext.
-  FIELD-SYMBOLS <fs_sub_fld> TYPE any.
-
   " Detect by name what to do
   CASE ms_ext-typ.
       " A structure is the most popular case
     WHEN mc_type-struct.
-      DATA lo_sdesc TYPE REF TO cl_abap_structdescr.
-      lo_sdesc ?= ms_ext-desc.
-
-      " Get structure data
-      FIELD-SYMBOLS <ls_struc> TYPE any.
-      ASSIGN ms_ext-dref->* TO <ls_struc>.
-
-      " Add every field
-      FIELD-SYMBOLS <ls_comp>  TYPE abap_compdescr.
-      LOOP AT lo_sdesc->components ASSIGNING <ls_comp>.
-        " Name and data
-        ASSIGN COMPONENT sy-tabix OF STRUCTURE <ls_struc> TO <fs_sub_fld>.
-        CONCATENATE ms_ext-name mc_block-name_delim <ls_comp>-name INTO ls_sub_field-name.
-
-        " Add sub field
-        ls_sub_field = get_field_ext( io_xtt        = io_xtt
-                                      is_block      = <fs_sub_fld>
-                                      iv_block_name = ls_sub_field-name ).
-        CHECK ls_sub_field-desc IS NOT INITIAL.
-        ls_sub_field-fl_stat = abap_true.
-        INSERT ls_sub_field-fld INTO TABLE mt_fields.
-      ENDLOOP.
+      _add_struct( ms_ext ).
 
       " If it is plain structure
       IF is_field IS NOT INITIAL AND is_field->dref = ms_ext-dref.
@@ -201,49 +188,7 @@ METHOD constructor.
 
       " Object processed as a structure ↑↑↑
     WHEN mc_type-object.
-      DATA lo_odesc TYPE REF TO cl_abap_objectdescr.
-      DATA lo_cdesc TYPE REF TO cl_abap_classdescr.
-
-      " Can read private & protected ?
-      DATA lv_public_only TYPE abap_bool.
-      lv_public_only = abap_true.
-
-      TRY.
-          " Is class ?
-          lo_cdesc ?= ms_ext-desc.
-          lo_odesc = lo_cdesc.
-
-          DATA lt_friends TYPE abap_frndtypes_tab.
-          lt_friends = lo_cdesc->get_friend_types( ).
-          READ TABLE lt_friends TRANSPORTING NO FIELDS
-           WITH KEY table_line->absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK'.
-          IF sy-subrc = 0.
-            CLEAR lv_public_only.
-          ENDIF.
-        CATCH cx_sy_move_cast_error.
-          " Is interface ?
-          lo_odesc ?= ms_ext-desc.
-      ENDTRY.
-
-      " Add every field
-      FIELD-SYMBOLS <ls_attr>  TYPE abap_attrdescr.
-      LOOP AT lo_odesc->attributes ASSIGNING <ls_attr>.
-        IF lv_public_only = abap_true.
-          CHECK <ls_attr>-visibility = cl_abap_objectdescr=>public.
-        ENDIF.
-
-        " Name and data
-        ASSIGN ms_ext-oref->(<ls_attr>-name) TO <fs_sub_fld>.
-        CONCATENATE ms_ext-name mc_block-name_delim <ls_attr>-name INTO ls_sub_field-name.
-
-        " Add sub field
-        ls_sub_field = get_field_ext( io_xtt        = io_xtt
-                                      is_block      = <fs_sub_fld>
-                                      iv_block_name = ls_sub_field-name ).
-        CHECK ls_sub_field-desc IS NOT INITIAL.
-        ls_sub_field-fl_stat = abap_true.
-        INSERT ls_sub_field-fld INTO TABLE mt_fields.
-      ENDLOOP.
+      _add_object( ms_ext ).
 
       " If it is the same class
       DO 1 TIMES.
@@ -269,8 +214,7 @@ ENDMETHOD.
 
 METHOD find_match.
   DATA lv_off TYPE i.
-  lv_off = _check_offest( io_xtt     = io_xtt
-                          is_scope   = is_scope
+  lv_off = _check_offest( is_scope   = is_scope
                           iv_content = cv_content ).
   CHECK lv_off > 0.
 
@@ -318,7 +262,7 @@ METHOD find_match.
     WHEN mc_type-mask.
       IF lv_type_warn = abap_true.
         MESSAGE w014(zsy_xtt) WITH lr_field->name INTO sy-msgli.
-        io_xtt->add_log_message( iv_syst = abap_true ).
+        mo_xtt->add_log_message( iv_syst = abap_true ).
       ENDIF.
 
     WHEN mc_type-image.
@@ -331,7 +275,7 @@ METHOD find_match.
   ENDCASE.
 
   " Replace value in event handler
-  io_xtt->on_match_found( EXPORTING is_field   = lr_field
+  mo_xtt->on_match_found( EXPORTING is_field   = lr_field
                                     iv_pos_beg = is_scope-beg
                                     iv_pos_end = is_scope-end
                           CHANGING  cv_content = cv_content ).
@@ -933,6 +877,100 @@ ENDMETHOD.
   ENDMETHOD.
 
 
+  METHOD _add_object.
+    DATA lo_odesc TYPE REF TO cl_abap_objectdescr.
+    DATA lo_cdesc TYPE REF TO cl_abap_classdescr.
+
+    " Can read private & protected ?
+    DATA lv_public_only TYPE abap_bool.
+    lv_public_only = abap_true.
+
+    TRY.
+        " Is class ?
+        lo_cdesc ?= is_ext-desc.
+        lo_odesc = lo_cdesc.
+
+        DATA lt_friends TYPE abap_frndtypes_tab.
+        lt_friends = lo_cdesc->get_friend_types( ).
+        READ TABLE lt_friends TRANSPORTING NO FIELDS
+         WITH KEY table_line->absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK'.
+        IF sy-subrc = 0.
+          CLEAR lv_public_only.
+        ENDIF.
+      CATCH cx_sy_move_cast_error.
+        " Is interface ?
+        lo_odesc ?= is_ext-desc.
+    ENDTRY.
+
+    " Add every field
+    FIELD-SYMBOLS <ls_attr>  TYPE abap_attrdescr.
+    LOOP AT lo_odesc->attributes ASSIGNING <ls_attr>.
+      IF lv_public_only = abap_true.
+        CHECK <ls_attr>-visibility = cl_abap_objectdescr=>public.
+      ENDIF.
+
+      " Name and data
+      FIELD-SYMBOLS <fs_sub_fld> TYPE any.
+      ASSIGN is_ext-oref->(<ls_attr>-name) TO <fs_sub_fld>.
+
+      DATA ls_sub_field TYPE ts_field_ext.
+      CONCATENATE is_ext-name mc_block-name_delim <ls_attr>-name INTO ls_sub_field-name.
+
+      " Add sub field
+      ls_sub_field = get_field_ext( io_xtt        = mo_xtt
+                                    is_block      = <fs_sub_fld>
+                                    iv_block_name = ls_sub_field-name ).
+      CHECK ls_sub_field-desc IS NOT INITIAL.
+      ls_sub_field-fl_stat = abap_true.
+      INSERT ls_sub_field-fld INTO TABLE mt_fields.
+    ENDLOOP.
+  ENDMETHOD.
+
+
+  METHOD _add_struct.
+    DATA lo_sdesc TYPE REF TO cl_abap_structdescr.
+    lo_sdesc ?= is_ext-desc.
+
+    " Get structure data
+    FIELD-SYMBOLS <ls_struc> TYPE any.
+    ASSIGN is_ext-dref->* TO <ls_struc>.
+
+    " Add every field
+    FIELD-SYMBOLS <ls_comp>  TYPE abap_compdescr.
+    LOOP AT lo_sdesc->components ASSIGNING <ls_comp>.
+      " Name and data
+      FIELD-SYMBOLS <fs_sub_fld> TYPE any.
+      ASSIGN COMPONENT sy-tabix OF STRUCTURE <ls_struc> TO <fs_sub_fld>.
+
+      DATA ls_sub_field TYPE ts_field_ext.
+      CONCATENATE is_ext-name mc_block-name_delim <ls_comp>-name INTO ls_sub_field-name.
+
+      " Add sub field
+      ls_sub_field = get_field_ext( io_xtt        = mo_xtt
+                                    is_block      = <fs_sub_fld>
+                                    iv_block_name = ls_sub_field-name ).
+      CHECK ls_sub_field-desc IS NOT INITIAL.
+      ls_sub_field-fl_stat  = abap_true.
+      ls_sub_field-fl_level = iv_level.
+
+      " {R-T-MSEG-, {R-T-MKPF-
+      IF    ls_sub_field-typ = mc_type-struct
+        AND ls_sub_field-dref IS NOT INITIAL
+        AND _is_plain_structure( ls_sub_field ) = abap_true.
+
+        DATA lv_level LIKE iv_level.
+        lv_level = iv_level + 1.
+
+        _add_struct( is_ext   = ls_sub_field
+                     iv_level = lv_level ).
+        CONTINUE.
+      ENDIF.
+
+      INSERT ls_sub_field-fld INTO TABLE mt_fields.
+    ENDLOOP.
+  ENDMETHOD.
+
+
 METHOD _check_offest.
   DATA: lv_len TYPE i, lv_off LIKE rv_offset.
   lv_len = strlen( iv_content ).
@@ -940,14 +978,14 @@ METHOD _check_offest.
 
   IF lv_off > lv_len.
     MESSAGE e020(zsy_xtt) WITH lv_off is_scope-field INTO sy-msgli.
-    io_xtt->add_log_message( iv_syst = abap_true ).
+    mo_xtt->add_log_message( iv_syst = abap_true ).
     RETURN.
   ENDIF.
 
   IF iv_content+is_scope-beg(1) <> '{' OR
      iv_content+is_scope-end(1) <> '}'.
     MESSAGE e023(zsy_xtt) WITH is_scope-field INTO sy-msgli.
-    io_xtt->add_log_message( iv_syst = abap_true ).
+    mo_xtt->add_log_message( iv_syst = abap_true ).
     RETURN.
   ENDIF.
 
@@ -970,4 +1008,22 @@ METHOD _get_color_tab.
     CONCATENATE rv_text lv_part INTO rv_text.
   ENDLOOP.
 ENDMETHOD.
+
+
+  METHOD _is_plain_structure.
+    DATA lo_struc TYPE REF TO cl_abap_structdescr.
+    lo_struc ?= is_field_ext-desc .
+
+    LOOP AT lo_struc->components TRANSPORTING NO FIELDS WHERE type_kind = cl_abap_typedescr=>typekind_table
+                                                           OR type_kind = cl_abap_typedescr=>typekind_dref
+                                                           OR type_kind = cl_abap_typedescr=>typekind_struct1
+                                                           OR type_kind = cl_abap_typedescr=>typekind_struct2
+                                                           OR type_kind = cl_abap_typedescr=>typekind_intf
+                                                           OR type_kind = cl_abap_typedescr=>typekind_class
+                                                           OR type_kind = cl_abap_typedescr=>typekind_oref.
+      RETURN.
+    ENDLOOP.
+
+    rv_plane = abap_true.
+  ENDMETHOD.
 ENDCLASS.

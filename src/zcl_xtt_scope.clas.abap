@@ -1,17 +1,16 @@
 class ZCL_XTT_SCOPE definition
   public
   final
-  create public .
+  create public
+
+  global friends ZCL_XTT .
 
 public section.
   type-pools ABAP .
 
-  types:
-    ts_pair  TYPE zss_xtt_pair .
-  types:
-    tt_pair  TYPE ztt_xtt_pair .
-  types:
-    ts_scope TYPE zss_xtt_scope .
+  types TS_PAIR type ZSS_XTT_PAIR .
+  types TT_PAIR type ZTT_XTT_PAIR .
+  types TS_SCOPE type ZSS_XTT_SCOPE .
   types:
     tt_scope TYPE STANDARD TABLE OF ts_scope WITH DEFAULT KEY .
 
@@ -32,7 +31,6 @@ public section.
     importing
       !IO_XTT type ref to ZCL_XTT
       !IV_TABIX type SYTABIX
-      !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
       !IV_INIT type ABAP_BOOL .
   methods IS_BY_COLUMN
     importing
@@ -102,7 +100,7 @@ METHOD calc_cond_matches.
 
     FIELD-SYMBOLS <ls_scope> LIKE LINE OF mt_scope.
     DATA lv_block_level TYPE i.
-    lv_block_level = io_block->ms_ext-rb_level + 1.
+    lv_block_level = mo_block->ms_ext-rb_level + 1.
     LOOP AT mt_scope ASSIGNING <ls_scope> WHERE sc_level = lv_block_level.
 
 *      FIELD-SYMBOLS <ls_pair> LIKE LINE OF <ls_scope>-t_pair.
@@ -140,7 +138,7 @@ METHOD calc_cond_matches.
   CHECK mo_cond IS NOT INITIAL.
   mo_cond->calc_matches( io_xtt   = io_xtt
                          iv_tabix = iv_tabix
-                         io_block = io_block
+                         io_block = mo_block
                          it_scope = lt_cond_scope ).
 ENDMETHOD.
 
@@ -492,8 +490,18 @@ ENDMETHOD.
 
 
 METHOD _is_level_norm.
+  " Usually is equal to zero
+  DATA lv_field_level TYPE i.
+
+  FIELD-SYMBOLS <ls_field> TYPE zcl_xtt_replace_block=>ts_field.
+  READ TABLE mo_block->mt_fields ASSIGNING <ls_field>
+   WITH TABLE KEY name = ir_scope->field.
+  IF sy-subrc = 0.
+    lv_field_level = <ls_field>-fl_level.
+  ENDIF.
+
   DATA lv_level TYPE i.
-  lv_level = mo_block->ms_ext-rb_level + 1.
+  lv_level = mo_block->ms_ext-rb_level + 1 + lv_field_level.
   IF lv_level < ir_scope->sc_level.
     CLEAR ir_scope->end.
     RETURN.

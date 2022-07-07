@@ -589,6 +589,7 @@ METHOD _get_scope.
       DELETE _scopes INDEX sy-tabix.
     ELSE.
       eo_scope = lr_scope->scope.
+      eo_scope->mo_block = io_block.
       RETURN.
     ENDIF.
   ENDIF.

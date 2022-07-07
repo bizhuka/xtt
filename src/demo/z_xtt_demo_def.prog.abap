@@ -93,6 +93,21 @@ CLASS lcl_demo IMPLEMENTATION.
     _do_download( lo_xtt ).
   ENDMETHOD.
 
+  METHOD get_raw.
+    DATA lo_xtt TYPE REF TO zcl_xtt.
+    get_from_template( EXPORTING iv_template = iv_template
+                       IMPORTING eo_xtt      = lo_xtt ).
+    CHECK lo_xtt IS NOT INITIAL.
+
+    " Paste data
+    _merge( io_xtt   = lo_xtt
+            it_merge = it_merge[] ).
+
+    " Take binary file
+    DATA lv_file TYPE xstring.
+    lv_file = lo_xtt->get_raw( ).
+  ENDMETHOD.
+
   METHOD _do_download.
     IF p_open = abap_true.
       " All parameters are optional

@@ -312,8 +312,7 @@ METHOD do_merge.
     " Already found scopes
     FIELD-SYMBOLS <ls_scope> LIKE LINE OF lo_scope->mt_scope.
     LOOP AT lo_scope->mt_scope ASSIGNING <ls_scope>.
-      io_block->find_match( EXPORTING io_xtt     = me
-                                      is_scope   = <ls_scope>
+      io_block->find_match( EXPORTING is_scope   = <ls_scope>
                             CHANGING  cv_content = cv_content ).
     ENDLOOP.
   ENDIF.
@@ -531,7 +530,6 @@ METHOD read_scopes.
   ENDIF.
 
   eo_scope->calc_cond_matches( io_xtt   = me
-                               io_block = io_block
                                iv_tabix = iv_tabix
                                iv_init  = lv_new ).
 ENDMETHOD.

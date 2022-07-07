@@ -206,6 +206,14 @@ CLASS lcl_report IMPLEMENTATION.
     CHECK mo_injection IS INITIAL
       AND lv_exit <> abap_true.
 
+*    " for tr. SAT
+*    IF p_exa = '020' AND p_r_cnt = 150000.
+*      o_demo->download( it_merge    = t_merge[]
+*                        iv_template = 'ZXXT_DEMO_020_A-XLSX' ).
+*      LEAVE TO SCREEN 0.
+*      RETURN.
+*    ENDIF.
+
     DATA ls_grid_params TYPE ts_grid_params.
     ls_grid_params = _get_grid_params( ).
     show_alv( ls_grid_params ).

@@ -94,6 +94,11 @@ CLASS lcl_demo DEFINITION ABSTRACT.
           io_injection TYPE REF TO lif_injection OPTIONAL
           iv_template  TYPE csequence            OPTIONAL,
 
+      get_raw FINAL
+        IMPORTING
+          it_merge     TYPE tt_merge
+          iv_template  TYPE csequence,
+
       send FINAL
         IMPORTING
           it_merge TYPE tt_merge,

@@ -80,7 +80,8 @@ private section.
   methods _FILL_T_PAIR
     importing
       !IV_WHOLE_FIELD type STRING
-      !IR_SCOPE type ref to TS_SCOPE .
+      !IR_SCOPE type ref to TS_SCOPE
+      !IO_XTT type ref to ZCL_XTT .
   methods _IS_LEVEL_NORM
     importing
       !IR_SCOPE type ref to TS_SCOPE
@@ -208,19 +209,30 @@ METHOD _fill_t_pair.
 
   " Always name of field in first part
   DATA: lv_param TYPE string, ls_pair TYPE ts_pair.
+
+  " Detect level
   DATA lv_next      TYPE i VALUE 0.
   DATA lv_curr_coef TYPE i VALUE 1.
+
   LOOP AT lt_params INTO lv_param FROM 2.
     SPLIT lv_param AT '=' INTO ls_pair-key ls_pair-val.
 
     CASE ls_pair-key .
-      WHEN 'cond' or 'call'. " +1 level
+
+        " +1 level
+      WHEN 'cond'   " Show or hide block       -> https://bizhuka.github.io/xtt/cond/
+        OR 'call'.  " Call method to get value -> https://bizhuka.github.io/xtt/call/
         lv_next = 1.
-      WHEN 'type'. " 'cond' for current levele
+
+      WHEN 'type'. " Data types               -> https://bizhuka.github.io/xtt/data-types/
+
+        " is not data type. 'cond' for current level
         IF ls_pair-val = zcl_xtt_replace_block=>mc_type-block.
           lv_curr_coef = 0.
         ENDIF.
+
       WHEN ''. " short form of type block
+        " {;type=block} as above             -> https://bizhuka.github.io/xtt/block/
         lv_curr_coef = 0.
 
         DATA ls_pair2 LIKE ls_pair.
@@ -230,10 +242,26 @@ METHOD _fill_t_pair.
 
         ls_pair-key = 'cond'.
         REPLACE ALL OCCURRENCES OF 'v-' IN ls_pair-val WITH 'value-'.
-      WHEN 'merge'.
-        " Faster
+
+      WHEN 'merge'. " Merge cells           -> https://bizhuka.github.io/xtt/merging-cells/
+        " 'X' or group like 'G0', 'G1' ...
         ir_scope->merge_me = ls_pair-val.
         CHECK ir_scope->merge_me <> abap_true.
+
+      WHEN 'direction' "  output by column                              ->  https://bizhuka.github.io/xtt/output-direction/
+        OR 'group'     "  converts table to tree                        ->  https://bizhuka.github.io/xtt/tree-group-by-fields/
+        OR 'func'      "  tree functions like SUM | AVG | COUNT | FIRST ->  https://bizhuka.github.io/xtt/tree-aggregation-functions/
+        " show tree line by condition                                   ->  https://bizhuka.github.io/xtt/tree-output-level-by-condition/
+        OR 'top' OR 'show_if' OR 'hide_if' OR 'level'
+        " image declaration for xString                                 =>  https://bizhuka.github.io/xtt/images-no-code/
+        OR 'height' OR 'width' OR 'ext'
+        " Just additional comments for complicated cells
+        OR 'comment'.
+
+      WHEN OTHERS.
+        MESSAGE s017(zsy_xtt) WITH ls_pair-key INTO sy-msgli.
+        io_xtt->add_log_message( iv_syst = abap_true ).
+
     ENDCASE.
 
     INSERT ls_pair INTO TABLE ir_scope->t_pair.
@@ -346,7 +374,8 @@ METHOD _get_scope.
   ENDIF.
   " All field options
   _fill_t_pair( iv_whole_field = l_whole_field
-                ir_scope       = rr_scope ).
+                ir_scope       = rr_scope
+                io_xtt         = io_xtt ).
 
   _is_level_norm( rr_scope ).
 ENDMETHOD.

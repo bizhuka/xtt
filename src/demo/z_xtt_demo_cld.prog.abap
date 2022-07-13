@@ -84,7 +84,8 @@ CLASS lcl_demo DEFINITION ABSTRACT.
 
       show FINAL
         IMPORTING
-          it_merge TYPE tt_merge,
+          it_merge    TYPE tt_merge
+          iv_template TYPE csequence OPTIONAL,
 
       download FINAL
         IMPORTING
@@ -101,7 +102,8 @@ CLASS lcl_demo DEFINITION ABSTRACT.
 
       send FINAL
         IMPORTING
-          it_merge TYPE tt_merge,
+          it_merge    TYPE tt_merge
+          iv_template TYPE csequence OPTIONAL,
 
       set_merge_info ABSTRACT
         IMPORTING

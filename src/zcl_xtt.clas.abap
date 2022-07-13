@@ -32,6 +32,8 @@ public section.
   aliases TT_RECIPIENTS_BCS
     for ZIF_XTT~TT_RECIPIENTS_BCS .
 
+  types TS_BOUNDS type ZSS_XTT_BOUNDS .
+
   events PREPARE_RAW
     exporting
       value(IV_PATH) type STRING
@@ -62,6 +64,14 @@ protected section.
     END OF to_scope .
   types:
     tt_scopes TYPE SORTED TABLE OF to_scope WITH UNIQUE KEY sc_id .
+  types:
+    BEGIN OF ts_log_xml,
+      rows    TYPE STRING,
+      title   TYPE STRING,
+      before  TYPE STRING,
+      after   TYPE STRING,
+      has_axe TYPE abap_bool,
+    END OF ts_log_xml .
 
   data MV_FILE_NAME type STRING .
   data MV_OLE_EXT type STRING .
@@ -69,6 +79,12 @@ protected section.
   data _LOGGER type ref to ZCL_EUI_LOGGER .
   data _SCOPES type TT_SCOPES .
 
+  methods BOUNDS_SPLIT
+    importing
+      !IV_NAME type CSEQUENCE
+    changing
+      !CS_BOUNDS type TS_BOUNDS
+      !CV_MIDDLE type CSEQUENCE .
   methods RAISE_RAW_EVENTS
     importing
       !IO_ZIP type ref to CL_ABAP_ZIP .
@@ -87,15 +103,22 @@ protected section.
     exporting
       !EV_NEW type ABAP_BOOL
       !EO_SCOPE type ref to ZCL_XTT_SCOPE .
+  methods _LOGGER_AS_XML
+    importing
+      !IV_ROW type STRING optional
+    returning
+      value(RS_LOG_XML) type TS_LOG_XML .
 private section.
+
 *"* private components of class ZCL_XTT
 *"* do not include other source files here!!!
-
   data MT_RAW_EVENT type STRINGTAB .
   data MO_HELPER type ref to OBJECT .
   data MO_DEBUG type ref to ZCL_XTT_DEBUG .
+  data MV_IS_PROD type ABAP_BOOL .
+  data MV_CAN_SHOW_MENU type ABAP_BOOL .
 
-  methods _INIT_LOGGER .
+  methods _LOGGER_INIT .
 ENDCLASS.
 
 
@@ -143,9 +166,58 @@ METHOD add_raw_event.
 ENDMETHOD.
 
 
+METHOD bounds_split.
+  CLEAR: cs_bounds-pos_beg,
+         cs_bounds-pos_end,
+         cs_bounds-pos_cnt,
+         " Resulting fields
+         cs_bounds-text_before,
+         cs_bounds-text_after.
+
+  " 1 - Text before body
+  FIELD-SYMBOLS <ls_match>   LIKE LINE OF cs_bounds-t_match.
+  READ TABLE cs_bounds-t_match ASSIGNING <ls_match> INDEX cs_bounds-first_match.
+
+  " TODO silent mode ?
+  IF sy-subrc <> 0.
+    RETURN.
+  ENDIF.
+
+  IF cs_bounds-first_match >= cs_bounds-last_match.
+    MESSAGE e009(zsy_xtt) WITH iv_name INTO sy-msgli.
+    add_log_message( iv_syst = abap_true ).
+    RETURN.
+  ENDIF.
+
+  " Does need an open tag?
+  IF cs_bounds-with_tag = abap_true.
+    cs_bounds-pos_beg = <ls_match>-offset.
+  ELSE.
+    cs_bounds-pos_beg = <ls_match>-offset + <ls_match>-length.
+  ENDIF.
+  cs_bounds-text_before = cv_middle(cs_bounds-pos_beg).
+
+*************
+  " 2 - Text after body
+  READ TABLE cs_bounds-t_match ASSIGNING <ls_match> INDEX cs_bounds-last_match.
+
+  IF cs_bounds-with_tag = abap_true.
+    cs_bounds-pos_end = <ls_match>-offset + <ls_match>-length.
+  ELSE.
+    cs_bounds-pos_end = <ls_match>-offset.
+  ENDIF.
+  cs_bounds-text_after = cv_middle+cs_bounds-pos_end.
+
+*************
+  " 3 - Body
+  cs_bounds-pos_cnt = cs_bounds-pos_end - cs_bounds-pos_beg.
+  cv_middle = cv_middle+cs_bounds-pos_beg(cs_bounds-pos_cnt).
+ENDMETHOD.
+
+
 METHOD constructor.
   DATA lo_no_check TYPE REF TO zcx_eui_no_check.
-  _init_logger( ).
+  _logger_init( ).
 
   mv_ole_ext = iv_ole_ext.
   TRY.
@@ -288,9 +360,11 @@ METHOD zif_xtt~download.
 
   DATA lo_no_check TYPE REF TO zcx_eui_no_check.
   TRY.
+      get_no_warning mv_can_show_menu.
+
       " As a xstring (implemented in subclasses)
       DATA lv_content   TYPE xstring.
-      lv_content = get_raw( ).
+      lv_content = get_raw( iv_no_warning = lv_no_warning ).
     CATCH zcx_eui_no_check INTO lo_no_check.
       add_log_message( io_exception = lo_no_check ).
   ENDTRY.
@@ -492,7 +566,8 @@ METHOD zif_xtt~send.
         TRANSLATE lv_ext TO UPPER CASE.
 
         " Convert to table
-        lv_value = get_raw( ).
+        get_no_warning '-'.
+        lv_value = get_raw( iv_no_warning = lv_no_warning ).
         zcl_eui_conv=>xstring_to_binary( EXPORTING iv_xstring = lv_value
                                          IMPORTING ev_length  = lv_file_size
                                                    et_table   = lt_data ).
@@ -531,23 +606,7 @@ ENDMETHOD.
 
 
 METHOD zif_xtt~show.
-  DATA lv_content   TYPE xstring.
   DATA lv_file_name TYPE string.
-  DATA lo_eui_file  TYPE REF TO zcl_eui_file.
-  DATA lo_error     TYPE REF TO zcx_eui_exception.
-
-  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
-  TRY.
-      " As a xstring (implemented in subclasses)
-      lv_content = get_raw( ).
-    CATCH zcx_eui_no_check INTO lo_no_check.
-      add_log_message( io_exception = lo_no_check ).
-  ENDTRY.
-  " If has logs show them
-  _logger->show_as_button( ).
-  IF _logger->has_messages( iv_msg_types = zcl_eui_logger=>mc_msg_types-error ) = abap_true.
-    _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup ).
-  ENDIF.
 
   " Get from file name
   IF mv_ole_ext IS NOT INITIAL.
@@ -558,9 +617,28 @@ METHOD zif_xtt~show.
      CHANGING
        cv_fullpath = lv_file_name ).
   ELSE.
+    TRY.
+        get_no_warning mv_can_show_menu.
+
+        " As a xstring (implemented in subclasses)
+        DATA lv_content   TYPE xstring.
+        lv_content = get_raw( iv_no_warning = lv_no_warning ).
+
+        DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+      CATCH zcx_eui_no_check INTO lo_no_check.
+        add_log_message( io_exception = lo_no_check ).
+    ENDTRY.
+
+    " If has logs show them
+    _logger->show_as_button( ).
+    IF _logger->has_messages( iv_msg_types = zcl_eui_logger=>mc_msg_types-error ) = abap_true.
+      _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup ).
+    ENDIF.
+
     lv_file_name = mv_file_name.
   ENDIF.
 
+  DATA lo_eui_file  TYPE REF TO zcl_eui_file.
   CREATE OBJECT lo_eui_file
     EXPORTING
       iv_xstring   = lv_content
@@ -568,6 +646,7 @@ METHOD zif_xtt~show.
 
   TRY.
       lo_eui_file->show( io_handler = io_handler ).
+      DATA lo_error     TYPE REF TO zcx_eui_exception.
     CATCH zcx_eui_exception INTO lo_error.
       MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
   ENDTRY.
@@ -589,16 +668,15 @@ METHOD _get_scope.
       DELETE _scopes INDEX sy-tabix.
     ELSE.
       eo_scope = lr_scope->scope.
-      eo_scope->mo_block = io_block.
+      eo_scope->set_block( io_block ).
       RETURN.
     ENDIF.
   ENDIF.
 
   " Not initilized
   ev_new = abap_true.
-  CREATE OBJECT eo_scope
-    EXPORTING
-      io_block = io_block.
+  CREATE OBJECT eo_scope.
+  eo_scope->set_block( io_block ).
 
   ls_scope-sc_id = io_block->ms_ext-rb_id.
   ls_scope-scope = eo_scope.
@@ -606,20 +684,55 @@ METHOD _get_scope.
 ENDMETHOD.
 
 
-METHOD _init_logger.
-  DATA lv_has_dev TYPE symandt.
-  SELECT SINGLE mandt INTO lv_has_dev
-  FROM t000
-  WHERE mandt = sy-mandt AND cccategory <> 'P'.
-
-  DATA lv_msg_types TYPE string.
-
-  IF lv_has_dev IS INITIAL.
-    lv_msg_types = zcl_eui_logger=>mc_msg_types-error.
-  ELSE.
-    " Add to log also all info & warnings
-    lv_msg_types = zcl_eui_logger=>mc_msg_types-all.
+METHOD _logger_as_xml.
+  " do not change document in productive system
+  IF mv_is_prod = abap_true OR iv_row IS INITIAL.
+    RETURN.
   ENDIF.
+
+  DATA lt_message TYPE sfb_t_bal_s_msg.
+  lt_message = _logger->get_messages( ).
+  CHECK lt_message IS NOT INITIAL.
+
+  FIELD-SYMBOLS <ls_message>  LIKE LINE OF lt_message.
+  LOOP AT lt_message ASSIGNING <ls_message>.
+    DATA lv_msgli TYPE string.
+    MESSAGE ID <ls_message>-msgid TYPE <ls_message>-msgty NUMBER <ls_message>-msgno WITH <ls_message>-msgv1 <ls_message>-msgv2 <ls_message>-msgv3 <ls_message>-msgv4
+     INTO lv_msgli.
+    lv_msgli = cl_http_utility=>escape_html( lv_msgli ).
+
+    DATA lv_row_copy TYPE string.
+    lv_row_copy = iv_row.
+
+    REPLACE FIRST OCCURRENCE OF: `{MSGTY}` IN lv_row_copy WITH <ls_message>-msgty,
+                                 `{MSGID}` IN lv_row_copy WITH <ls_message>-msgid,
+                                 `{MSGNO}` IN lv_row_copy WITH <ls_message>-msgno,
+                                 `{MSGLI}` IN lv_row_copy WITH lv_msgli.
+    CONCATENATE rs_log_xml-rows
+                lv_row_copy INTO rs_log_xml-rows RESPECTING BLANKS.
+
+    CHECK <ls_message>-msgty CA 'AXE'.
+    rs_log_xml-has_axe = abap_true.
+  ENDLOOP.
+
+  CONCATENATE `DEV Warnings ` sy-datum(4) `.` sy-datum+4(2) `.` sy-datum+6(2) ` - ` sy-uzeit(2) `.` sy-uzeit+2(2) ` Please fix them` INTO rs_log_xml-title.
+ENDMETHOD.
+
+
+METHOD _logger_init.
+  DATA lv_is_prod TYPE symandt.
+  SELECT SINGLE mandt INTO lv_is_prod
+  FROM t000
+  WHERE mandt = sy-mandt AND cccategory = 'P'.
+
+  " Show all info & warnings
+  DATA lv_msg_types TYPE string VALUE zcl_eui_logger=>mc_msg_types-all.
+  " Only errors
+  IF lv_is_prod IS NOT INITIAL.
+    mv_is_prod   = abap_true.
+    lv_msg_types = zcl_eui_logger=>mc_msg_types-error.
+  ENDIF.
+  mv_can_show_menu = zcl_eui_menu=>can_show( ).
 
   CREATE OBJECT _logger
     EXPORTING

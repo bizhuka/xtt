@@ -15,9 +15,11 @@ public section.
       !IV_OLE_EXT_FORMAT type I default 51 .
 protected section.
 
+  methods BOUNDS_FROM_BODY
+    redefinition .
   methods ON_MATCH_FOUND
     redefinition .
-  methods BOUNDS_FROM_BODY
+  methods _LOGGER_AS_XML
     redefinition .
 private section.
 *"* private components of class ZCL_XTT_EXCEL_XML
@@ -174,5 +176,42 @@ METHOD on_match_found.
      iv_pos_end = iv_pos_end
    CHANGING
      cv_content = cv_content ).
+ENDMETHOD.
+
+
+METHOD _logger_as_xml.
+  DATA lv_row TYPE string.
+  CONCATENATE
+      `<Row>`
+        `<Cell><Data ss:Type="String">{MSGTY}</Data></Cell>`
+        `<Cell><Data ss:Type="String">{MSGID}</Data></Cell>`
+        `<Cell><Data ss:Type="Number">{MSGNO}</Data></Cell>`
+        `<Cell><Data ss:Type="String">{MSGLI}</Data></Cell>`
+      `</Row>` INTO lv_row.
+  rs_log_xml = super->_logger_as_xml( lv_row ).
+  CHECK rs_log_xml IS NOT INITIAL.
+
+  DATA lv_color TYPE string.
+  IF rs_log_xml-has_axe = abap_true.
+    lv_color = `<TabColorIndex>10</TabColorIndex>`.
+  ENDIF.
+
+  CONCATENATE:
+    `</Worksheet><Worksheet ss:Name="` rs_log_xml-title(31) `">`
+      `<Table ss:ExpandedColumnCount="4" x:FullColumns="1" x:FullRows="1" ss:DefaultRowHeight="15">`
+       `<Column ss:AutoFitWidth="0" ss:Width="52.5" ss:Span="2"/>`
+       `<Column ss:Index="4" ss:AutoFitWidth="0" ss:Width="577.5"/>`
+       `<Row>`
+        `<Cell><Data ss:Type="String">Type</Data></Cell>`
+        `<Cell><Data ss:Type="String">Class</Data></Cell>`
+        `<Cell><Data ss:Type="String">Number</Data></Cell>`
+        `<Cell><Data ss:Type="String">Message</Data></Cell>`
+       `</Row>`      INTO rs_log_xml-before,
+
+     `</Table>`
+        `<WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel">`
+        lv_color
+       `</WorksheetOptions>`
+       INTO rs_log_xml-after.
 ENDMETHOD.
 ENDCLASS.

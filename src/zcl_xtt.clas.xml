@@ -35,6 +35,12 @@
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>BOUNDS_SPLIT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Split content to header, body and footer</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>CONSTRUCTOR</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>CONSTRUCTOR</DESCRIPT>
@@ -71,9 +77,21 @@
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>TS_BOUNDS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Fill the strucure from top to bottom (results)</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>_LOGGER</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Logger</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_XTT</CLSNAME>
+     <CMPNAME>_LOGGER_AS_XML</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Log info only for WF &amp; web dynpro</DESCRIPT>
     </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>

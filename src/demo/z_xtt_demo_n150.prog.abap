@@ -65,19 +65,25 @@ CLASS lcl_demo_150 IMPLEMENTATION.
       DATA lv_tabix TYPE sytabix.
       lv_tabix = sy-tabix.
 
-      IF lv_tabix MOD 3 = 0.
+      " 7.00 compatibility
+      DATA lv_mod TYPE i.
+
+      lv_mod = lv_tabix MOD 3.
+      IF lv_mod = 0.
         ls_color-color-col = col_positive.
         ls_color-fname     = 'PRICE'.
         APPEND ls_color TO ls_flight_info->t_color[].
       ENDIF.
 
-      IF lv_tabix MOD 5 = 0.
+      lv_mod = lv_tabix MOD 5.
+      IF lv_mod = 0.
         ls_color-color-col = col_negative.
         ls_color-fname     = 'SEATSMAX'.
         APPEND ls_color TO ls_flight_info->t_color[].
       ENDIF.
 
-      IF lv_tabix MOD 7 = 0.
+      lv_mod = lv_tabix MOD 7.
+      IF lv_mod = 0.
         ls_color-color-col = col_total.
         ls_color-fname     = 'SEATSMAX'.
         APPEND ls_color TO ls_flight_info->t_color[].
@@ -268,10 +274,10 @@ CLASS lcl_demo_150 IMPLEMENTATION.
     ENDIF.
 
     IF lo_grid IS NOT INITIAL.
-    CREATE OBJECT eo_file TYPE zcl_xtt_file_grid
-      EXPORTING
-        io_grid    = lo_grid.
-    else.
+      CREATE OBJECT eo_file TYPE zcl_xtt_file_grid
+        EXPORTING
+          io_grid = lo_grid.
+    ELSE.
       " For test mode only
       eo_file = zcl_xtt_file_grid=>create(
         ir_table   = ms_test_params-r_table

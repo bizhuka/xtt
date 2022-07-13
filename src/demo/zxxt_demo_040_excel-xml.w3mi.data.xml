@@ -221,7 +221,7 @@
       ss:Name="COUTRY2_LIST"/></Cell>
    </Row>
    <Row ss:AutoFitHeight="0" ss:Height="30">
-    <Cell ss:Index="2" ss:StyleID="s87"><Data ss:Type="String">{R-C-LAND1}</Data><NamedCell
+    <Cell ss:Index="2" ss:StyleID="s87"><Data ss:Type="String">{R-C-LAND1;typeee=test logs}</Data><NamedCell
       ss:Name="COUTRY2_LIST"/></Cell>
     <Cell ss:StyleID="s87"><Data ss:Type="String">{R-C-LANDX50}</Data><NamedCell
       ss:Name="COUTRY2_LIST"/></Cell>

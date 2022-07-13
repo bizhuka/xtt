@@ -7,8 +7,6 @@ public section.
   type-pools ABAP .
   class ZCL_XTT_REPLACE_BLOCK definition load .
 
-  types TS_BOUNDS type ZSS_XTT_BOUNDS .
-
   methods CONSTRUCTOR
     importing
       !IO_FILE type ref to ZIF_XTT_FILE
@@ -58,12 +56,6 @@ private section.
       !IS_FIELD type ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
     returning
       value(RS_BOUNDS) type TS_BOUNDS .
-  methods BOUNDS_SPLIT
-    importing
-      !IV_NAME type CSEQUENCE
-    changing
-      !CS_BOUNDS type TS_BOUNDS
-      !CV_MIDDLE type CSEQUENCE .
   methods DO_MERGE
     importing
       !IV_ROOT_IS_TABLE type ABAP_BOOL default ABAP_FALSE
@@ -172,55 +164,6 @@ METHOD bounds_from_row.
   " Extend bounds for iv_tag
   rs_bounds-first_match = rs_bounds-first_match - 1.
   rs_bounds-last_match  = rs_bounds-last_match + 1.
-ENDMETHOD.
-
-
-METHOD bounds_split.
-  CLEAR: cs_bounds-pos_beg,
-         cs_bounds-pos_end,
-         cs_bounds-pos_cnt,
-         " Resulting fields
-         cs_bounds-text_before,
-         cs_bounds-text_after.
-
-  " 1 - Text before body
-  FIELD-SYMBOLS <ls_match>   LIKE LINE OF cs_bounds-t_match.
-  READ TABLE cs_bounds-t_match ASSIGNING <ls_match> INDEX cs_bounds-first_match.
-
-  " TODO silent mode ?
-  IF sy-subrc <> 0.
-    RETURN.
-  ENDIF.
-
-  IF cs_bounds-first_match >= cs_bounds-last_match.
-    MESSAGE e009(zsy_xtt) WITH iv_name INTO sy-msgli.
-    add_log_message( iv_syst = abap_true ).
-    RETURN.
-  ENDIF.
-
-  " Does need an open tag?
-  IF cs_bounds-with_tag = abap_true.
-    cs_bounds-pos_beg = <ls_match>-offset.
-  ELSE.
-    cs_bounds-pos_beg = <ls_match>-offset + <ls_match>-length.
-  ENDIF.
-  cs_bounds-text_before = cv_middle(cs_bounds-pos_beg).
-
-*************
-  " 2 - Text after body
-  READ TABLE cs_bounds-t_match ASSIGNING <ls_match> INDEX cs_bounds-last_match.
-
-  IF cs_bounds-with_tag = abap_true.
-    cs_bounds-pos_end = <ls_match>-offset + <ls_match>-length.
-  ELSE.
-    cs_bounds-pos_end = <ls_match>-offset.
-  ENDIF.
-  cs_bounds-text_after = cv_middle+cs_bounds-pos_end.
-
-*************
-  " 3 - Body
-  cs_bounds-pos_cnt = cs_bounds-pos_end - cs_bounds-pos_beg.
-  cv_middle = cv_middle+cs_bounds-pos_beg(cs_bounds-pos_cnt).
 ENDMETHOD.
 
 
@@ -584,6 +527,35 @@ ENDMETHOD.
 
 
 METHOD zif_xtt~get_raw.
+  DO 1 TIMES.
+    CHECK iv_no_warning <> abap_true.
+
+    DATA ls_log_xml TYPE ts_log_xml.
+    ls_log_xml = _logger_as_xml( ).
+    CHECK ls_log_xml IS NOT INITIAL.
+
+    DATA ls_bounds TYPE ts_bounds.
+    ls_bounds = bounds_from_body( iv_context       = mv_file_content
+                                  iv_root_is_table = abap_false
+                                  iv_block_name    = '' ).
+    " Divide to 3 parts
+    bounds_split( EXPORTING iv_name   = ''
+                  CHANGING  cs_bounds = ls_bounds
+                            cv_middle = mv_file_content ).
+    " And just concatenate
+    CONCATENATE ls_bounds-text_before
+                mv_file_content
+                mv_page_break
+
+                ls_log_xml-before
+                ls_log_xml-rows
+                ls_log_xml-after
+
+                ls_bounds-text_after INTO mv_file_content RESPECTING BLANKS.
+  ENDDO.
+**********************************************************************
+**********************************************************************
+
   " Can convert XML or HTML result to pdf or attach to email for example
   rv_content = zcl_eui_conv=>string_to_xstring( mv_file_content ).
 

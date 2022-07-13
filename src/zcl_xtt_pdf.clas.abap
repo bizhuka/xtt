@@ -18,6 +18,8 @@ protected section.
     redefinition .
   methods ON_MATCH_FOUND
     redefinition .
+  methods _LOGGER_AS_XML
+    redefinition .
 PRIVATE SECTION.
 ENDCLASS.
 
@@ -27,10 +29,8 @@ CLASS ZCL_XTT_PDF IMPLEMENTATION.
 
 
 METHOD bounds_from_body.
-  DATA lv_tag  TYPE string.
-  lv_tag = mv_body_tag.
-  IF iv_root_is_table = abap_true.
-    mv_body_tag = lv_tag = 'subform'.                       "#EC NOTEXT
+  IF iv_root_is_table = abap_true OR iv_block_name IS INITIAL.
+    mv_body_tag = 'subform'.                                "#EC NOTEXT
   ENDIF.
 
   rs_bounds = super->bounds_from_body( iv_context       = iv_context
@@ -213,7 +213,7 @@ METHOD zif_xtt~get_raw.
     lo_pdfobj TYPE REF TO if_fp_pdf_object,
     lo_err    TYPE REF TO cx_fp_exception.
   " Get ready XML file
-  rv_content = super->get_raw( ).
+  rv_content = super->get_raw( iv_no_warning  = iv_no_warning ).
 
   " Create an instance
   lo_fp = cl_fp=>get_reference( ).
@@ -238,5 +238,98 @@ METHOD zif_xtt~get_raw.
   " Return as xstring
   CLEAR rv_content.
   lo_pdfobj->get_pdf( IMPORTING pdfdata = rv_content ).
+ENDMETHOD.
+
+
+METHOD _logger_as_xml.
+  DATA lv_row TYPE string.
+  CONCATENATE
+  `<subform layout="row">`
+    `<draw h="10mm">`
+      `<border><edge/><corner thickness="0.1778mm"/></border>`
+      `<ui><textEdit/></ui>`
+      `<value><text xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xliff:rid="62FA1503-5B7C-4CC4-9FFE-28102AFB29CA">{MSGTY}</text></value>`
+      `<font typeface="Arial"/><margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/><para vAlign="middle" hAlign="center"/>`
+    `</draw>`
+
+    `<draw h="10mm">`
+      `<border><edge/><corner thickness="0.1778mm"/></border>`
+      `<ui><textEdit/></ui>`
+      `<value><text xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xliff:rid="EF88A2A4-760E-427F-8DF4-BB49261C3ADB">{MSGID}</text></value>`
+      `<font typeface="Arial"/><margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/><para vAlign="middle" hAlign="center"/>`
+    `</draw>`
+
+    `<draw h="10mm">`
+      `<border><edge/><corner thickness="0.1778mm"/></border>`
+      `<ui><textEdit/></ui>`
+      `<value><text xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xliff:rid="F2638213-9E81-48F7-A61A-7623A79FFEC3">{MSGNO}</text></value>`
+      `<font typeface="Arial"/><margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/><para vAlign="middle" hAlign="center"/>`
+    `</draw>`
+
+    `<draw h="10mm">`
+      `<border><edge/><corner thickness="0.1778mm"/></border>`
+      `<ui><textEdit/></ui>`
+      `<value><text xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xliff:rid="C3D5510B-76A8-42F8-9865-361895C88D77">{MSGLI}</text></value>`
+      `<font typeface="Arial"/><margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/><para vAlign="middle" hAlign="right"/>`
+    `</draw>`
+
+    `<border><edge presence="hidden"/></border><?templateDesigner expand 1?>`
+  `</subform>`
+      INTO lv_row.
+
+  rs_log_xml = super->_logger_as_xml( lv_row ).
+  CHECK rs_log_xml IS NOT INITIAL.
+
+  DATA lv_color TYPE string.
+  IF rs_log_xml-has_axe = abap_true.
+    lv_color = `<fill><color value="255,0,0"/></fill>`.
+  ENDIF.
+
+  CONCATENATE:
+      `<draw hAlign="center" minH="13mm" w="201mm">`
+         `<ui><textEdit/></ui><value><text>` rs_log_xml-title `</text></value>`
+         `<font size="34pt" typeface="Arial" baselineShift="0pt">` lv_color `</font>`
+         `<margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/>`
+         `<para hAlign="center" spaceAbove="0pt" spaceBelow="0pt" textIndent="0pt" marginLeft="0pt" marginRight="0pt"/>`
+      `</draw>`
+
+      `<subform xmlns="http://www.xfa.org/schema/xfa-template/3.3/" layout="table" columnWidths="40.6402mm 40.6402mm 40.6402mm 80.657mm" x="0in" y="0in">`
+        `<border><edge/></border>`
+        `<subform layout="row" name="HeaderRow" id="HeaderRow_ID">`
+
+          `<draw h="10mm">`
+            `<border><edge/><corner thickness="0.1778mm"/></border>`
+            `<ui><textEdit/></ui>`
+            `<value><text xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xliff:rid="83483D43-7C10-463E-B94B-4ADC352A4DB9">Type</text></value>`
+            `<font typeface="Arial"/><margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/><para vAlign="middle" hAlign="center"/>`
+          `</draw>`
+
+          `<draw h="10mm">`
+            `<border><edge/><corner thickness="0.1778mm"/></border>`
+            `<ui><textEdit/></ui>`
+            `<value><text xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xliff:rid="ADF01250-2066-40E1-BDD6-CD5CF0A62EA6">Class</text></value>`
+            `<font typeface="Arial"/><margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/><para vAlign="middle" hAlign="center"/>`
+          `</draw>`
+
+          `<draw h="10mm">`
+            `<border><edge/><corner thickness="0.1778mm"/></border>`
+            `<ui><textEdit/></ui>`
+            `<value><text xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xliff:rid="E305E5C2-14E7-48B3-92C6-C4CB94B1C1C5">Number</text></value>`
+            `<font typeface="Arial"/><margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/><para vAlign="middle" hAlign="center"/>`
+          `</draw>`
+
+          `<draw h="10mm">`
+            `<border><edge/><corner thickness="0.1778mm"/></border>`
+            `<ui><textEdit/></ui>`
+            `<value><text xmlns:xliff="urn:oasis:names:tc:xliff:document:1.1" xliff:rid="8B31CA66-6574-45A9-975D-C26701AD9A2C">Message</text></value>`
+            `<font typeface="Arial"/><margin topInset="0.5mm" bottomInset="0.5mm" leftInset="0.5mm" rightInset="0.5mm"/><para vAlign="middle" hAlign="center"/>`
+          `</draw>`
+
+          `<border><edge presence="hidden"/></border><bind match="none"/><?templateDesigner expand 1?>`
+        `</subform>`
+      INTO rs_log_xml-before,
+           `<?templateDesigner rowpattern first:1, next:1, firstcolor:f0f0f0, nextcolor:ffffff, apply:0?><overflow leader="HeaderRow"/><?templateDesigner expand 1?>`
+         `</subform>`
+      INTO rs_log_xml-after.
 ENDMETHOD.
 ENDCLASS.

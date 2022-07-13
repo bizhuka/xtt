@@ -25,3 +25,22 @@ AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_r_path.
     iv_title = 'Select root directory'(f4p)
    CHANGING
     cv_path  = p_r_path ).
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+FORM test USING i_exa    LIKE p_exa
+                i_action LIKE p_action
+                i_templ  LIKE p_templ.
+  p_exa    = i_exa.
+  p_action = i_action.
+  p_templ  = i_templ.
+
+  p_r_cnt  = 25.
+  p_c_cnt  = 10.
+  p_b_cnt  = 3.
+  p_open   = abap_true.
+  p_user   = sy-uname.
+
+  CREATE OBJECT go_report.
+  go_report->start_of_selection( ).
+ENDFORM.

@@ -1,9 +1,7 @@
 class ZCL_XTT_SCOPE definition
   public
   final
-  create public
-
-  global friends ZCL_XTT .
+  create public .
 
 public section.
   type-pools ABAP .
@@ -16,7 +14,7 @@ public section.
 
   data MT_SCOPE type TT_SCOPE read-only .
 
-  methods CONSTRUCTOR
+  methods SET_BLOCK
     importing
       !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK .
   methods GET_SCOPES
@@ -144,11 +142,6 @@ METHOD calc_cond_matches.
 ENDMETHOD.
 
 
-METHOD constructor.
-  mo_block = io_block.
-ENDMETHOD.
-
-
 METHOD get_scopes.
   CLEAR ev_inline_tree.
 
@@ -198,6 +191,11 @@ METHOD is_by_column.
   " By default by row
   rv_by_column = abap_true.
 ENDMETHOD.
+
+
+  METHOD set_block.
+    mo_block = io_block.
+  ENDMETHOD.
 
 
 METHOD _fill_t_pair.

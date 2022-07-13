@@ -15,6 +15,8 @@ protected section.
 
   methods ON_MATCH_FOUND
     redefinition .
+  methods _LOGGER_AS_XML
+    redefinition .
 private section.
 
   class-methods DETECT_IMAGE_ANNOTATION
@@ -236,5 +238,60 @@ METHOD replace_binary_data.
   cv_pos_beg = ls_match_beg->offset.
   cv_pos_end = ls_match_end->offset + ls_match_end->length - 1. " plus 1 ?
   cv_value   = lv_value.
+ENDMETHOD.
+
+
+METHOD _logger_as_xml.
+  DATA lv_row TYPE string.
+  CONCATENATE
+      `<w:tr>`
+        `<w:tc><w:p><w:r><w:t>{MSGTY}</w:t></w:r></w:p></w:tc>`
+        `<w:tc><w:p><w:r><w:t>{MSGID}</w:t></w:r></w:p></w:tc>`
+        `<w:tc><w:p><w:r><w:t>{MSGNO}</w:t></w:r></w:p></w:tc>`
+        `<w:tc><w:p><w:r><w:t>{MSGLI}</w:t></w:r></w:p></w:tc>`
+      `</w:tr>` INTO lv_row.
+  rs_log_xml = super->_logger_as_xml( lv_row ).
+  CHECK rs_log_xml IS NOT INITIAL.
+
+  DATA lv_color TYPE string.
+  IF rs_log_xml-has_axe = abap_true.
+    lv_color = `<w:color w:val="FF0000"/>`.
+  ENDIF.
+
+  CONCATENATE:
+    `<w:p>`
+    `<w:pPr><w:jc w:val="center"/></w:pPr>`
+    `<w:r>`
+    `<w:rPr><w:b/>` lv_color `<w:sz w:val="34"/></w:rPr>`
+    `<w:t>` rs_log_xml-title `</w:t>`
+    `</w:r>`
+    `</w:p>`
+
+    `<w:tbl>`
+      `<w:tblPr>`
+        `<w:tblW w:w="0" w:type="auto"/>`
+        `<w:jc w:val="center"/>`
+        `<w:tblBorders>`
+          `<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>`
+          `<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>`
+          `<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>`
+          `<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>`
+          `<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>`
+          `<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/>`
+        `</w:tblBorders>`
+      `</w:tblPr>`
+      `<w:tblGrid>`
+        `<w:gridCol w:w="650"/>`
+        `<w:gridCol w:w="1100"/>`
+        `<w:gridCol w:w="1100"/>`
+        `<w:gridCol w:w="6400"/>`
+      `</w:tblGrid>`
+      `<w:tr>`
+        `<w:tc><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Type</w:t></w:r></w:p></w:tc>`
+        `<w:tc><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Class</w:t></w:r></w:p></w:tc>`
+        `<w:tc><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Number</w:t></w:r></w:p></w:tc>`
+        `<w:tc><w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:rPr><w:b/></w:rPr><w:t>Message</w:t></w:r></w:p></w:tc>`
+      `</w:tr>`      INTO rs_log_xml-before,
+     `</w:tbl>`  ``  INTO rs_log_xml-after.
 ENDMETHOD.
 ENDCLASS.

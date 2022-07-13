@@ -23,6 +23,9 @@ public section.
       !EV_BINDATA type STRING
       !EV_TAG type STRING
       !EV_NAME type STRING .
+  methods LOGGER_AS_XML
+    importing
+      !IO_XTT type ref to ZCL_XTT .
 
   methods ZIF_XTT~GET_RAW
     redefinition .
@@ -33,6 +36,8 @@ protected section.
   data MO_ZIP type ref to CL_ABAP_ZIP .
 
   methods ON_MATCH_FOUND
+    redefinition .
+  methods _LOGGER_AS_XML
     redefinition .
 private section.
 
@@ -148,6 +153,10 @@ METHOD get_image_tag.
 ENDMETHOD.
 
 
+  method LOGGER_AS_XML.
+  endmethod.
+
+
 METHOD on_match_found.
   DATA lv_skip TYPE abap_bool.
 
@@ -255,7 +264,7 @@ METHOD zif_xtt~get_raw.
   raise_raw_events( mo_zip ).
 
   " Raise from parent method
-  super->get_raw( ). " rv_content
+  super->get_raw( iv_no_warning  = iv_no_warning ). " rv_content
 
 **********************************************************************
   " Raise evant with whole archive
@@ -342,7 +351,7 @@ METHOD _change_header_footer.
                     io_helper     = io_helper ).
 
     DATA lx_content TYPE xstring.
-    lx_content = lo_html->get_raw( ).
+    lx_content = lo_html->get_raw( iv_no_warning = abap_true ).
 
     " Write back
     zcl_eui_conv=>xml_to_zip( io_zip  = mo_zip
@@ -465,5 +474,21 @@ METHOD _find_image_templates.
                                               iv_from    = lv_pos_beg
                                     CHANGING  cv_xml     = mv_file_content ).
   ENDLOOP.
+ENDMETHOD.
+
+
+METHOD _logger_as_xml.
+  DATA lo_file TYPE REF TO zif_xtt_file.
+  CREATE OBJECT lo_file TYPE zcl_xtt_file_raw
+    EXPORTING
+      iv_name = 'dummy'.  "#EC NOTEXT
+
+  DATA lo_word_xml TYPE REF TO zcl_xtt.
+  CREATE OBJECT lo_word_xml TYPE zcl_xtt_word_xml " zcl_xtt_html
+    EXPORTING
+      io_file = lo_file.
+
+  lo_word_xml->_logger = me->_logger.
+  rs_log_xml = lo_word_xml->_logger_as_xml( ).
 ENDMETHOD.
 ENDCLASS.

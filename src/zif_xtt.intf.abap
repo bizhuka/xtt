@@ -30,6 +30,8 @@ interface ZIF_XTT
     returning
       value(RO_XTT) type ref to ZIF_XTT .
   methods GET_RAW
+    importing
+      !IV_NO_WARNING type ABAP_BOOL optional
     returning
       value(RV_CONTENT) type XSTRING .
   methods DOWNLOAD

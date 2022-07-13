@@ -21,12 +21,6 @@
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
-     <CMPNAME>BOUNDS_SPLIT</CMPNAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Split content to header, body and footer</DESCRIPT>
-    </SEOCOMPOTX>
-    <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
      <CMPNAME>CONSTRUCTOR</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>CONSTRUCTOR</DESCRIPT>
@@ -60,12 +54,6 @@
      <CMPNAME>MV_PAGE_BREAK</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>If pass a table to Merge() method</DESCRIPT>
-    </SEOCOMPOTX>
-    <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT_XML_BASE</CLSNAME>
-     <CMPNAME>TS_BOUNDS</CMPNAME>
-     <LANGU>E</LANGU>
-     <DESCRIPT>Fill the strucure from top to bottom (results)</DESCRIPT>
     </SEOCOMPOTX>
    </DESCRIPTIONS>
   </asx:values>

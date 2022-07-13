@@ -45,7 +45,10 @@ CLASS lcl_demo IMPLEMENTATION.
 
   METHOD show.
     DATA lv_template TYPE string.
-    lv_template = _get_template_by_f4( ).
+    lv_template = iv_template.
+    IF lv_template IS INITIAL.
+      lv_template = _get_template_by_f4( ).
+    ENDIF.
 
     DATA: lo_xtt TYPE REF TO zcl_xtt.
     get_from_template( EXPORTING iv_template = lv_template
@@ -130,9 +133,13 @@ CLASS lcl_demo IMPLEMENTATION.
     INNER JOIN usr21 ON usr21~addrnumber = adr6~addrnumber AND usr21~persnumber = adr6~persnumber
     WHERE usr21~bname = sy-uname.                       "#EC CI_NOORDER
 
-    lv_template = _show_screen( iv_dynnr = '1020'
-                                iv_lb_id = 'P_STEMPL'
-                                iv_title = 'Send options'(snd) ).
+    lv_template = iv_template.
+    IF lv_template IS INITIAL.
+      lv_template = _show_screen( iv_dynnr = '1020'
+                                  iv_lb_id = 'P_STEMPL'
+                                  iv_title = 'Send options'(snd) ).
+    ENDIF.
+
     get_from_template( EXPORTING iv_template = lv_template
                        IMPORTING eo_xtt      = lo_xtt ).
     CHECK lo_xtt IS NOT INITIAL.

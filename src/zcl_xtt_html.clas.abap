@@ -22,6 +22,9 @@ public section.
   methods ZIF_XTT~SEND
     redefinition .
 protected section.
+
+  methods _LOGGER_AS_XML
+    redefinition .
 private section.
 
   data MV_AS_EMAIL_BODY type ABAP_BOOL .
@@ -85,7 +88,7 @@ METHOD format.
                 ).
 
   " DATA lv_text TYPE xstring. lv_text =
-  lo_html->get_raw( ).
+  lo_html->get_raw( iv_no_warning = abap_true ).
 
   " Convert
   rv_text = lo_html->mv_file_content. " zcl_eui_conv=>xstring_to_string( lv_text ).
@@ -104,7 +107,7 @@ METHOD zif_xtt~send.
   IF lv_body IS INITIAL AND mv_as_email_body = abap_true.
     " Get as HTML text. lv_raw =
     " Raise events to change content
-    get_raw( ).
+    get_raw( iv_no_warning = abap_true ).
 
     " None UTF-8 system?
     " lv_body = zcl_eui_conv=>xstring_to_string( lv_raw ).
@@ -128,5 +131,39 @@ METHOD zif_xtt~send.
   IF lv_file_name IS NOT INITIAL.
     mv_file_name = lv_file_name.
   ENDIF.
+ENDMETHOD.
+
+
+METHOD _logger_as_xml.
+  DATA lv_row TYPE string.
+  CONCATENATE
+      `<tr>`
+        `<td>{MSGTY}</td>`
+        `<td>{MSGID}</td>`
+        `<td>{MSGNO}</td>`
+        `<td>{MSGLI}</td>`
+      `</tr>` INTO lv_row.
+  rs_log_xml = super->_logger_as_xml( lv_row ).
+  CHECK rs_log_xml IS NOT INITIAL.
+
+  DATA lv_color TYPE string.
+  IF rs_log_xml-has_axe = abap_true.
+    lv_color = ` color: #ff0000`.
+  ENDIF.
+
+  CONCATENATE:
+    `<hr/><p style="text-align:center;` lv_color `; font-size:34px;">`
+      rs_log_xml-title
+    `</p>`
+    `<table border="1"`
+       ` cellspacing="0"`
+       ` cellpadding="0">`
+      `<tr>`
+        `<td style="text-align:center"><b>Type</b></td>`
+        `<td style="text-align:center"><b>Class</b></td>`
+        `<td style="text-align:center"><b>Number</b></td>`
+        `<td style="text-align:center"><b>Message</b></td>`
+      `</tr>`        INTO rs_log_xml-before,
+     `</table>`  ``  INTO rs_log_xml-after.
 ENDMETHOD.
 ENDCLASS.

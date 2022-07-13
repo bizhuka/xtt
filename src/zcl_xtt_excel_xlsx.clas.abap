@@ -226,8 +226,12 @@ METHOD area_get_address.
     ELSE.
       lv_delim = `:`. " Old method for 1 area only. Always `:`
 
+      " 7.00 compatibility
+      DATA lv_mod TYPE i.
+      lv_mod = sy-tabix MOD 2.
+
       " If several cell pairs in area
-      IF iv_ext = abap_true AND sy-tabix MOD 2 = 1.
+      IF iv_ext = abap_true AND lv_mod = 1.
         lv_delim = ` `. " space
       ENDIF.
     ENDIF.
@@ -2130,7 +2134,10 @@ ENDMETHOD.
 
 METHOD zif_xtt~get_raw.
   CHECK mo_zip IS NOT INITIAL.
-  _add_logs_sheet( ).
+
+  IF iv_no_warning <> abap_true.
+    _add_logs_sheet( ).
+  ENDIF.
 
 ***************************************
   shared_strings_save( ).
@@ -2212,17 +2219,31 @@ ENDMETHOD.
 
 
 METHOD _add_logs_sheet.
-  DATA lt_message TYPE sfb_t_bal_s_msg.
-  lt_message = _logger->get_messages( ).
-  CHECK lt_message IS NOT INITIAL.
+  DATA lv_row TYPE string.
+  CONCATENATE
+          `<row r="2" spans="1:2" x14ac:dyDescent="0.25">`
+          `<c r="A2" t="inlineStr">{MSGTY}</c>`
+          `<c r="B2" t="inlineStr">{MSGID}</c>`
+          `<c r="C2" t="inlineStr">{MSGNO}</c>`
+          `<c r="D2" t="inlineStr">{MSGLI}</c>`
+        `</row>` INTO lv_row.
+  DATA ls_xml TYPE ts_log_xml.
 
-  DATA mv_str_template  TYPE string.
+  ls_xml = _logger_as_xml( iv_row = lv_row ).
+  CHECK ls_xml IS NOT INITIAL.
+
+  DATA lv_content TYPE string.
+  IF ls_xml-has_axe = abap_true.
+    lv_content = `<sheetPr><tabColor rgb="FFFF0000"/></sheetPr>`.
+  ENDIF.
+
   CONCATENATE
     `<?xml version="1.0" encoding="UTF-8" standalone="yes"?> `
     `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" `
     `mc:Ignorable="x14ac xr xr2 xr3" xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac" xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision" `
     `xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2" xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3" xr:uid="{34516DE1-841D-4CC5-B679-4B9DADE1A673}"> `
-      `<dimension ref="A1:D2"/> `
+      lv_content
+      `<dimension ref="A1:D2"/>`
       `<sheetViews>`
         `<sheetView workbookViewId="0"/>`
       `</sheetViews>`
@@ -2240,20 +2261,16 @@ METHOD _add_logs_sheet.
           `<c r="C1" t="inlineStr">Number</c>`
           `<c r="D1" t="inlineStr">Message</c>`
         `</row>`
-        `<row r="2" spans="1:2" x14ac:dyDescent="0.25">`
-          `<c r="A2" t="inlineStr">{R-MSGTY}</c>`
-          `<c r="B2" t="inlineStr">{R-MSGID}</c>`
-          `<c r="C2" t="inlineStr">{R-MSGNO}</c>`
-          `<c r="D2" t="inlineStr">{R-MSGLI}</c>`
-        `</row>`
+        ls_xml-rows
       `</sheetData>`
       `<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>`
-    `</worksheet>` INTO mv_str_template.
+    `</worksheet>` INTO lv_content.
 
-  DATA mv_xstr_template TYPE xstring.
-  mv_xstr_template = zcl_eui_conv=>string_to_xstring( mv_str_template ).
+  DATA lv_content_xstr TYPE xstring.
+  lv_content_xstr = zcl_eui_conv=>string_to_xstring( lv_content ).
+
   mo_zip->add( name    = `xl/worksheets/sheet999.xml`
-               content = mv_xstr_template ).
+               content = lv_content_xstr ).
 
   CONSTANTS c_log_index TYPE string VALUE '999'.
   _sheets_counter = c_log_index.
@@ -2262,41 +2279,8 @@ METHOD _add_logs_sheet.
     EXPORTING
       iv_index = c_log_index
       io_xlsx  = me.
-  CONCATENATE `DEV Warnings ` sy-datum(4) `.` sy-datum+4(2) `.` sy-datum+6(2) `-` sy-uzeit INTO mo_sheet->_name.
+  mo_sheet->_name = ls_xml-title.
   APPEND mo_sheet TO mt_sheets.
-
-**********************************************************************
-**********************************************************************
-  TYPES: BEGIN OF ts_message,
-           msgty TYPE symsgty,
-           msgid TYPE symsgid,
-           msgno TYPE symsgno,
-           msgli TYPE string,
-         END OF ts_message.
-  DATA lt_root TYPE STANDARD TABLE OF ts_message WITH DEFAULT KEY.
-
-  FIELD-SYMBOLS: <ls_message> LIKE LINE OF lt_message,
-                 <ls_row>     LIKE LINE OF lt_root.
-  LOOP AT lt_message ASSIGNING <ls_message>.
-    APPEND INITIAL LINE TO lt_root ASSIGNING <ls_row>.
-
-    MOVE-CORRESPONDING <ls_message> TO <ls_row>.
-    MESSAGE ID <ls_message>-msgid TYPE <ls_message>-msgty NUMBER <ls_message>-msgno WITH <ls_message>-msgv1 <ls_message>-msgv2 <ls_message>-msgv3 <ls_message>-msgv4
-     INTO <ls_row>-msgli.
-  ENDLOOP.
-**********************************************************************
-**********************************************************************
-
-  " Prepare for replacement
-  DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
-  CREATE OBJECT lo_replace_block
-    EXPORTING
-      io_xtt        = me
-      is_block      = lt_root
-      iv_block_name = `R`.
-
-  mo_sheet->merge( EXPORTING io_block = lo_replace_block
-                   CHANGING  ct_cells = mo_sheet->mt_cells ).
 ENDMETHOD.
 
 

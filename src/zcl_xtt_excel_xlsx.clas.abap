@@ -1846,12 +1846,14 @@ ENDMETHOD.
 
 METHOD on_match_found.
   CONSTANTS:
-    c_date_start TYPE d VALUE '18991230',
-    c_time_start TYPE t VALUE '000000'.
+    c_date_start           TYPE d VALUE '18991230',
+    c_zero_date            TYPE d VALUE '18991231',
+    c_excel_1900_leap_year TYPE d VALUE '19000228',
+    c_time_start           TYPE t VALUE '000000'.
   DATA:
-    l_len       TYPE i,
-    l_value     TYPE string,
-    l_date      TYPE float.
+    l_len   TYPE i,
+    l_value TYPE string,
+    l_date  TYPE float.
   FIELD-SYMBOLS:
     <l_string> TYPE csequence,
     <l_date>   TYPE d,
@@ -1906,6 +1908,18 @@ METHOD on_match_found.
       IF <l_date> IS ASSIGNED AND <l_date> IS NOT INITIAL.
         " Number of days since
         l_date = <l_date> - c_date_start.
+
+        " Needed hack caused by the problem that:
+        " MS Excel incorrectly assumes that the year 1900 is a leap year
+        " http://support.microsoft.com/kb/214326/en-us
+
+        IF <l_date> <= c_excel_1900_leap_year.
+          l_date = l_date - 1.
+        ENDIF.
+
+        IF <l_date> = c_zero_date. "Special case for 31.12.1899, which is displayed as 00.01.1900 in Excel
+          l_date = l_date - 1.
+        ENDIF.
       ENDIF.
 
       " Time
@@ -1920,11 +1934,11 @@ METHOD on_match_found.
       lv_prev_val = is_field->dref.
 
       " Empty string
-      IF     l_date IS INITIAL.
+      IF     l_date IS INITIAL .
         " Empty string
         CREATE DATA is_field->dref TYPE string.
         is_field->typ = zcl_xtt_replace_block=>mc_type-string.
-      ELSEIF l_date < 0.
+      ELSEIF l_date < 0 .
         " Use WRITE ... TO
       ELSE.
         GET REFERENCE OF l_date INTO is_field->dref.

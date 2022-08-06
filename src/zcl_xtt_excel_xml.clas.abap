@@ -85,13 +85,13 @@ ENDMETHOD.
 
 
 METHOD on_match_found.
+  CONSTANTS:
+    c_date_start      TYPE d VALUE '18991231'.
   DATA:
     l_start           TYPE i,
-    lv_cell_block_end TYPE string.
-  FIELD-SYMBOLS:
-    <l_string> TYPE csequence,
-    <l_date>   TYPE d,
-    <l_time>   TYPE t.
+    lv_cell_block_end TYPE string,
+    lv_date           TYPE d,
+    lv_time           TYPE t.
 
   " If the exactly in one cell and need number
   l_start = iv_pos_beg - 8.
@@ -110,21 +110,29 @@ METHOD on_match_found.
     CASE is_field->typ.
         " Datetime
       WHEN zcl_xtt_replace_block=>mc_type-datetime.
-        ASSIGN is_field->dref->* TO <l_string>.
+        FIELD-SYMBOLS <lv_string> TYPE csequence.
+        ASSIGN is_field->dref->* TO <lv_string>.
+
+        FIELD-SYMBOLS <lv_date>   TYPE d.
+        FIELD-SYMBOLS <lv_time>   TYPE t.
+        ASSIGN <lv_string>(8)     TO <lv_date> CASTING.
+        ASSIGN <lv_string>+8(6)   TO <lv_time> CASTING.
 
         " Both parts
-        ASSIGN <l_string>(8)     TO <l_date> CASTING.
-        ASSIGN <l_string>+8(6)   TO <l_time> CASTING.
+        lv_date = <lv_date>.
+        lv_time = <lv_time>.
         me->mv_prefix = 'DateTime">'.                      "#EC NO_TEXT
 
         " Date
       WHEN zcl_xtt_replace_block=>mc_type-date.
-        ASSIGN is_field->dref->* TO <l_date>.
+        ASSIGN is_field->dref->* TO <lv_date>.
+        lv_date = <lv_date>.
         me->mv_prefix = 'DateTime">'.                      "#EC NO_TEXT
 
         " Time
       WHEN zcl_xtt_replace_block=>mc_type-time.
-        ASSIGN is_field->dref->* TO <l_time>.
+        ASSIGN is_field->dref->* TO <lv_time>.
+        lv_time = <lv_time>.
         me->mv_prefix = 'DateTime">'.                       "#EC NOTEXT
 
         " Boolean
@@ -143,29 +151,21 @@ METHOD on_match_found.
     " For date and time
     CHECK me->mv_prefix = 'DateTime">'.                     "#EC NOTEXT
 
-    " Date only
-    IF <l_date> IS ASSIGNED.
-      CONCATENATE <l_date>(4) `-` <l_date>+4(2) `-` <l_date>+6(2) `T00:00:00` INTO me->mv_value.
-      REPLACE FIRST OCCURRENCE OF `0000-00-00T` IN me->mv_value WITH `1899-12-31T`.
+    IF <lv_time> IS ASSIGNED AND lv_date IS INITIAL.
+      lv_date = c_date_start.
     ENDIF.
 
-    " Concatenate time
-    IF <l_time> IS ASSIGNED.
-      " Datetime ?
-      IF <l_date> IS ASSIGNED.  " Both parts
-        CONCATENATE me->mv_value(11)  <l_time>(2) `:` <l_time>+2(2) `:` <l_time>+4(2) INTO me->mv_value.
-      ELSE.                     " Just time
-        CONCATENATE `1899-12-31T` <l_time>(2) `:` <l_time>+2(2) `:` <l_time>+4(2) INTO me->mv_value.
+    IF lv_date <= c_date_start AND lv_date IS NOT INITIAL  AND
+       is_field->typ <> zcl_xtt_replace_block=>mc_type-time." Date & datetime
+      CLEAR me->mv_value. " treat as a string
+      me->mv_prefix = `String">`.                           "#EC NOTEXT
+    ELSE.
+      CONCATENATE lv_date(4) `-` lv_date+4(2) `-` lv_date+6(2) `T`
+                  lv_time(2) `:` lv_time+2(2) `:` lv_time+4(2) INTO me->mv_value.
+      IF `1899-12-31T00:00:00` = me->mv_value OR `0000-00-00T00:00:00` = me->mv_value.
+        me->mv_value  = ` `. " Do not reaplace MV_VALUE
+        me->mv_prefix = `String">`.
       ENDIF.
-    ENDIF.
-
-    IF     `1899-12-31T00:00:00` = me->mv_value.
-      me->mv_value  = ` `.
-      me->mv_prefix = `String">`.                           "#EC NOTEXT
-      " Use WRITE ... TO
-    ELSEIF `1899-12-31T`         > me->mv_value.
-      CLEAR me->mv_value.
-      me->mv_prefix = `String">`.                           "#EC NOTEXT
     ENDIF.
   ENDDO.
 

@@ -390,9 +390,9 @@ ENDMETHOD.
       WRITE <l_time> TO l_text.
 
       " Datetime ?
-      IF <l_date> IS ASSIGNED.  " Both parts
+      IF <l_date> IS ASSIGNED AND rv_result IS NOT INITIAL.  " Both parts
         CONCATENATE rv_result ` ` l_text INTO rv_result.
-      ELSE.                     " Just time
+      ELSE.                                                  " Just time
         rv_result = l_text.
       ENDIF.
     ENDIF.

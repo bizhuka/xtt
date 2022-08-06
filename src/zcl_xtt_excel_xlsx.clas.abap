@@ -1934,11 +1934,11 @@ METHOD on_match_found.
       lv_prev_val = is_field->dref.
 
       " Empty string
-      IF     l_date IS INITIAL .
+      IF     l_date IS INITIAL.
         " Empty string
         CREATE DATA is_field->dref TYPE string.
         is_field->typ = zcl_xtt_replace_block=>mc_type-string.
-      ELSEIF l_date < 0 .
+      ELSEIF l_date < 0.
         " Use WRITE ... TO
       ELSE.
         GET REFERENCE OF l_date INTO is_field->dref.
@@ -1953,7 +1953,7 @@ METHOD on_match_found.
 
     " Use WRITE ... TO
     IF l_date < 0.
-      mo_sheet->ms_cell->c_style = ''.
+      " mo_sheet->ms_cell->c_style = ''. keep the same style
       mo_sheet->ms_cell->c_type  = 's'.
       " is_field->typ = zcl_xtt_replace_block=>mc_type-string.
     ENDIF.

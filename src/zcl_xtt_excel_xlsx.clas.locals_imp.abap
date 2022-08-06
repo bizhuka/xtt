@@ -781,6 +781,13 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
        MATCH LENGTH lv_length.
       CHECK sy-subrc = 0.
 
+      " Skip pivot tables
+      LOOP AT mt_pivot_area TRANSPORTING NO FIELDS WHERE row_beg <= ls_cell->c_row     AND row_end >= ls_cell->c_row
+                                                     AND col_beg <= ls_cell->c_col_ind AND col_end >= ls_cell->c_col_ind.
+        EXIT.
+      ENDLOOP.
+      CHECK sy-subrc <> 0.
+
       lv_row_last = ls_cur_pair-position.
       " Set 1 time only
       IF lv_row_first IS INITIAL.

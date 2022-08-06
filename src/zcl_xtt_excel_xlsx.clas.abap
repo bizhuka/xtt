@@ -149,6 +149,10 @@ private section.
     importing
       !IO_SHEET type ref to LCL_EX_SHEET
       !IV_SID type I .
+  methods PIVOT_READ_XML
+    importing
+      !IO_SHEET type ref to LCL_EX_SHEET
+      !IV_PATH type STRING .
   class-methods DATA_VALIDATION_READ_XML
     importing
       !IO_SHEET type ref to LCL_EX_SHEET .
@@ -1737,6 +1741,11 @@ METHOD list_object_read_xml.
   WHILE lo_rel IS BOUND.
     l_val = lo_rel->get_attribute( `Target` ).              "#EC NOTEXT
     lo_rel ?= lo_rel->get_next( ).
+
+    IF l_val CP '../pivotTables/*'.
+      pivot_read_xml( io_sheet = io_sheet
+                      iv_path  = l_val ).
+    ENDIF.
     CHECK l_val CP `../tables/*`.                           "#EC NOTEXT
 
     " Path to table
@@ -1969,6 +1978,45 @@ METHOD on_match_found.
    mo_sheet->ms_cell->c_value(iv_pos_beg)
    l_value
    mo_sheet->ms_cell->c_value+iv_pos_end INTO mo_sheet->ms_cell->c_value RESPECTING BLANKS.
+ENDMETHOD.
+
+
+METHOD pivot_read_xml.
+  DATA lv_path TYPE string.
+  CONCATENATE `xl` iv_path+2 INTO lv_path.                  "#EC NOTEXT
+
+  DATA lo_dom TYPE REF TO if_ixml_document.
+  zcl_eui_conv=>xml_from_zip(
+   EXPORTING io_zip    = mo_zip
+             iv_name   = lv_path
+   IMPORTING eo_xmldoc = lo_dom ).
+
+  DATA lo_area TYPE REF TO if_ixml_element.
+  lo_area = lo_dom->find_from_name( 'location' ).
+  CHECK lo_area IS NOT INITIAL.
+
+  DATA l_val TYPE string.
+  l_val = lo_area->get_attribute( 'ref' ).                  "#EC NOTEXT
+
+  DATA ls_area      TYPE ts_ex_area.
+  DATA ls_area_ref  TYPE REF TO ts_ex_area.
+  GET REFERENCE OF ls_area INTO ls_area_ref.
+  area_read_xml(
+   iv_value = l_val
+   is_area  = ls_area_ref ).
+
+  DATA: ls_cell_beg TYPE REF TO ts_ex_cell, ls_cell_end TYPE REF TO ts_ex_cell.
+  READ TABLE ls_area-a_cells[] INDEX 1 REFERENCE INTO ls_cell_beg.
+  READ TABLE ls_area-a_cells[] INDEX 2 REFERENCE INTO ls_cell_end.
+  CHECK ls_cell_beg IS NOT INITIAL AND ls_cell_end IS NOT INITIAL.
+
+  DATA ls_pivot_area TYPE ts_pivot_area.
+  ls_pivot_area-row_beg = ls_cell_beg->c_row.
+  ls_pivot_area-col_beg = ls_cell_beg->c_col_ind.
+  ls_pivot_area-row_end = ls_cell_end->c_row.
+  ls_pivot_area-col_end = ls_cell_end->c_col_ind.
+
+  APPEND ls_pivot_area TO io_sheet->mt_pivot_area.
 ENDMETHOD.
 
 

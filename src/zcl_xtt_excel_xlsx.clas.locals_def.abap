@@ -93,6 +93,14 @@ TYPES:
   END OF ts_ex_area,
   tt_ex_area TYPE STANDARD TABLE OF ts_ex_area WITH DEFAULT KEY,
 
+  BEGIN OF ts_pivot_area,
+    row_beg TYPE i,
+    row_end TYPE i,
+    col_beg TYPE i,
+    col_end TYPE i,
+  END OF ts_pivot_area,
+  tt_pivot_area TYPE STANDARD TABLE OF ts_pivot_area WITH DEFAULT KEY,
+
   " Range's name in VBA term
   BEGIN OF ts_ex_defined_name,
     d_name      TYPE string,      " Name in the top left combo
@@ -212,6 +220,7 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       mt_rows           TYPE tt_ex_row,
       mt_columns        TYPE tt_ex_column,
       mt_list_objects   TYPE tt_ex_list_object,
+      mt_pivot_area     TYPE tt_pivot_area,
       mt_data_valid     TYPE tt_ex_area,
       mr_autofilter     TYPE REF TO ts_ex_area,
       _t_defined_names  TYPE tt_ex_defined_name,

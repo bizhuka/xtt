@@ -434,7 +434,7 @@ METHOD _cond_format_add_rules.
   FIELD-SYMBOLS <lt_table> TYPE ANY TABLE.
   ASSIGN mr_table->* TO <lt_table>.
 
-  DATA(lt_unq_color) = VALUE tt_unq_color( ).
+  DATA lt_unq_color TYPE tt_unq_color.
 
   FIELD-SYMBOLS <ls_item> TYPE any.
   LOOP AT <lt_table> ASSIGNING <ls_item>.

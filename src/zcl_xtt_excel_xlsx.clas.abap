@@ -39,6 +39,7 @@ private section.
   data MO_SHEET type ref to LCL_EX_SHEET .
   data MO_ZIP type ref to CL_ABAP_ZIP .
   data MT_SHARED_STRINGS type STRINGTAB .
+  data MT_DEFINED_NAME type TT_EX_DEFINED_NAME .
   data _XML_XL_WORKBOOK type ref to ZCL_XTT_XML_UPDATER .
   data _XML_CONTENT_TYPES type ref to ZCL_XTT_XML_UPDATER .
   data _SHEETS_COUNTER type I value 555 ##NO_TEXT.
@@ -142,6 +143,9 @@ private section.
       !IT_DEFINED_NAMES type TT_EX_DEFINED_NAME
     returning
       value(RT_NEW_NAME) type STRINGTAB .
+  methods DEFINED_NAME_READ_XML_WB_SCOPE
+    importing
+      !IS_DEFINED_NAME type TS_EX_DEFINED_NAME .
   methods LIST_OBJECT_READ_XML
     importing
       !IO_SHEET type ref to LCL_EX_SHEET .
@@ -941,6 +945,11 @@ METHOD defined_name_read_xml.
                      CHANGING  ct_areas = ls_defined_name-d_areas ).
     ENDLOOP.
 
+    " Entire workbook scope (is not worksheet related)
+    IF ls_defined_name-d_local_sid IS INITIAL AND lines( lt_value ) = 1.
+      defined_name_read_xml_wb_scope( ls_defined_name ).
+    ENDIF.
+
     " Related to sheet ?
     DELETE ls_defined_name-d_areas WHERE a_sheet_name <> io_sheet->_name.
 
@@ -952,6 +961,17 @@ METHOD defined_name_read_xml.
     lo_node ?= lo_node->get_next( ).
   ENDWHILE.
 ENDMETHOD.
+
+
+  METHOD defined_name_read_xml_wb_scope.
+    CHECK lines( is_defined_name-d_areas ) = 1.
+
+    DATA lr_area TYPE REF TO ts_ex_area.
+    READ TABLE is_defined_name-d_areas REFERENCE INTO lr_area INDEX 1.
+    CHECK sy-subrc = 0 AND lr_area->a_sheet_name IS INITIAL AND lr_area->a_cells[] IS INITIAL.
+
+    INSERT is_defined_name INTO TABLE mt_defined_name[].
+  ENDMETHOD.
 
 
 METHOD defined_name_save_xml.
@@ -2403,7 +2423,7 @@ ENDMETHOD.
 
 METHOD _sheet_save.
   " Results
-  CLEAR et_defined_names.
+  et_defined_names[] = mt_defined_name[]. " CLEAR:
   CLEAR et_new_tags.
 
   DATA lo_sheet TYPE REF TO lcl_ex_sheet.

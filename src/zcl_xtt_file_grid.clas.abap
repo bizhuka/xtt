@@ -279,8 +279,10 @@ METHOD _add_row.
       ENDIF.
     ENDIF.
 
-
-    ASSIGN COMPONENT <ls_field>-fieldname OF STRUCTURE <ls_row> TO <lv_value>.
+    DATA lv_field_name TYPE c LENGTH 30.
+    lv_field_name = <ls_field>-fieldname.
+    REPLACE ALL OCCURRENCES OF '-' IN lv_field_name WITH '_'.
+    ASSIGN COMPONENT lv_field_name OF STRUCTURE <ls_row> TO <lv_value>.
 
     DATA lv_opt TYPE string.
     CLEAR lv_opt.
@@ -295,7 +297,7 @@ METHOD _add_row.
     ENDIF.
 
     DATA lv_value TYPE string.
-    CONCATENATE `{R-` <ls_field>-fieldname lv_opt `}` INTO lv_value.
+    CONCATENATE `{R-` lv_field_name lv_opt `}` INTO lv_value.
 
     " Show only totals.
     IF iv_sum_only = abap_true AND lv_opt IS INITIAL.
@@ -519,6 +521,7 @@ METHOD _get_template_table.
     ls_comp-name = <ls_field>-fieldname.
     ls_comp-type = cl_abap_elemdescr=>get_string( ).
 
+    REPLACE ALL OCCURRENCES OF '-' IN ls_comp-name WITH '_'.
     INSERT ls_comp INTO TABLE lt_comp.
   ENDLOOP.
 
@@ -571,11 +574,18 @@ METHOD _new_catalog.
 
   FIELD-SYMBOLS <ls_src>  LIKE LINE OF mt_catalog.
   FIELD-SYMBOLS <ls_dest> LIKE LINE OF rt_catalog.
-  LOOP AT rt_catalog ASSIGNING <ls_dest>.
-    READ TABLE mt_catalog ASSIGNING <ls_src> WITH KEY fieldname = <ls_dest>-fieldname.
-    CHECK sy-subrc = 0.
 
-    <ls_dest>-coltext = <ls_src>-coltext.
+  LOOP AT rt_catalog ASSIGNING <ls_dest>.
+
+    LOOP AT mt_catalog ASSIGNING <ls_src>.
+      DATA lv_field_name TYPE c LENGTH 30.
+      lv_field_name = <ls_src>-fieldname.
+      REPLACE ALL OCCURRENCES OF '-' IN lv_field_name WITH '_'.
+
+      CHECK <ls_dest>-fieldname = lv_field_name.
+      <ls_dest>-coltext = <ls_src>-coltext.
+      EXIT.
+    ENDLOOP.
   ENDLOOP.
 ENDMETHOD.
 ENDCLASS.

@@ -295,14 +295,14 @@ CLASS lcl_report IMPLEMENTATION.
     ENDIF.
 
     DATA lt_sub_field TYPE zcl_eui_type=>tt_field_desc.
-    lt_sub_field = _merge_get_sub_fields( is_root    = is_root
-                                          iv_root_id = iv_root_id ).
+    lt_sub_field = _get_sub_fields( is_root    = is_root
+                                    iv_root_id = iv_root_id ).
     _merge_add_sub_fields_to_alv( is_root      = is_root
                                   iv_root_id   = iv_root_id
                                   it_sub_field = lt_sub_field ).
   ENDMETHOD.
 
-  METHOD _merge_get_sub_fields.
+  METHOD _get_sub_fields.
     DATA lo_error TYPE REF TO zcx_eui_exception.
     TRY.
         DATA ls_field_desc TYPE zcl_eui_type=>ts_field_desc.
@@ -503,8 +503,41 @@ CLASS lcl_report IMPLEMENTATION.
         ir_table       = lr_table
         it_mod_catalog = lt_catalog.
 
+    _check_has_sub_tables( io_alv   = lo_alv
+                           it_table = <lt_table> ).
     lo_alv->popup( ).
     lo_alv->show( ).
+  ENDMETHOD.
+
+  METHOD _check_has_sub_tables.
+    DATA lt_sub_field TYPE zcl_eui_type=>tt_field_desc.
+    lt_sub_field = _get_sub_fields( is_root    = it_table
+                                    iv_root_id = '' ).
+
+    FIELD-SYMBOLS <ls_sub_field> LIKE LINE OF lt_sub_field.
+    DATA lv_has_sub_table TYPE abap_bool.
+    LOOP AT lt_sub_field ASSIGNING <ls_sub_field>.
+      <ls_sub_field>-label = <ls_sub_field>-name.
+
+      CHECK <ls_sub_field>-ui_type = zcl_eui_type=>mc_ui_type-table.
+      lv_has_sub_table = abap_true.
+
+      DATA lt_sub2 LIKE lt_sub_field.
+      zcl_eui_conv=>from_json( EXPORTING iv_json = <ls_sub_field>-sub_fdesc
+                               IMPORTING ex_data = lt_sub2 ).
+
+      FIELD-SYMBOLS <ls_sub2> LIKE LINE OF lt_sub2.
+      LOOP AT lt_sub2 ASSIGNING <ls_sub2>.
+        <ls_sub2>-label = <ls_sub2>-name.
+      ENDLOOP.
+      <ls_sub_field>-sub_fdesc = zcl_eui_conv=>to_json( im_data = lt_sub2 ).
+    ENDLOOP.
+
+    CHECK lv_has_sub_table = abap_true.
+    DATA ls_field_desc TYPE REF TO zcl_eui_type=>ts_field_desc.
+    CREATE DATA ls_field_desc.
+    ls_field_desc->sub_fdesc = zcl_eui_conv=>to_json( im_data = lt_sub_field ).
+    io_alv->set_field_desc( ls_field_desc ).
   ENDMETHOD.
 
   METHOD _on_top_of_page.
@@ -629,7 +662,8 @@ CLASS lcl_report IMPLEMENTATION.
 
       " Special XML symbols <>
       ls_no_sum-caption = sy-index.
-      CONCATENATE `<Caption ` ls_no_sum-caption `/>` INTO ls_no_sum-caption.
+      CONDENSE ls_no_sum-caption.
+      CONCATENATE `<Caption ` ls_no_sum-caption ` />` INTO ls_no_sum-caption.
 
       " Date
       lv_int = mo_rand_i->get_next( ).
@@ -651,21 +685,31 @@ CLASS lcl_report IMPLEMENTATION.
       APPEND INITIAL LINE TO et_table ASSIGNING <ls_item>.
       MOVE-CORRESPONDING ls_no_sum TO <ls_item>.
 
+      " For 092 example
+      FIELD-SYMBOLS <lt_sums> TYPE tt_sums_alv.
+      ASSIGN COMPONENT 'T_SUMS' OF STRUCTURE <ls_item> TO <lt_sums>.
+
       " Fill R-T-SUM*
       DO iv_column_cnt TIMES.
         " Get column name
         lv_column = sy-index.
         CONDENSE lv_column.
-        CONCATENATE `SUM` lv_column INTO lv_column.
 
-        " Exist ?
-        ASSIGN COMPONENT lv_column OF STRUCTURE <ls_item> TO <lv_sum>.
-        IF sy-subrc <> 0.
-          zcx_xtt_exception=>raise_dump( iv_message = 'Check data structure'(cds) ).
+        IF <lt_sums> IS ASSIGNED.
+          APPEND INITIAL LINE TO <lt_sums> ASSIGNING <lv_sum> CASTING.
+        ELSE.
+          " Fields like SUM1, SUM2 ...
+          CONCATENATE `SUM` lv_column INTO lv_column.
+
+          " Exist ?
+          ASSIGN COMPONENT lv_column OF STRUCTURE <ls_item> TO <lv_sum>.
+          IF sy-subrc <> 0.
+            zcx_xtt_exception=>raise_dump( iv_message = 'Check data structure'(cds) ).
+          ENDIF.
         ENDIF.
 
         " Show with decimals
-        <lv_sum> = mo_rand_p->get_next( ).                  " / 100
+        <lv_sum> = mo_rand_p->get_next( ).
         <lv_sum> = <lv_sum> / 100.
       ENDDO.
     ENDDO.

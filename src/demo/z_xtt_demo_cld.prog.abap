@@ -13,8 +13,8 @@ TYPES:
 
   " Random table data
   BEGIN OF ts_rand_data,
-    group   TYPE string,
-    caption TYPE string,
+    group   TYPE text100, "string,
+    caption TYPE text100, "string,
     date    TYPE d,
     sum1    TYPE bf_rbetr, " P with sign
     sum2    TYPE bf_rbetr, " P with sign
@@ -22,10 +22,17 @@ TYPES:
   tt_rand_data TYPE STANDARD TABLE OF ts_rand_data WITH DEFAULT KEY,
 
   BEGIN OF ts_no_sum,
-    group   TYPE string,
-    caption TYPE string,
+    group   TYPE text100, "string,
+    caption TYPE text100, "string,
     date    TYPE d,
   END OF ts_no_sum,
+
+  " Dynamic columns new syntax
+*  tt_sums TYPE STANDARD TABLE OF bf_rbetr WITH DEFAULT KEY,
+  BEGIN OF ts_sum_alv,
+    sum TYPE bf_rbetr, " Just 1 field for alv only
+  END OF ts_sum_alv,
+  tt_sums_alv TYPE STANDARD TABLE OF ts_sum_alv WITH DEFAULT KEY,
 
   BEGIN OF ts_grid_params,
     r_table   TYPE REF TO data,
@@ -280,7 +287,7 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
 
       _update_demo_listbox,
 
-      _merge_get_sub_fields
+      _get_sub_fields
         IMPORTING
                   is_root             TYPE any
                   iv_root_id          TYPE string
@@ -336,6 +343,9 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
         RETURNING VALUE(rt_catalog) TYPE lvc_t_fcat,
 
       _make_toolbar
-        RETURNING VALUE(rt_toolbar) TYPE ttb_button.
+        RETURNING VALUE(rt_toolbar) TYPE ttb_button,
+
+      _check_has_sub_tables IMPORTING io_alv   TYPE REF TO zcl_eui_alv
+                                      it_table TYPE ANY TABLE.
 ENDCLASS.
 **********************************************************************

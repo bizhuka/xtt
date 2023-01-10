@@ -823,7 +823,7 @@ METHOD constructor.
 
    _xml_content_types EXPORTING io_zip  = mo_zip iv_path = '[Content_Types].xml' "#EC NOTEXT
      " Append mode for file
-      iv_str_tag = `Types`.                                  "#EC NOTEXT
+      iv_str_tag = `Types`.                                 "#EC NOTEXT
 
   DATA lo_workbook TYPE REF TO if_ixml_document.
   lo_workbook = _xml_xl_workbook->obj_get_document( ).
@@ -836,22 +836,30 @@ METHOD constructor.
   ENDIF.
 
 ***************************************
-  " Read sheets
-  DATA lo_sheet TYPE REF TO lcl_ex_sheet.
-  DATA lo_node  TYPE REF TO if_ixml_element.
+  DATA lt_index TYPE lcl_ex_sheet=>tt_index.
+  lt_index = lcl_ex_sheet=>get_sheet_indices( mo_zip ).
+  SORT lt_index BY table_line.
 
+  " Read sheets
+  DATA lo_node TYPE REF TO if_ixml_element.
   lo_node = lo_workbook->find_from_name( 'sheet' ).         "#EC NOTEXT
   WHILE lo_node IS BOUND.
     DATA lv_index TYPE string.
     int_2_text sy-index lv_index.
 
-    " Prepare and add
-    CREATE OBJECT lo_sheet
-      EXPORTING
-        iv_index = lv_index
-        io_xlsx  = me.
-    lo_sheet->defined_names_read( io_node = lo_node ).
-    APPEND lo_sheet TO mt_sheets.
+    " Ok ?
+    READ TABLE lt_index TRANSPORTING NO FIELDS BINARY SEARCH
+     WITH KEY table_line = lv_index.
+    IF sy-subrc = 0.
+      " Prepare and add
+      DATA lo_sheet TYPE REF TO lcl_ex_sheet.
+      CREATE OBJECT lo_sheet
+        EXPORTING
+          iv_index = lv_index
+          io_xlsx  = me.
+      lo_sheet->defined_names_read( io_node = lo_node ).
+      APPEND lo_sheet TO mt_sheets.
+    ENDIF.
 
     " Next
     lo_node ?= lo_node->get_next( ).

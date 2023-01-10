@@ -1,6 +1,28 @@
 **********************************************************************
 **********************************************************************
 CLASS lcl_ex_sheet IMPLEMENTATION.
+  METHOD get_sheet_indices.
+    DATA lo_workbook_rels TYPE REF TO if_ixml_document.
+    zcl_eui_conv=>xml_from_zip( EXPORTING io_zip    = io_zip
+                                          iv_name   = 'xl/_rels/workbook.xml.rels'
+                                IMPORTING eo_xmldoc = lo_workbook_rels ).
+    DATA lo_node  TYPE REF TO if_ixml_element.
+    lo_node = lo_workbook_rels->find_from_name( 'Relationship' ).
+    WHILE lo_node IS BOUND.
+      DATA lv_target TYPE string.
+      lv_target = lo_node->get_attribute( 'Target' ).
+      IF lv_target CP 'worksheets/sheet*'.
+        REPLACE FIRST OCCURRENCE OF: 'worksheets/sheet' IN lv_target WITH ``,
+                                     '.xml'             IN lv_target WITH ``.
+
+        DATA lv_index TYPE syindex.
+        lv_index = lv_target.
+        APPEND lv_index TO rt_index.
+      ENDIF.
+
+      lo_node ?= lo_node->get_next( ).
+    ENDWHILE.
+  ENDMETHOD.
 *--------------------------------------------------------------------*
   METHOD constructor.
     " Set owner

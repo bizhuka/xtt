@@ -240,6 +240,12 @@ CLASS lcl_ex_sheet DEFINITION FINAL.
       " New offsets
       _t_cell_ref       TYPE tt_cell_ref.
 
+    TYPES:
+       tt_index TYPE STANDARD TABLE OF syindex WITH DEFAULT KEY.
+    CLASS-METHODS:
+      get_sheet_indices IMPORTING io_zip TYPE REF TO cl_abap_zip
+                        RETURNING VALUE(rt_index) TYPE tt_index.
+
     METHODS:
       constructor
         IMPORTING

@@ -38,7 +38,7 @@ CLASS lcl_demo_120 DEFINITION FINAL INHERITING FROM lcl_demo.
     DATA a TYPE REF TO data. "#EC NEEDED tt_demo_120_attr, Cannot show in ALV
     DATA date TYPE d.                                     "#EC NEEDED 8
     DATA time TYPE t.                                     "#EC NEEDED 6
-    DATA datetime TYPE cpet_reftimestamp. "#EC NEEDED 14 = date(8) + time(6)
+    DATA datetime TYPE char14. "#EC NEEDED 14 = date(8) + time(6)
 
   PROTECTED SECTION.
     METHODS:

@@ -33,7 +33,7 @@ CLASS lcl_demo_020 IMPLEMENTATION.
         t        TYPE tt_rand_data,      " internal flat table ( In template {R-T} )
         date     TYPE d,                 " 8
         time     TYPE t,                 " 6
-        datetime TYPE cpet_reftimestamp, " 14 = date(8) + time(6)
+        datetime TYPE char14,            " 14 = date(8) + time(6)
       END OF ts_root.
     DATA ls_root TYPE ts_root.
 

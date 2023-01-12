@@ -36,7 +36,7 @@ CLASS lcl_demo_040 IMPLEMENTATION.
         bool     TYPE abap_bool,
         int      TYPE i,
         sum      TYPE p LENGTH 13 DECIMALS 2,
-        datetime TYPE cpet_reftimestamp, " 14 = date(8) + time(6)
+        datetime TYPE char14, " 14 = date(8) + time(6)
         u        TYPE STANDARD TABLE OF t006a WITH DEFAULT KEY,
         c        TYPE STANDARD TABLE OF t005t WITH DEFAULT KEY,
       END OF ts_root.

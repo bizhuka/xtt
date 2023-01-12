@@ -73,9 +73,11 @@ protected section.
       has_axe TYPE abap_bool,
     END OF ts_log_xml .
 
+  data MO_FILE type ref to ZIF_XTT_FILE .
   data MV_FILE_NAME type STRING .
   data MV_OLE_EXT type STRING .
   data MV_SKIP_TAGS type ABAP_BOOL .
+  data MS_LOG_PROFILE type BAL_S_PROF .
   data _LOGGER type ref to ZCL_EUI_LOGGER .
   data _SCOPES type TT_SCOPES .
 
@@ -219,9 +221,10 @@ METHOD constructor.
   DATA lo_no_check TYPE REF TO zcx_eui_no_check.
   _logger_init( ).
 
+  mo_file    = io_file.
   mv_ole_ext = iv_ole_ext.
   TRY.
-      mv_file_name = io_file->get_name( ).
+      mv_file_name = mo_file->get_name( ).
     CATCH zcx_eui_no_check INTO lo_no_check.
       add_log_message( io_exception = lo_no_check ).
   ENDTRY.
@@ -470,9 +473,11 @@ METHOD zif_xtt~download.
   ENDDO.
 
   " And finally show logs
-  _logger->show_as_button( iv_write_message = 'Please read logs for finding issues'(prl) ).
+  _logger->show_as_button( iv_write_message = 'Please read logs for finding issues'(prl)
+                           is_profile       = ms_log_profile ).
   CHECK _logger->has_messages( iv_msg_types = zcl_eui_logger=>mc_msg_types-error ) = abap_true.
-  _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup ).
+  _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup
+                 is_profile = ms_log_profile ).
 ENDMETHOD.
 
 
@@ -630,9 +635,10 @@ METHOD zif_xtt~show.
     ENDTRY.
 
     " If has logs show them
-    _logger->show_as_button( ).
+    _logger->show_as_button( is_profile = ms_log_profile ).
     IF _logger->has_messages( iv_msg_types = zcl_eui_logger=>mc_msg_types-error ) = abap_true.
-      _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup ).
+      _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup
+                     is_profile = ms_log_profile ).
     ENDIF.
 
     lv_file_name = mv_file_name.
@@ -738,5 +744,12 @@ METHOD _logger_init.
     EXPORTING
       iv_msg_types = lv_msg_types
       iv_unique    = abap_true.
+
+  ms_log_profile-use_grid = abap_true.
+  ms_log_profile-start_col = ms_log_profile-start_row = 3.
+
+* change pf-status
+  ms_log_profile-clbk_pbo-userexitp  = 'Z_XTT_TEMPLATE_013_ERR_REPAIR'.
+  ms_log_profile-clbk_pbo-userexitf  = 'LOGGER_CALLBACK_PBO'.
 ENDMETHOD.
 ENDCLASS.

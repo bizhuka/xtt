@@ -5,6 +5,7 @@ class ZCL_XTT_XML_BASE definition
 
 public section.
   type-pools ABAP .
+  type-pools ICON .
   class ZCL_XTT_REPLACE_BLOCK definition load .
 
   methods CONSTRUCTOR
@@ -25,7 +26,10 @@ public section.
     redefinition .
   methods ZIF_XTT~MERGE
     redefinition .
+  methods ADD_LOG_MESSAGE
+    redefinition .
 protected section.
+  TYPES STRING_STAB TYPE SORTED TABLE OF STRING WITH UNIQUE KEY TABLE_LINE.
 
   data MV_BODY_TAG type STRING .
   data MV_ROW_TAG type STRING .
@@ -34,6 +38,7 @@ protected section.
   data MV_VALUE type STRING .
   data MV_PREFIX type STRING .
   data MV_PATH type STRING .
+  data MT_NAMES type STRING_STAB.
 
   methods BOUNDS_FROM_BODY
     importing
@@ -99,6 +104,35 @@ ENDCLASS.
 
 
 CLASS ZCL_XTT_XML_BASE IMPLEMENTATION.
+
+
+METHOD add_log_message.
+  DATA lv_chars_skipped_within_block TYPE abap_bool.
+  IF iv_syst = abap_true AND sy-msgid = 'ZSY_XTT' AND sy-msgno = 013.
+    lv_chars_skipped_within_block = abap_true.
+  ENDIF.
+
+  super->add_log_message(
+    iv_syst      = iv_syst
+    iv_text      = iv_text
+    io_exception = io_exception
+    iv_msgty     = iv_msgty ).
+
+  CHECK lv_chars_skipped_within_block = abap_true.
+
+* define a new pushbutton
+  ms_log_profile-ext_push1-active        = 'X'.
+  ms_log_profile-ext_push1-def-icon_id   = icon_doc.
+  ms_log_profile-ext_push1-def-icon_text = 'Repair the template'(rep).
+
+* define callback to react on this pushbutton
+  ms_log_profile-clbk_ucom-userexitp = 'Z_XTT_TEMPLATE_013_ERR_REPAIR'.
+  ms_log_profile-clbk_ucom-userexitf = 'LOGGER_CALLBACK_UCOMM'.
+
+  PERFORM set_template IN PROGRAM z_xtt_template_013_err_repair
+   USING me
+         mo_file.
+ENDMETHOD.
 
 
 METHOD bounds_from_body.
@@ -262,6 +296,8 @@ METHOD do_merge.
 
   DATA lr_field TYPE REF TO zcl_xtt_replace_block=>ts_field.
   LOOP AT io_block->mt_fields REFERENCE INTO lr_field.
+    INSERT lr_field->name INTO TABLE mt_names.
+
     CASE lr_field->typ.
 
         " merge-2 Structures and objects

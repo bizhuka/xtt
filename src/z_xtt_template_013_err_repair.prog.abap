@@ -103,12 +103,18 @@ CLASS lcl_repair IMPLEMENTATION.
     CREATE OBJECT __zip.
     __zip->load( __content ).
 
-    _replace_1_in_zip( 'word/document.xml' ).
+    DATA lt_all TYPE STANDARD TABLE OF string.
+    APPEND 'word/document.xml' TO lt_all[].
 
     FIELD-SYMBOLS <ls_file> LIKE LINE OF __zip->files.
     LOOP AT __zip->files ASSIGNING <ls_file> WHERE name CP 'word/header*.xml'
                                                 OR name CP 'word/footer*.xml'.
-      _replace_1_in_zip( <ls_file>-name ).
+      APPEND <ls_file>-name TO lt_all.
+    ENDLOOP.
+
+    DATA lv_file TYPE string.
+    LOOP AT lt_all INTO lv_file.
+      _replace_1_in_zip( lv_file ).
     ENDLOOP.
 
     __content = __zip->save( ).

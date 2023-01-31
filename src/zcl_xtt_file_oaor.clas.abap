@@ -15,9 +15,9 @@ public section.
       !IV_OBJECT_KEY type SBDST_OBJECT_KEY
       !IV_FILENAME type CSEQUENCE .
 protected section.
-private section.
+PRIVATE SECTION.
 
-  types:
+  TYPES:
     BEGIN OF ts_signature,
       objid            TYPE bapicompo2-objid,
       file_name        TYPE bapicompo2-file_name,
@@ -26,8 +26,8 @@ private section.
       class            TYPE sdok_class,
 *    bds_documenttype  TYPE string,
 *    bds_documentclass TYPE string,
-*    created_at        TYPE string,
-*    created_by        TYPE string,
+      created_at       TYPE string,
+      created_by       TYPE string,
       description      TYPE string,
       language         TYPE string,
 *    last_changed_at   TYPE string,
@@ -35,7 +35,7 @@ private section.
 *    state             TYPE string,
       storage_category TYPE text128,
     END OF ts_signature .
-  types:
+  TYPES:
     BEGIN OF ts_key,
       classname  TYPE sbdst_classname,
       classtype  TYPE sbdst_classtype,
@@ -43,11 +43,11 @@ private section.
       filename   TYPE string,
     END OF ts_key .
 
-  data MS_KEY type TS_KEY .
+  DATA ms_key TYPE ts_key .
 
-  methods _READ_SIGNATURE
-    returning
-      value(RS_SIGNATURE) type TS_SIGNATURE .
+  METHODS _read_signature
+    RETURNING
+      VALUE(rs_signature) TYPE ts_signature .
 ENDCLASS.
 
 
@@ -199,7 +199,7 @@ METHOD _read_signature.
   DELETE lt_signature WHERE file_name <> ms_key-filename.
 
   " Max versions first
-  SORT lt_signature BY doc_id doc_ver_no DESCENDING.
+  SORT lt_signature BY created_at DESCENDING.
 
   " Read the last version
   READ TABLE lt_signature INTO rs_signature INDEX 1.

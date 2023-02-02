@@ -1,21 +1,25 @@
-CLASS zcl_xtt_template_maker DEFINITION
-  PUBLIC
-  FINAL
-  CREATE PUBLIC.
+class ZCL_XTT_TEMPLATE_MAKER definition
+  public
+  final
+  create public .
 
-  PUBLIC SECTION.
-    TYPE-POOLS abap.
+public section.
+  type-pools ABAP .
 
-    CLASS-METHODS:
-      get_structure IMPORTING is_root        TYPE any
-                              iv_as_char     TYPE abap_bool OPTIONAL
-                              iv_prefix      TYPE string OPTIONAL
-                    RETURNING VALUE(rr_root) TYPE REF TO data,
-
-      get_one_line_table IMPORTING it_table        TYPE ANY TABLE
-                                   iv_as_char      TYPE abap_bool OPTIONAL
-                                   iv_name         TYPE string DEFAULT 'T'
-                         RETURNING VALUE(rr_table) TYPE REF TO data.
+  class-methods GET_STRUCTURE
+    importing
+      !IS_ROOT type ANY
+      !IV_AS_CHAR type ABAP_BOOL default ABAP_TRUE
+      !IV_PREFIX type STRING optional
+    returning
+      value(RR_ROOT) type ref to DATA .
+  class-methods GET_ONE_LINE_TABLE
+    importing
+      !IT_TABLE type ANY TABLE
+      !IV_AS_CHAR type ABAP_BOOL default ABAP_TRUE
+      !IV_NAME type STRING default 'T'
+    returning
+      value(RR_TABLE) type ref to DATA .
   PROTECTED SECTION.
   PRIVATE SECTION.
 ENDCLASS.

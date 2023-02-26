@@ -13,7 +13,6 @@
    </VSEOCLASS>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT_IMAGE</CLSNAME>
      <CMPNAME>CREATE_IMAGE</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Use {;type=image} in template instead. (!Internal use only!)</DESCRIPT>

@@ -2,9 +2,15 @@
 *&---------------------------------------------------------------------*
 REPORT z_xtt_template_013_err_repair.
 
+PARAMETERS:
+ p_file TYPE string LOWER CASE DEFAULT 'D:\Users\moldab\Desktop\ZEP_029_MOM_GRANT_LOAN.docx'.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
 CLASS lcl_repair DEFINITION INHERITING FROM zcl_xtt_xml_base FINAL.
   PUBLIC SECTION.
     CLASS-METHODS:
+      start_of_selection,
       init IMPORTING io_xtt  TYPE any
                      io_file TYPE REF TO zif_xtt_file,
       repair.
@@ -24,6 +30,38 @@ CLASS lcl_repair DEFINITION INHERITING FROM zcl_xtt_xml_base FINAL.
 ENDCLASS.
 
 CLASS lcl_repair IMPLEMENTATION.
+  METHOD start_of_selection.
+    TRY.
+        DATA lo_file TYPE REF TO zcl_eui_file.
+        CREATE OBJECT lo_file.
+        lo_file->import_from_file( iv_full_path = p_file ).
+
+        DATA lo_error TYPE REF TO zcx_eui_exception.
+      CATCH zcx_eui_exception INTO lo_error.
+        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+        RETURN.
+    ENDTRY.
+
+    DATA lo_xtt_file TYPE REF TO zif_xtt_file.
+    CREATE OBJECT lo_xtt_file TYPE zcl_xtt_file_raw
+      EXPORTING
+        iv_name    = 'ok.docx'
+        iv_xstring = lo_file->mv_xstring.
+
+    DATA lo_xtt TYPE REF TO zcl_xtt_xml_base.
+    CREATE OBJECT lo_xtt TYPE zcl_xtt_word_docx EXPORTING io_file = lo_xtt_file.
+
+    " TODO
+    APPEND '' TO lo_xtt->mt_names[].
+    APPEND '' TO lo_xtt->mt_names[].
+    APPEND '' TO lo_xtt->mt_names[].
+
+    init( io_file = lo_xtt_file
+          io_xtt  = lo_xtt ).
+
+    repair( ).
+  ENDMETHOD.
+
   METHOD init.
     __file = io_file.
     __xtt ?= io_xtt.
@@ -96,6 +134,7 @@ CLASS lcl_repair IMPLEMENTATION.
       ENDDO.
 
       REPLACE ALL OCCURRENCES OF REGEX lv_regexed_name IN cv_document WITH lv_name.
+      WRITE: sy-subrc, lv_name, lv_regexed_name.
     ENDLOOP.
   ENDMETHOD.
 
@@ -160,3 +199,9 @@ FORM logger_callback_ucomm                                  "#EC CALLED
   CHECK cs_user_command-ucomm = '%EXT_PUSH1'.
   lcl_repair=>repair( ).
 ENDFORM.
+
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+
+START-OF-SELECTION.
+  lcl_repair=>start_of_selection( ).

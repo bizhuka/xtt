@@ -22,84 +22,79 @@
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>ADD_LOG_MESSAGE</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Add warning</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>ADD_RAW_EVENT</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>For archive files more event to update XML files in zip</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>BOUNDS_SPLIT</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Split content to header, body and footer</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>CONSTRUCTOR</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>CONSTRUCTOR</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>MO_DEBUG</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Export|Import report info</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>MO_FILE</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Info about template</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>MT_RAW_EVENT</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Additional paths in archive</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>ON_MATCH_FOUND</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Call back for Replace-&gt;FIND_MATCH</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>PREPARE_RAW</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Use for XML parsing (In the end of GET_RAW)</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>RAISE_RAW_EVENTS</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Before the main event</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>TS_BOUNDS</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Fill the strucure from top to bottom (results)</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>_LOGGER</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Logger</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT</CLSNAME>
      <CMPNAME>_LOGGER_AS_XML</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Log info only for WF &amp; web dynpro</DESCRIPT>
     </SEOCOMPOTX>
    </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>BOUNDS_SPLIT</CMPNAME>
+     <SCONAME>CS_BOUNDS</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Fill the strucure from top to bottom (results)</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
   </asx:values>
  </asx:abap>
 </abapGit>

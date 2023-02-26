@@ -6,22 +6,16 @@
    <TEXT>3D example (sheets, columns and rows)</TEXT>
    <PARAMS>
     <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZXXT_DEMO_091-XLSX</OBJID>
+     <NAME>fileextension</NAME>
+     <VALUE>.XLSX</VALUE>
+    </WWWPARAMS>
+    <WWWPARAMS>
      <NAME>filename</NAME>
      <VALUE>ZXXT_DEMO_091.XLSX</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZXXT_DEMO_091-XLSX</OBJID>
      <NAME>mimetype</NAME>
      <VALUE>application/msexcel</VALUE>
-    </WWWPARAMS>
-    <WWWPARAMS>
-     <RELID>MI</RELID>
-     <OBJID>ZXXT_DEMO_091-XLSX</OBJID>
-     <NAME>fileextension</NAME>
-     <VALUE>.XLSX</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

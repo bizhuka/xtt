@@ -13,19 +13,16 @@
    </VSEOCLASS>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
      <CMPNAME>CREATE_ROOT</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Create dynamic root for merge( )</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
      <CMPNAME>HIDE_EXCEL_WARNING</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Don&apos;t recomend to use! You can change file ext in SMWO</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
-     <CLSNAME>ZCL_XTT_UTIL</CLSNAME>
      <CMPNAME>IS_COMMON_GUI</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Normal mode (OR batch OR Web-gui)</DESCRIPT>

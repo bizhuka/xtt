@@ -453,7 +453,7 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
                    ls_defined_name-d_local_sid.
       ENDIF.
 
-      LOOP AT lr_defined_name->d_areas REFERENCE INTO ls_area.
+      LOOP AT ls_defined_name-d_areas REFERENCE INTO ls_area.  " lr_defined_name->
         ls_area->a_sheet_name = me->_name.
         replace_with_new(
          EXPORTING
@@ -466,8 +466,12 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
       ENDLOOP.
 
       " Delete old range name
-      CHECK lv_skip_name <> abap_true.
-      INSERT lr_defined_name->* INTO TABLE ct_defined_names.
+      IF lv_skip_name <> abap_true.
+        INSERT ls_defined_name INTO TABLE ct_defined_names. " lr_defined_name->*
+      ENDIF.
+
+      lr_defined_name->d_areas = ls_defined_name-d_areas.
+      lr_defined_name->d_count = ls_defined_name-d_count.
     ENDLOOP.
     " Add new names
     INSERT LINES OF lt_defined_name INTO TABLE ct_defined_names.
@@ -903,9 +907,22 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
         io_xlsx  = me->mo_xlsx.
     int_2_text iv_new_index ro_copy->_index.
     ro_copy->defined_names_read( io_src = me ).
+
+    DATA lv_prev_name TYPE string.
+    lv_prev_name = ro_copy->_name.
     ro_copy->_name = zcl_xtt_html=>format( iv_template  = me->_name
                                            is_root      = is_block
                                            iv_root_name = iv_block_name ).
+    " New sheet name
+    DATA ls_defined_name TYPE REF TO ts_ex_defined_name.
+    DATA ls_area         TYPE REF TO ts_ex_area.
+    LOOP AT ro_copy->_t_defined_names REFERENCE INTO ls_defined_name.
+      LOOP AT ls_defined_name->d_areas REFERENCE INTO ls_area WHERE a_sheet_name = lv_prev_name.
+        ls_area->a_sheet_name = ro_copy->_name.
+        REPLACE ALL OCCURRENCES OF lv_prev_name IN ls_area->a_original_value
+                                   WITH ro_copy->_name.
+      ENDLOOP.
+    ENDLOOP.
 
     IF ro_copy->_name IS INITIAL.
       zcx_xtt_exception=>raise_dump( iv_message = 'Sheet name is initial'(shi) ).

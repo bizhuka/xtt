@@ -20,6 +20,8 @@ protected section.
     redefinition .
   methods _LOGGER_AS_XML
     redefinition .
+  methods _GET_FILE_NAME
+    redefinition .
 PRIVATE SECTION.
 ENDCLASS.
 
@@ -73,9 +75,6 @@ METHOD constructor.
    "iv_line_break = '' ?
    iv_page_break = '<breakAfter targetType="pageArea"/>'    "#EC NOTEXT
   ).
-
-  " Change extension
-  REPLACE ALL OCCURRENCES OF `.xdp` IN mv_file_name WITH `.pdf` IGNORING CASE. "#EC NOTEXT
 ENDMETHOD.
 
 
@@ -238,6 +237,13 @@ METHOD zif_xtt~get_raw.
   " Return as xstring
   CLEAR rv_content.
   lo_pdfobj->get_pdf( IMPORTING pdfdata = rv_content ).
+ENDMETHOD.
+
+
+METHOD _get_file_name.
+  rv_file_name = super->_get_file_name( iv_mode ).
+  " Change extension
+  REPLACE ALL OCCURRENCES OF `.xdp` IN rv_file_name WITH `.pdf` IGNORING CASE. "#EC NOTEXT
 ENDMETHOD.
 
 

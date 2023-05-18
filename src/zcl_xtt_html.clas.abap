@@ -26,8 +26,6 @@ protected section.
   methods _LOGGER_AS_XML
     redefinition .
 private section.
-
-  data MV_AS_EMAIL_BODY type ABAP_BOOL .
 ENDCLASS.
 
 
@@ -43,7 +41,9 @@ METHOD constructor.
    iv_line_break  = '<br/>' ).
 
   " Template as email body
-  mv_as_email_body = iv_as_email_body.
+  IF iv_as_email_body = abap_true.
+    mv_attach = abap_false.
+  ENDIF.
 
   " Skip MESSAGE w008(zsy_xtt).
   _logger->skip( iv_msgid = 'ZSY_XTT'
@@ -97,14 +97,13 @@ ENDMETHOD.
 
 METHOD zif_xtt~send.
   DATA:
-    lv_body      TYPE string,
-    lv_file_name LIKE mv_file_name.
+    lv_body      TYPE string.
 
   " Default body
   lv_body = iv_body.
 
   " Only if no body
-  IF lv_body IS INITIAL AND mv_as_email_body = abap_true.
+  IF lv_body IS INITIAL AND mv_attach <> abap_true.
     " Get as HTML text. lv_raw =
     " Raise events to change content
     get_raw( iv_no_warning = abap_true ).
@@ -112,10 +111,6 @@ METHOD zif_xtt~send.
     " None UTF-8 system?
     " lv_body = zcl_eui_conv=>xstring_to_string( lv_raw ).
     lv_body = mv_file_content.
-
-    " Do not have any attachments
-    lv_file_name = mv_file_name.
-    CLEAR mv_file_name.
   ENDIF.
 
   super->send(
@@ -126,11 +121,6 @@ METHOD zif_xtt~send.
     iv_express        = iv_express
     io_sender         = io_sender
     iv_commit         = iv_commit ).
-
-  " Set it back
-  IF lv_file_name IS NOT INITIAL.
-    mv_file_name = lv_file_name.
-  ENDIF.
 ENDMETHOD.
 
 

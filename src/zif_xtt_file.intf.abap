@@ -1,12 +1,15 @@
-interface ZIF_XTT_FILE
-  public .
+INTERFACE zif_xtt_file
+  PUBLIC.
 
+  CONSTANTS: BEGIN OF ms_name,
+               tech TYPE i VALUE 0,
+               verb TYPE i VALUE 1,
+             END OF ms_name.
 
-  methods GET_NAME
-    returning
-      value(RV_NAME) type STRING .
-  methods GET_CONTENT
-    exporting
-      !EV_AS_STRING type STRING
-      !EV_AS_XSTRING type XSTRING .
-endinterface.
+  METHODS get_name IMPORTING iv_mode        TYPE i DEFAULT ms_name-tech
+                   RETURNING VALUE(rv_name) TYPE string.
+
+  METHODS get_content EXPORTING
+                        ev_as_string  TYPE string
+                        ev_as_xstring TYPE xstring.
+ENDINTERFACE.

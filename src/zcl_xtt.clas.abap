@@ -74,7 +74,7 @@ protected section.
     END OF ts_log_xml .
 
   data MO_FILE type ref to ZIF_XTT_FILE .
-  data MV_FILE_NAME type STRING .
+  data MV_ATTACH type ABAP_BOOL .
   data MV_OLE_EXT type STRING .
   data MV_SKIP_TAGS type ABAP_BOOL .
   data MS_LOG_PROFILE type BAL_S_PROF .
@@ -110,6 +110,8 @@ protected section.
       !IV_ROW type STRING optional
     returning
       value(RS_LOG_XML) type TS_LOG_XML .
+  methods _GET_FILE_NAME IMPORTING IV_MODE TYPE i DEFAULT ZIF_XTT_FILE=>MS_NAME-TECH
+                         RETURNING VALUE(RV_FILE_NAME) TYPE STRING.
 private section.
 
 *"* private components of class ZCL_XTT
@@ -218,16 +220,13 @@ ENDMETHOD.
 
 
 METHOD constructor.
-  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
   _logger_init( ).
 
   mo_file    = io_file.
   mv_ole_ext = iv_ole_ext.
-  TRY.
-      mv_file_name = mo_file->get_name( ).
-    CATCH zcx_eui_no_check INTO lo_no_check.
-      add_log_message( io_exception = lo_no_check ).
-  ENDTRY.
+
+  _get_file_name( ).
+  mv_attach  = abap_true.
 
   " Export MERGE ?
   DATA lv_debug TYPE abap_bool VALUE abap_false.
@@ -377,7 +376,7 @@ METHOD zif_xtt~download.
   lv_fullpath = cv_fullpath.
   " Just name without path
   IF lv_fullpath IS INITIAL.
-    cv_fullpath = lv_fullpath = mv_file_name.
+    cv_fullpath = lv_fullpath = _get_file_name( ).
   ENDIF.
 
   " Could be file name
@@ -556,10 +555,10 @@ METHOD zif_xtt~send.
       ENDLOOP.
 
       " Set to null in children to avoid sending attachment
-      IF mv_file_name IS NOT INITIAL.
+      IF mv_attach = abap_true.
         " File name
         APPEND INITIAL LINE TO lt_header REFERENCE INTO ls_header.
-        lv_filename = mv_file_name.
+        lv_filename = _get_file_name( zif_xtt_file=>ms_name-verb ). "mv_file_name.
         CONCATENATE '&SO_FILENAME=' lv_filename INTO ls_header->line.
 
         " Show icon
@@ -641,7 +640,7 @@ METHOD zif_xtt~show.
                      is_profile = ms_log_profile ).
     ENDIF.
 
-    lv_file_name = mv_file_name.
+    lv_file_name = _get_file_name( ).
   ENDIF.
 
   DATA lo_eui_file  TYPE REF TO zcl_eui_file.
@@ -655,6 +654,16 @@ METHOD zif_xtt~show.
       DATA lo_error     TYPE REF TO zcx_eui_exception.
     CATCH zcx_eui_exception INTO lo_error.
       MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+  ENDTRY.
+ENDMETHOD.
+
+
+METHOD _get_file_name.
+  DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+  TRY.
+      rv_file_name  = mo_file->get_name( iv_mode ).
+    CATCH zcx_eui_no_check INTO lo_no_check.
+      add_log_message( io_exception = lo_no_check ).
   ENDTRY.
 ENDMETHOD.
 

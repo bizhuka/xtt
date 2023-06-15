@@ -602,6 +602,8 @@ METHOD zif_xtt~get_raw.
    EXPORTING
      iv_path    = mv_path
      ir_content = lr_content.
+
+  mv_file_content = zcl_eui_conv=>xstring_to_string( rv_content ).
 ENDMETHOD.
 
 

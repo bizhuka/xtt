@@ -1733,13 +1733,18 @@ ENDMETHOD.
 METHOD get_without_t.
   DATA:
    l_len TYPE i.
+
   " Remove <t>...</t>
   IF iv_text(3) = '<t>'.
-    l_len = strlen( iv_text ) - 7.
-    rv_text = iv_text+3(l_len).
-  ELSE.
-    rv_text = iv_text.
+    l_len = strlen( iv_text ) - 4.
+    IF iv_text+l_len = '</t>'.
+      l_len = l_len - 3.
+      rv_text = iv_text+3(l_len).
+      RETURN.
+    ENDIF.
   ENDIF.
+
+  rv_text = iv_text.
 ENDMETHOD.                    "get_without_t
 
 

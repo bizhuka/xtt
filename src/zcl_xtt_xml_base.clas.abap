@@ -526,6 +526,8 @@ METHOD zif_xtt~download.
    EXPORTING
      iv_open     = lv_open
      iv_zip      = iv_zip
+   IMPORTING
+     ev_content  = ev_content
    CHANGING
      cv_ole_app  = cv_ole_app
      cv_ole_doc  = cv_ole_doc

@@ -29,7 +29,9 @@ public section.
   methods ADD_LOG_MESSAGE
     redefinition .
 protected section.
-  TYPES STRING_STAB TYPE SORTED TABLE OF STRING WITH UNIQUE KEY TABLE_LINE.
+
+  types:
+    STRING_STAB TYPE SORTED TABLE OF STRING WITH UNIQUE KEY TABLE_LINE .
 
   data MV_BODY_TAG type STRING .
   data MV_ROW_TAG type STRING .
@@ -38,7 +40,7 @@ protected section.
   data MV_VALUE type STRING .
   data MV_PREFIX type STRING .
   data MV_PATH type STRING .
-  data MT_NAMES type STRING_STAB.
+  data MT_NAMES type STRING_STAB .
 
   methods BOUNDS_FROM_BODY
     importing
@@ -47,6 +49,12 @@ protected section.
       !IV_BLOCK_NAME type CSEQUENCE
     returning
       value(RS_BOUNDS) type TS_BOUNDS .
+  methods _MERGE_ME_INIT .
+  methods _MERGE_ME_INSERT
+    importing
+      !IO_SCOPE type ref to ZCL_XTT_SCOPE
+      !IO_BLOCK type ref to ZCL_XTT_REPLACE_BLOCK
+      !IV_CONTENT type STRING .
 
   methods ON_MATCH_FOUND
     redefinition .
@@ -279,11 +287,17 @@ ENDMETHOD.
 METHOD do_merge.
   IF iv_root_is_table <> abap_true.
     DATA lo_scope TYPE REF TO zcl_xtt_scope.
-    read_scopes( EXPORTING io_block = io_block
-                           iv_tabix = iv_tabix
-                           iv_force = iv_force
-                 IMPORTING eo_scope = lo_scope
+    read_scopes( EXPORTING io_block   = io_block
+                           iv_tabix   = iv_tabix
+                           iv_force   = iv_force
+                 IMPORTING eo_scope   = lo_scope
                  CHANGING  cv_content = cv_content ).
+
+    IF iv_tabix IS NOT INITIAL.
+      _merge_me_insert( io_scope   = lo_scope
+                        io_block   = io_block
+                        iv_content = cv_content ).
+    ENDIF.
 
     " What will search in template. At first '{ROOT-'
     " Already found scopes
@@ -306,11 +320,13 @@ METHOD do_merge.
                               CHANGING  cv_content = cv_content ).
         " merge-3 Array types
       WHEN zcl_xtt_replace_block=>mc_type-table.
+        _merge_me_init( ).
         merge_tables( EXPORTING ir_field         = lr_field
                                 iv_root_is_table = iv_root_is_table
                       CHANGING  cv_content       = cv_content ).
         " merge-4 And trees
       WHEN zcl_xtt_replace_block=>mc_type-tree.
+        _merge_me_init( ).
         merge_trees( EXPORTING ir_field         = lr_field
                                iv_root_is_table = iv_root_is_table
                      CHANGING  cv_content       = cv_content ).
@@ -659,5 +675,13 @@ METHOD zif_xtt~merge.
   IF lv_root_is_table = abap_true.
     delete_last_page_break( ).
   ENDIF.
+ENDMETHOD.
+
+
+method _MERGE_ME_INIT.
+ENDMETHOD.
+
+
+method _MERGE_ME_INSERT.
 ENDMETHOD.
 ENDCLASS.

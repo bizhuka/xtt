@@ -35,6 +35,10 @@ public section.
       !IV_FIELD_NAME type CSEQUENCE
     returning
       value(RV_BY_COLUMN) type ABAP_BOOL .
+  methods INSERT_SCOPE
+    importing
+      !IS_SCOPE type TS_SCOPE
+      !IV_INDEX type I .
   class-methods _GET_SCOPE_FIELD
     importing
       !IV_CONTENT type STRING
@@ -535,5 +539,10 @@ METHOD _is_level_norm.
   ENDIF.
 
   rv_ok = abap_true.
+ENDMETHOD.
+
+
+METHOD insert_scope.
+  INSERT is_scope INTO mt_scope INDEX iv_index.
 ENDMETHOD.
 ENDCLASS.

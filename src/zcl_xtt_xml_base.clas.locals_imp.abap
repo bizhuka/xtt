@@ -5,18 +5,18 @@
 CLASS lcl_tree_handler IMPLEMENTATION.
   METHOD fill_text_match.
     detect_row_offset_01(
-       ir_field      = ir_field
-       iv_middle     = iv_middle
-       iv_beg        = is_bounds-pos_beg
-       it_match      = is_bounds-t_match ).
+      ir_field  = ir_field
+      iv_middle = iv_middle
+      iv_beg    = is_bounds-pos_beg
+      it_match  = is_bounds-t_match ).
 
     check_overlaps_02( ir_field ).
 
     fill_text_match_03(
-     iv_tr_id   = iv_tr_id
-     it_match   = is_bounds-t_match
-     iv_beg     = is_bounds-pos_beg
-     iv_middle  = iv_middle ).
+      iv_tr_id  = iv_tr_id
+      it_match  = is_bounds-t_match
+      iv_beg    = is_bounds-pos_beg
+      iv_middle = iv_middle ).
 
     CHECK mt_row_offset IS NOT INITIAL.
     rv_has_text = abap_true.
@@ -100,16 +100,18 @@ CLASS lcl_tree_handler IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD add_tree_data.
-    DATA lv_text_top      TYPE string.
-    DATA lv_text_bottom   TYPE string.
-    DATA lr_tree_attr     TYPE REF TO zcl_xtt_replace_block=>ts_tree_attr.
-    DATA lr_tree          TYPE REF TO zcl_xtt_replace_block=>ts_tree.
+    DATA lv_text_top             TYPE string.
+    DATA lv_text_bottom          TYPE string.
+    DATA lr_tree_attr            TYPE REF TO zcl_xtt_replace_block=>ts_tree_attr.
+    DATA lr_tree                 TYPE REF TO zcl_xtt_replace_block=>ts_tree.
+    DATA lo_bottom_replace_block TYPE REF TO zcl_xtt_replace_block.
 
-    add_tree_data_own( EXPORTING io_owner       = io_owner
-                                 ir_tree        = ir_tree
-                                 iv_tabix       = iv_tabix
-                       IMPORTING ev_text_top    = lv_text_top
-                                 ev_text_bottom = lv_text_bottom ).
+    add_tree_data_own( EXPORTING io_owner                = io_owner
+                                 ir_tree                 = ir_tree
+                                 iv_tabix                = iv_tabix
+                       IMPORTING ev_text_top             = lv_text_top
+                                 ev_text_bottom          = lv_text_bottom
+                                 eo_bottom_replace_block = lo_bottom_replace_block ).
     " text before
     CONCATENATE cv_text lv_text_top INTO cv_text RESPECTING BLANKS.
 
@@ -123,13 +125,19 @@ CLASS lcl_tree_handler IMPLEMENTATION.
       lr_tree ?= lr_tree_attr->attr.
 
       add_tree_data(
-       EXPORTING
-        io_owner = io_owner
-        ir_tree  = lr_tree
-        iv_tabix = lv_tabix
-       CHANGING
-        cv_text  = cv_text ).
+        EXPORTING
+          io_owner = io_owner
+          ir_tree  = lr_tree
+          iv_tabix = lv_tabix
+        CHANGING
+          cv_text  = cv_text ).
     ENDLOOP.
+
+    IF lo_bottom_replace_block IS NOT INITIAL.
+      io_owner->do_merge( EXPORTING io_block   = lo_bottom_replace_block
+                                    iv_tabix   = iv_tabix
+                          CHANGING  cv_content = lv_text_bottom ).
+    ENDIF.
 
     " text after
     CONCATENATE cv_text lv_text_bottom INTO cv_text RESPECTING BLANKS.
@@ -137,11 +145,13 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
   METHOD add_tree_data_own.
     DATA lo_replace_block TYPE REF TO zcl_xtt_replace_block.
+    DATA lv_index         TYPE syindex.
     DATA lv_top           TYPE abap_bool.
 
     " result
     CLEAR: ev_text_top,
-           ev_text_bottom.
+           ev_text_bottom,
+           eo_bottom_replace_block.
 
     " Main data
     FIELD-SYMBOLS <ls_data> TYPE any.
@@ -159,7 +169,9 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
     FIELD-SYMBOLS <lv_text> TYPE string.
     DO 3 TIMES.
-      CASE sy-index.
+      lv_index = sy-index.
+
+      CASE lv_index.
         WHEN 1.
           ASSIGN ev_text_top TO <lv_text>.
           lv_top = abap_true.
@@ -187,6 +199,12 @@ CLASS lcl_tree_handler IMPLEMENTATION.
 
       " Merge with data
       <lv_text> = lr_cache->tr_text.
+
+      " For later call
+      IF lv_index = 2.
+        eo_bottom_replace_block = lo_replace_block.
+        CONTINUE.
+      ENDIF.
       io_owner->do_merge( EXPORTING io_block   = lo_replace_block
                                     iv_tabix   = iv_tabix
                           CHANGING  cv_content = <lv_text> ).

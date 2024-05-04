@@ -2,20 +2,20 @@
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_W3MI" serializer_version="v2.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
-   <NAME>ZXXT_DEMO_022-XLSX</NAME>
-   <TEXT>Flight Model</TEXT>
+   <NAME>ZXXT_DEMO_022_G0-DOCX</NAME>
+   <TEXT>Flight Model (merge=G*)</TEXT>
    <PARAMS>
     <WWWPARAMS>
      <NAME>fileextension</NAME>
-     <VALUE>.XLSX</VALUE>
+     <VALUE>.DOCX</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <NAME>filename</NAME>
-     <VALUE>ZXXT_DEMO_022.XLSX</VALUE>
+     <VALUE>ZXXT_DEMO_022_G0.DOCX</VALUE>
     </WWWPARAMS>
     <WWWPARAMS>
      <NAME>mimetype</NAME>
-     <VALUE>Excel</VALUE>
+     <VALUE>doc/word</VALUE>
     </WWWPARAMS>
    </PARAMS>
   </asx:values>

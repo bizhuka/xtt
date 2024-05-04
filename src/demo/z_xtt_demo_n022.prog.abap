@@ -109,6 +109,10 @@ CLASS lcl_demo_022 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_templates.
-    APPEND 'ZXXT_DEMO_022-XLSX' TO rt_templates.
+    APPEND 'ZXXT_DEMO_022-XLSX'          TO rt_templates.
+    APPEND 'ZXXT_DEMO_022-DOCX'          TO rt_templates.
+    APPEND 'ZXXT_DEMO_022_GRP-DOCX'      TO rt_templates.
+    APPEND 'ZXXT_DEMO_022_G0-DOCX'       TO rt_templates.
+    APPEND 'ZXXT_DEMO_022_G0_TREE-DOCX'  TO rt_templates.
   ENDMETHOD.
 ENDCLASS.

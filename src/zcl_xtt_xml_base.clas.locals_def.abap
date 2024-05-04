@@ -48,12 +48,13 @@ CLASS lcl_tree_handler DEFINITION INHERITING FROM zcl_xtt_tree_function FINAL.
 
       add_tree_data_own
         IMPORTING
-          io_owner       TYPE REF TO zcl_xtt_xml_base
-          ir_tree        TYPE REF TO zcl_xtt_replace_block=>ts_tree
-          iv_tabix       TYPE sytabix
+          io_owner                TYPE REF TO zcl_xtt_xml_base
+          ir_tree                 TYPE REF TO zcl_xtt_replace_block=>ts_tree
+          iv_tabix                TYPE sytabix
         EXPORTING
-          ev_text_top    TYPE string
-          ev_text_bottom TYPE string.
+          ev_text_top             TYPE string
+          ev_text_bottom          TYPE string
+          eo_bottom_replace_block TYPE REF TO zcl_xtt_replace_block.
 *        CHANGING
     " cv_text  TYPE string.
 

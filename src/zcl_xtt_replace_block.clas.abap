@@ -982,8 +982,7 @@ METHOD _check_offest.
     RETURN.
   ENDIF.
 
-  IF iv_content+is_scope-beg(1) <> '{' OR
-     iv_content+is_scope-end(1) <> '}'.
+  IF ( iv_content+is_scope-beg(1) <> '{' OR iv_content+is_scope-end(1) <> '}' ) AND is_scope-field NP '*$MERGE'.
     MESSAGE e023(zsy_xtt) WITH is_scope-field INTO sy-msgli.
     mo_xtt->add_log_message( iv_syst = abap_true ).
     RETURN.

@@ -39,6 +39,10 @@ protected section.
     redefinition .
   methods _LOGGER_AS_XML
     redefinition .
+  methods _MERGE_ME_INSERT
+    redefinition .
+  methods _MERGE_ME_INIT
+    redefinition .
 private section.
 
   types:
@@ -46,6 +50,7 @@ private section.
 
   data _XML_DOCUMENT_RELS type ref to ZCL_XTT_XML_UPDATER .
   data MT_REQUIRED type TT_REQUIRED .
+  data MT_PREV_MERGE_VALUE type ZTT_XTT_PAIR .
 
   methods _CHANGE_HEADER_FOOTER
     importing
@@ -54,6 +59,11 @@ private section.
       !IO_HELPER type ref to OBJECT .
   methods _FIND_IMAGE_TEMPLATES .
   methods _CHECK_DRAWING_REL .
+  methods _IS_NEW_MERGE_ME
+    importing
+      !IR_FIELD type ref to ZCL_XTT_REPLACE_BLOCK=>TS_FIELD
+    returning
+      value(RV_NEW_MERGE) type ABAP_BOOL .
 ENDCLASS.
 
 
@@ -490,5 +500,126 @@ METHOD _logger_as_xml.
 
   lo_word_xml->_logger = me->_logger.
   rs_log_xml = lo_word_xml->_logger_as_xml( ).
+ENDMETHOD.
+
+
+METHOD _is_new_merge_me.
+  DATA
+    ls_prev_merge_value   LIKE LINE OF mt_prev_merge_value.
+  FIELD-SYMBOLS
+    <ls_prev_merge_value> LIKE LINE OF mt_prev_merge_value.
+
+  ls_prev_merge_value-key = ir_field->name.
+  ls_prev_merge_value-val = zcl_xtt_replace_block=>get_as_string( is_field = ir_field ).
+  READ TABLE mt_prev_merge_value ASSIGNING <ls_prev_merge_value>
+   WITH TABLE KEY key = ls_prev_merge_value-key.
+  IF sy-subrc <> 0.
+    rv_new_merge = abap_true.
+    INSERT ls_prev_merge_value INTO TABLE mt_prev_merge_value ASSIGNING <ls_prev_merge_value>.
+  ENDIF.
+
+  IF ls_prev_merge_value-val <> <ls_prev_merge_value>-val.
+    rv_new_merge = abap_true.
+  ENDIF.
+  <ls_prev_merge_value>-val = ls_prev_merge_value-val.
+ENDMETHOD.
+
+
+METHOD _merge_me_init.
+  CLEAR mt_prev_merge_value.
+ENDMETHOD.
+
+
+METHOD _merge_me_insert.
+  DATA:
+    lv_count            TYPE i,
+    lv_index            TYPE i,
+    lt_merge_place      TYPE match_result_tab,
+    lv_insert_position  TYPE i,
+    lv_prev_index       TYPE i,
+    ls_scope_merge      LIKE LINE OF io_scope->mt_scope,
+    lr_merge_value      TYPE REF TO string,
+    lr_field            TYPE REF TO zcl_xtt_replace_block=>ts_field,
+    ls_field            LIKE LINE OF io_block->mt_fields,
+    lv_new_merge        TYPE abap_bool,
+    lt_new_line         TYPE SORTED TABLE OF zcl_xtt_scope=>ts_scope-merge_me WITH UNIQUE KEY table_line.
+  FIELD-SYMBOLS:
+    <ls_merge_place>      LIKE LINE OF lt_merge_place,
+    <ls_scope>            LIKE LINE OF io_scope->mt_scope,
+    <ls_scope_merge>      LIKE LINE OF io_scope->mt_scope.
+
+  " Start from the beginig
+  lv_count = lines( io_scope->mt_scope ).
+  DO lv_count TIMES.
+    lv_index = lv_count - sy-index + 1.
+
+    READ TABLE io_scope->mt_scope ASSIGNING <ls_scope> INDEX lv_index.
+    CHECK sy-subrc = 0 AND ( <ls_scope>-merge_me = abap_true
+                          OR <ls_scope>-merge_me CP 'G*' ).
+
+    lv_insert_position = lv_index + 1.
+    CONCATENATE <ls_scope>-field `$MERGE` INTO ls_scope_merge-field.
+
+    READ TABLE io_scope->mt_scope ASSIGNING <ls_scope_merge> INDEX lv_insert_position.
+    IF sy-subrc <> 0 OR <ls_scope_merge>-field <> ls_scope_merge-field.
+      IF lt_merge_place[] IS INITIAL.
+        FIND ALL OCCURRENCES OF `</w:tcPr>` IN iv_content RESULTS lt_merge_place.
+      ENDIF.
+
+      READ TABLE lt_merge_place TRANSPORTING NO FIELDS BINARY SEARCH
+       WITH KEY offset = <ls_scope>-beg.
+      CHECK sy-subrc <> 0.
+
+      lv_prev_index = sy-tabix - 1.
+      READ TABLE lt_merge_place ASSIGNING <ls_merge_place> INDEX lv_prev_index.
+      CHECK sy-subrc = 0.
+
+      " CHECK <ls_scope>-beg - <ls_merge_place>-offset < 1000?
+      ls_scope_merge-beg = ls_scope_merge-end = <ls_merge_place>-offset - 1.
+      ls_scope_merge-sc_level = <ls_scope>-sc_level.
+
+      io_scope->insert_scope( is_scope = ls_scope_merge
+                              iv_index = lv_insert_position ).
+    ENDIF.
+
+    " Get current value
+    READ TABLE io_block->mt_fields REFERENCE INTO lr_field
+      WITH TABLE KEY name = <ls_scope>-field.
+    CHECK sy-subrc = 0.
+
+    lv_new_merge = _is_new_merge_me( lr_field ).
+
+
+    " Merge by group
+    DO 1 TIMES.
+      CHECK <ls_scope>-merge_me CP 'G*'.
+
+      IF lv_new_merge = abap_true.
+        INSERT <ls_scope>-merge_me INTO TABLE lt_new_line.
+        CONTINUE.
+      ENDIF.
+
+      READ TABLE lt_new_line TRANSPORTING NO FIELDS
+        WITH TABLE KEY table_line = <ls_scope>-merge_me.
+      IF sy-subrc = 0.
+        lv_new_merge = abap_true.
+      ENDIF.
+    ENDDO.
+
+    " Insert data
+    CREATE DATA lr_merge_value.
+    IF lv_new_merge = abap_true.
+      lr_merge_value->* = `><w:vMerge w:val="restart"/>`.
+    ELSE.
+      lr_merge_value->* = `><w:vMerge/>`.
+    ENDIF.
+
+    ls_field-name    = ls_scope_merge-field.
+    ls_field-dref    = lr_merge_value.
+    ls_field-fl_stat = abap_true.
+    ls_field-typ     = zcl_xtt_replace_block=>mc_type-as_is.
+
+    INSERT ls_field INTO TABLE io_block->mt_fields.
+  ENDDO.
 ENDMETHOD.
 ENDCLASS.

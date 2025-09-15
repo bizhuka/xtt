@@ -1025,6 +1025,14 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     _do_merge_me( ir_cell      = lr_prev_cell
                   iv_count     = lv_merge_cnt
                   iv_by_column = iv_by_column ).
+
+    " If it's a number (date, time, boolean) then leave only 1st value
+    LOOP AT _t_merge_me INTO lr_cell FROM 2 WHERE table_line->c_type <> 's'
+                                              AND table_line->c_merge_me     IS NOT INITIAL
+                                              AND table_line->c_merge_row_dx IS INITIAL
+                                              AND table_line->c_merge_col_dx IS INITIAL.
+      CLEAR lr_cell->c_value.
+    ENDLOOP.
   ENDMETHOD.
 
   METHOD _do_merge_me.

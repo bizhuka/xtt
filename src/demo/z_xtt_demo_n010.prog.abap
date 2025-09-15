@@ -33,7 +33,7 @@ CLASS lcl_demo_010 IMPLEMENTATION.
     " Init document structure
     DATA ls_root TYPE ts_root.
     ls_root-title   = 'Document title'(dot).
-    ls_root-text    = 'Just string'(jus).
+    ls_root-text    = 'Just string әіңғүұқөһ ӘІҢҒҮҰҚӨ'.
     ls_root-int     = 3.
     ls_root-bottom  = 'bottom'(bot).
 

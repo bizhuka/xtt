@@ -102,10 +102,19 @@ METHOD create_image.
 
     " Set 1 time only
     ro_image->mv_image  = iv_image.
-    IF iv_ext IS INITIAL.
-      ro_image->mv_ext = '.jpeg'.
-    ELSE.
+    IF iv_ext IS NOT INITIAL.
       ro_image->mv_ext = iv_ext.
+    ELSE.
+      " No explicit extension: detect by magic bytes
+      CONSTANTS: lc_png_magic TYPE x LENGTH 4 VALUE '89504E47',
+                 lc_gif_magic TYPE x LENGTH 3 VALUE '474946'.
+      IF xstrlen( iv_image ) >= 4 AND iv_image(4) = lc_png_magic.
+        ro_image->mv_ext = '.png'.
+      ELSEIF xstrlen( iv_image ) >= 3 AND iv_image(3) = lc_gif_magic.
+        ro_image->mv_ext = '.gif'.
+      ELSE.
+        ro_image->mv_ext = '.jpeg'. " JPEG and unknown: previous behavior
+      ENDIF.
     ENDIF.
 
     DATA lv_cnt TYPE i.

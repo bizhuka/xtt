@@ -78,8 +78,9 @@ ENDMETHOD.
 
 
 METHOD create_image.
-  DATA          ls_cache   LIKE LINE OF mt_cache.
-  FIELD-SYMBOLS <ls_cache> LIKE LINE OF mt_cache.
+  DATA:         ls_cache      LIKE LINE OF mt_cache,
+                lv_img_length TYPE i.
+  FIELD-SYMBOLS <ls_cache>    LIKE LINE OF mt_cache.
 
   READ TABLE mt_cache ASSIGNING <ls_cache>
    WITH TABLE KEY value  = iv_image
@@ -105,17 +106,19 @@ METHOD create_image.
     IF iv_ext IS NOT INITIAL.
       ro_image->mv_ext = iv_ext.
     ELSE.
-      " No explicit extension: detect by magic bytes
+      " Image prefixes
       CONSTANTS: lc_png_magic TYPE x LENGTH 4 VALUE '89504E47',
                  lc_gif_magic TYPE x LENGTH 3 VALUE '474946'.
-      IF xstrlen( iv_image ) >= 4 AND iv_image(4) = lc_png_magic.
+      lv_img_length = xstrlen( iv_image ).
+      IF lv_img_length >= 4 AND iv_image(4) = lc_png_magic.
         ro_image->mv_ext = '.png'.
-      ELSEIF xstrlen( iv_image ) >= 3 AND iv_image(3) = lc_gif_magic.
+      ELSEIF lv_img_length >= 3 AND iv_image(3) = lc_gif_magic.
         ro_image->mv_ext = '.gif'.
-      ELSE.
-        ro_image->mv_ext = '.jpeg'. " JPEG and unknown: previous behavior
+      ELSE.  " ELSEIF for jpeg 'FFD8FF' ?
+        ro_image->mv_ext = '.jpeg'.
       ENDIF.
     ENDIF.
+
 
     DATA lv_cnt TYPE i.
     lv_cnt = lines( mt_cache ).

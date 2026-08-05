@@ -509,7 +509,7 @@ METHOD cell_read_xml.
   IF lo_elem IS BOUND.
     l_val = lo_elem->get_value( ).
   ELSE.
-    l_val = io_node->get_value( ).  " TODO 'inlineStr' !!! with tags!
+    l_val = io_node->get_value( ).
   ENDIF.
 
   CASE ls_cell->c_type.
@@ -518,7 +518,26 @@ METHOD cell_read_xml.
       READ TABLE it_shared_strings INTO ls_cell->c_value INDEX l_ind.
 
     WHEN 'inlineStr'.
-      ls_cell->c_value = l_val. " <si> tag get_without_t(  ).
+      " The text of an inline string is in <is><t>, not in <v>; rich text
+      " splits it over several <r><t> runs, so concatenate all of them
+      CLEAR l_val.
+      DATA lo_is TYPE REF TO if_ixml_element.
+      lo_is ?= io_node->find_from_name( name = 'is' ).
+      IF lo_is IS BOUND.
+        DATA lo_texts TYPE REF TO if_ixml_node_collection.
+        DATA lo_titer TYPE REF TO if_ixml_node_iterator.
+        DATA lo_tnode TYPE REF TO if_ixml_node.
+        lo_texts = lo_is->get_elements_by_tag_name( name = 't' ).
+        lo_titer = lo_texts->create_iterator( ).
+        DO.
+          lo_tnode = lo_titer->get_next( ).
+          IF lo_tnode IS NOT BOUND.
+            EXIT.
+          ENDIF.
+          CONCATENATE l_val lo_tnode->get_value( ) INTO l_val.
+        ENDDO.
+      ENDIF.
+      ls_cell->c_value = l_val.
       ls_cell->c_type  = 's'.
 
     WHEN OTHERS.

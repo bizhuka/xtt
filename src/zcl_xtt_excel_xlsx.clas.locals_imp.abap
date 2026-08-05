@@ -11,12 +11,17 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     WHILE lo_node IS BOUND.
       DATA lv_target TYPE string.
       lv_target = lo_node->get_attribute( 'Target' ).
-      IF lv_target CP 'worksheets/sheet*'.
-        REPLACE FIRST OCCURRENCE OF: 'worksheets/sheet' IN lv_target WITH ``,
-                                     '.xml'             IN lv_target WITH ``.
+      " The Target may be relative ('worksheets/sheet1.xml') or an absolute
+      " part name ('/xl/worksheets/sheet1.xml') - both are valid OPC, and
+      " writers other than Excel do use the absolute form
+      IF lv_target CS 'worksheets/sheet'.
+        DATA lv_before TYPE string.
+        DATA lv_number TYPE string.
+        SPLIT lv_target AT 'worksheets/sheet' INTO lv_before lv_number.
+        REPLACE FIRST OCCURRENCE OF '.xml' IN lv_number WITH ``.
 
         DATA lv_index TYPE syindex.
-        lv_index = lv_target.
+        lv_index = lv_number.
         APPEND lv_index TO rt_index.
       ENDIF.
 

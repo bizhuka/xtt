@@ -59,9 +59,11 @@ METHOD load_all.
       iv_name    = lv_file_name
       iv_xstring = lo_file->mv_xstring.
 
-  CREATE OBJECT ro_xtt TYPE (iv_class)
+  DATA lo_xtt TYPE REF TO object.
+  CREATE OBJECT lo_xtt TYPE (iv_class)
     EXPORTING
       io_file = lo_raw.
+  ro_xtt ?= lo_xtt.
 
   DATA lv_index        TYPE i.
   DATA lv_merge_index  TYPE string.

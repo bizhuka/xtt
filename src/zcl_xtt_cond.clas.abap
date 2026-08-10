@@ -1,4 +1,4 @@
-class ZCL_XTT_COND definition
+  class ZCL_XTT_COND definition
   public
   final
   create public .
@@ -209,7 +209,8 @@ METHOD get_type.
       WHEN cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string OR
            cl_abap_typedescr=>typekind_w OR
            " Binary data in template? Dump ?
-           cl_abap_typedescr=>typekind_hex OR cl_abap_typedescr=>typekind_xsequence OR cl_abap_typedescr=>typekind_xstring.
+           cl_abap_typedescr=>typekind_hex OR '!' "cl_abap_typedescr=>typekind_xsequence
+                                           OR cl_abap_typedescr=>typekind_xstring.
         ev_type = 'STRING'.
 
         " Special case for objects

@@ -531,7 +531,8 @@ METHOD get_simple_type.
          cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string OR
          cl_abap_typedescr=>typekind_w OR
          " Binary data in template? Dump ?
-         cl_abap_typedescr=>typekind_hex OR cl_abap_typedescr=>typekind_xsequence OR cl_abap_typedescr=>typekind_xstring.
+         cl_abap_typedescr=>typekind_hex OR '!' "cl_abap_typedescr=>typekind_xsequence
+                                         OR cl_abap_typedescr=>typekind_xstring.
       rv_type = mc_type-string.
 
 *TYPEKIND_IREF, TYPEKIND_BREF
@@ -891,7 +892,13 @@ ENDMETHOD.
         lo_odesc = lo_cdesc.
 
         DATA lt_friends TYPE abap_frndtypes_tab.
-        lt_friends = lo_cdesc->get_friend_types( ).
+        TRY.
+          CALL METHOD lo_cdesc->('GET_FRIEND_TYPES')
+            RECEIVING p_friends_tab = lt_friends.
+        CATCH cx_sy_dyn_call_illegal_method. " or parent cx_sy_dyn_call_error ?
+          CLEAR lt_friends[].
+        ENDTRY.
+
         READ TABLE lt_friends TRANSPORTING NO FIELDS
          WITH KEY table_line->absolute_name = '\CLASS=ZCL_XTT_REPLACE_BLOCK'.
         IF sy-subrc = 0.

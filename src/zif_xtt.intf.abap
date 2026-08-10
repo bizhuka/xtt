@@ -38,9 +38,9 @@ interface ZIF_XTT
     importing
       !IV_OPEN type CSEQUENCE default ABAP_TRUE
       !IV_ZIP type ABAP_BOOL optional
+    exporting
+      !EO_OLE type ref to zif_eui_ole
     changing
-      !CV_OLE_APP type OLE2_OBJECT optional
-      !CV_OLE_DOC type OLE2_OBJECT optional
       !CV_FULLPATH type CSEQUENCE optional .
   methods SHOW
     importing

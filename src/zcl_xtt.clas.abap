@@ -230,14 +230,15 @@ METHOD constructor.
 
   " Export MERGE ?
   DATA lv_debug TYPE abap_bool VALUE abap_false.
-  DATA lv_cprog TYPE sycprog.
 
-  lv_cprog = sy-cprog.
-  PERFORM in_debug IN PROGRAM ('Z_XTT_DEBUG') IF FOUND USING    lv_cprog
-                                                       CHANGING lv_debug.
-  CHECK lv_debug = abap_true.
-  CREATE OBJECT mo_debug.
-  mo_debug->save_template( io_file ).
+  " For testing in QAS or PROD
+*  DATA lv_cprog TYPE sycprog. lv_cprog = sy-cprog.
+*  PERFORM in_debug IN PROGRAM ('Z_XTT_DEBUG') IF FOUND USING lv_cprog CHANGING lv_debug.
+
+  IF lv_debug = abap_true.
+    CREATE OBJECT mo_debug.
+    mo_debug->save_template( io_file ).
+  ENDIF.
 ENDMETHOD.
 
 
@@ -360,6 +361,8 @@ METHOD zif_xtt~download.
   DATA lo_eui_error TYPE REF TO zcx_eui_exception.
   DATA lv_visible   TYPE abap_bool.
 
+  CLEAR eo_ole.
+
   DATA lo_no_check TYPE REF TO zcx_eui_no_check.
   TRY.
       get_no_warning mv_can_show_menu.
@@ -458,13 +461,8 @@ METHOD zif_xtt~download.
 
         " Meaningless
         CHECK iv_zip <> abap_true.
+        eo_ole = lo_eui_file->open_by_ole( lv_visible ).
 
-        lo_eui_file->open_by_ole(
-         EXPORTING
-           iv_visible = lv_visible
-         CHANGING
-           cv_ole_app = cv_ole_app
-           cv_ole_doc = cv_ole_doc ).
       CATCH zcx_eui_exception INTO lo_eui_error.
         add_log_message( io_exception = lo_eui_error ).
         MESSAGE lo_eui_error TYPE 'S' DISPLAY LIKE 'E'.

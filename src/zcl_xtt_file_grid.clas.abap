@@ -224,7 +224,7 @@ METHOD _add_group_by_cell.
   ENDTRY.
 
   " Group by fields
-  DATA lt_field TYPE stringtab.
+  DATA lt_field TYPE STANDARD TABLE OF lvc_fname WITH DEFAULT KEY.
   DATA lr_sort TYPE REF TO lvc_s_sort.
   LOOP AT mt_sort REFERENCE INTO lr_sort.
     INSERT lr_sort->fieldname INTO lt_field INDEX 1. " Revers order again

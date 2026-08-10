@@ -32,7 +32,7 @@ CLASS lcl_demo_070 DEFINITION FINAL INHERITING FROM lcl_demo.
 
       check_ole_07
         IMPORTING
-          io_ole_app TYPE ole2_object.
+          io_ole TYPE REF TO zif_eui_ole.
 ENDCLASS.
 
 *&---------------------------------------------------------------------*
@@ -103,16 +103,17 @@ CLASS lcl_demo_070 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD _do_download.
-    DATA lv_ole_app TYPE ole2_object.
+    DATA lo_ole TYPE REF TO zif_eui_ole.
     io_xtt->download(        " All parameters are optional
      EXPORTING
       iv_open     = zcl_xtt=>mc_by-ole " Open with ole
+     IMPORTING
+      eo_ole      = lo_ole             " Get ole2_object back
      CHANGING
-      cv_fullpath = p_path
-      cv_ole_app  = lv_ole_app ).      " Get ole2_object back
+      cv_fullpath = p_path ).
 
     " Call macro. Works good regardless VBA politics
-    check_ole_07( io_ole_app = lv_ole_app ).
+    check_ole_07( io_ole = lo_ole ).
   ENDMETHOD.
 
   " Macro always will execute for download method (regardless VBA security level)
@@ -126,13 +127,10 @@ CLASS lcl_demo_070 IMPLEMENTATION.
     CHECK io_container IS NOT INITIAL.
 
     DATA lo_eui_file TYPE REF TO zcl_eui_file.
-    DATA ls_ole_info TYPE zcl_eui_file=>ts_ole_info.
-
     lo_eui_file ?= sender.
-    ls_ole_info = lo_eui_file->get_ole_info( ).
 
     " Call macro Error
-    check_ole_07( io_ole_app = ls_ole_info-app ).
+    check_ole_07( io_ole = lo_eui_file->mo_ole ).
   ENDMETHOD.
 
   " Ok for 'xtt->DOWNLOAD( )', but not ok for 'xtt->SHOW( )'
@@ -140,11 +138,11 @@ CLASS lcl_demo_070 IMPLEMENTATION.
     DATA lv_charts TYPE ole2_object.
 
     " Better to use XML than macro
-    CHECK io_ole_app IS NOT INITIAL.
+    CHECK io_ole->mv_ole_app IS NOT INITIAL.
 
     " @see on_prepare_raw_07
     CALL METHOD OF
-        io_ole_app
+        io_ole->mv_ole_app
         'Run'
 
       EXPORTING
@@ -152,9 +150,9 @@ CLASS lcl_demo_070 IMPLEMENTATION.
         #2         = 'From SAP'(fsp).
 
     " OR Call OLE like that
-    SET PROPERTY OF io_ole_app 'StatusBar' = 'OLE Call'(ole).
+    SET PROPERTY OF io_ole->mv_ole_app 'StatusBar' = 'OLE Call'(ole).
 
-    GET PROPERTY OF io_ole_app 'Charts' = lv_charts.
+    GET PROPERTY OF io_ole->mv_ole_app 'Charts' = lv_charts.
     CALL METHOD OF
         lv_charts
         'Add'.

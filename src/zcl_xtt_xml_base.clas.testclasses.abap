@@ -4,7 +4,7 @@ CLASS lcl_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
                                  .          "#AU Duration Short
   PUBLIC SECTION.
     DATA:
-      tab TYPE STANDARD TABLE OF t000.
+      tab TYPE STANDARD TABLE OF t000. " Just 1 field
     METHODS:
       body_tag
         IMPORTING
@@ -22,15 +22,18 @@ CLASS zcl_xtt_xml_base DEFINITION LOCAL FRIENDS lcl_test.
 CLASS lcl_test IMPLEMENTATION.
   METHOD body_tag.
     DATA lo_file TYPE REF TO zif_xtt_file.
-    DATA cut TYPE REF TO zcl_xtt_xml_base.
+    DATA lo_cut  TYPE REF TO object.
+    DATA cut     TYPE REF TO zcl_xtt_xml_base.
 
     CREATE OBJECT lo_file TYPE zcl_xtt_file_raw
       EXPORTING
         iv_name   = 'Ok.xml'
         iv_string = iv_template.
-    CREATE OBJECT cut TYPE (iv_class)
+
+    CREATE OBJECT lo_cut TYPE (iv_class)
       EXPORTING
         io_file = lo_file.
+    cut ?= lo_cut.
 
     cut->merge( is_block      = me
                 iv_block_name = 'R' ).

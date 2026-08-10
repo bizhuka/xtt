@@ -130,7 +130,7 @@ METHOD add_log_message.
 
 * define a new pushbutton
   ms_log_profile-ext_push1-active        = 'X'.
-  ms_log_profile-ext_push1-def-icon_id   = icon_doc.
+  ms_log_profile-ext_push1-def-icon_id   = '@J7@'. " icon_doc.
   ms_log_profile-ext_push1-def-icon_text = 'Repair the template'(rep).
 
 * define callback to react on this pushbutton
@@ -542,13 +542,15 @@ METHOD zif_xtt~download.
    EXPORTING
      iv_open     = lv_open
      iv_zip      = iv_zip
+   IMPORTING
+     eo_ole      = eo_ole
    CHANGING
-     cv_ole_app  = cv_ole_app
-     cv_ole_doc  = cv_ole_doc
      cv_fullpath = cv_fullpath ).
 
   " If opened as OLE
-  CHECK lv_open CP 'OLE*'.
+  CHECK lv_open CP 'OLE*'
+    AND eo_ole IS NOT INITIAL
+    AND mv_ole_ext IS NOT INITIAL. " ZCL_XTT_WORD_DOCX
 
   " New file name
   DATA lv_path   TYPE string.
@@ -566,15 +568,13 @@ METHOD zif_xtt~download.
     CONCATENATE lv_path lv_no_ext ` ` sy-datum ` ` sy-uzeit `.` mv_ole_ext INTO cv_fullpath.
   ENDIF.
 
-  CALL METHOD OF cv_ole_doc 'SaveAs'
-    EXPORTING
-      #1 = cv_fullpath
-      #2 = mv_ole_ext_format.
-
+  DATA lv_quit TYPE abap_bool.
   IF lv_open = mc_by-ole_hide.
-    CALL METHOD OF cv_ole_app 'QUIT'.
-    FREE OBJECT: cv_ole_doc, cv_ole_app.
+    lv_quit = abap_true.
   ENDIF.
+  eo_ole->save_as( iv_path       = cv_fullpath
+                   iv_ext_format = mv_ole_ext_format
+                   iv_quit       = lv_quit ).
 ENDMETHOD.
 
 

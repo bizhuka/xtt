@@ -126,11 +126,12 @@ METHOD add_log_message.
     io_exception = io_exception
     iv_msgty     = iv_msgty ).
 
-  CHECK lv_chars_skipped_within_block = abap_true.
+  CHECK lv_chars_skipped_within_block = abap_true
+    AND zcl_eui_menu=>can_show(  ) = abap_true.
 
 * define a new pushbutton
   ms_log_profile-ext_push1-active        = 'X'.
-  ms_log_profile-ext_push1-def-icon_id   = '@J7@'. " icon_doc.
+  ms_log_profile-ext_push1-def-icon_id   = icon_doc.
   ms_log_profile-ext_push1-def-icon_text = 'Repair the template'(rep).
 
 * define callback to react on this pushbutton

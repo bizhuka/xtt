@@ -739,6 +739,7 @@ METHOD column_read_xml.
   DATA lo_col TYPE REF TO if_ixml_element.
   DATA ls_col LIKE LINE OF io_sheet->mt_columns.
   DATA lv_cnt TYPE i.
+  DATA lr_cell TYPE REF TO ts_ex_cell.
 
   lo_col ?= io_sheet->mo_document->find_from_name( 'col' ).             "#EC NOTEXT
   WHILE lo_col IS BOUND.
@@ -752,6 +753,15 @@ METHOD column_read_xml.
     ls_col-phonetic     = lo_col->get_attribute( 'phonetic' ).     "#EC NOTEXT
     ls_col-style        = lo_col->get_attribute( 'style' ).        "#EC NOTEXT
     ls_col-width        = lo_col->get_attribute( 'width' ).        "#EC NOTEXT
+
+    lo_col ?= lo_col->get_next( ).
+    IF lo_col IS NOT BOUND AND ls_col-max = 16384. "the last and max column
+      ls_col-max = ls_col-min.
+      LOOP AT io_sheet->mt_cells REFERENCE INTO lr_cell.
+        CHECK lr_cell->c_col_ind > ls_col-max.
+        ls_col-max = lr_cell->c_col_ind.
+      ENDLOOP.
+    ENDIF.
 
     " From = To
     IF ls_col-min = ls_col-max.
@@ -769,8 +779,6 @@ METHOD column_read_xml.
         ls_col-min = ls_col-min + 1.
       ENDDO.
     ENDIF.
-
-    lo_col ?= lo_col->get_next( ).
   ENDWHILE.
 ENDMETHOD.
 

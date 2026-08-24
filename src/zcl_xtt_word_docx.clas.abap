@@ -82,8 +82,8 @@ METHOD constructor.
    iv_page_break = mc_break-page ).
 
   DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+  DATA lv_value    TYPE xstring.
   TRY.
-      DATA lv_value TYPE xstring.
       io_file->get_content( IMPORTING ev_as_xstring = lv_value ).
     CATCH zcx_eui_no_check INTO lo_no_check.
       add_log_message( io_exception = lo_no_check ).

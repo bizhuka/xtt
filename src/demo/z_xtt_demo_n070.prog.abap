@@ -48,9 +48,9 @@ CLASS lcl_demo_070 IMPLEMENTATION.
 
   METHOD set_merge_info.
     TYPES:
-     BEGIN OF ts_root,
-       message TYPE string,
-     END OF ts_root.
+      BEGIN OF ts_root,
+        message TYPE string,
+      END OF ts_root.
     DATA ls_root TYPE ts_root.
 
     ls_root-message = 'No data at all'(nda).
@@ -69,7 +69,7 @@ CLASS lcl_demo_070 IMPLEMENTATION.
   " Use for XML parsing (Called in the end of GET_RAW)
   METHOD on_prepare_raw_07.
     " if 'IV_PATH' is initial then intire XLSX or DOCX archive
-    CHECK iv_path = 'xl/worksheets/sheet1.xml'. "#EC NOTEXT
+    CHECK iv_path = 'xl/worksheets/sheet1.xml'.             "#EC NOTEXT
 
 *    " For REGEX
 *    DATA lv_string TYPE string.
@@ -91,7 +91,7 @@ CLASS lcl_demo_070 IMPLEMENTATION.
       " Hide every 2nd column
       IF lv_mod = 0.
         lo_col->set_attribute(
-          name = 'hidden'                                   "#EC NOTEXT
+          name  = 'hidden'                                   "#EC NOTEXT
           value = '1' ).
       ENDIF.
       lo_col ?= lo_col->get_next( ).
@@ -105,12 +105,12 @@ CLASS lcl_demo_070 IMPLEMENTATION.
   METHOD _do_download.
     DATA lo_ole TYPE REF TO zif_eui_ole.
     io_xtt->download(        " All parameters are optional
-     EXPORTING
-      iv_open     = zcl_xtt=>mc_by-ole " Open with ole
-     IMPORTING
-      eo_ole      = lo_ole             " Get ole2_object back
-     CHANGING
-      cv_fullpath = p_path ).
+      EXPORTING
+        iv_open     = zcl_xtt=>mc_by-ole " Open with ole
+      IMPORTING
+        eo_ole      = lo_ole             " Get ole2_object back
+      CHANGING
+        cv_fullpath = p_path ).
 
     " Call macro. Works good regardless VBA politics
     check_ole_07( io_ole = lo_ole ).
@@ -141,21 +141,18 @@ CLASS lcl_demo_070 IMPLEMENTATION.
     CHECK io_ole->mv_ole_app IS NOT INITIAL.
 
     " @see on_prepare_raw_07
-    CALL METHOD OF
-        io_ole->mv_ole_app
-        'Run'
-
-      EXPORTING
-        #1         = 'MAIN.start'
-        #2         = 'From SAP'(fsp).
+    io_ole->call_method(
+      iv_method = 'Run'
+      iv_param1 = 'MAIN.start'
+      iv_param2 = 'From SAP'(fsp) ).
 
     " OR Call OLE like that
-    SET PROPERTY OF io_ole->mv_ole_app 'StatusBar' = 'OLE Call'(ole).
+    io_ole->set_property( iv_prop  = 'StatusBar'
+                          iv_value = 'OLE Call'(ole) ).
 
-    GET PROPERTY OF io_ole->mv_ole_app 'Charts' = lv_charts.
-    CALL METHOD OF
-        lv_charts
-        'Add'.
+    lv_charts = io_ole->get_property( iv_prop = 'Charts' ).
+    io_ole->call_method( io_object = lv_charts
+                         iv_method = 'Add' ).
   ENDMETHOD.
 
   METHOD get_templates.

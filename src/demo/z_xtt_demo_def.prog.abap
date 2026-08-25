@@ -191,7 +191,7 @@ CLASS lcl_demo IMPLEMENTATION.
     ENDTRY.
 
     " Prepare scrren
-    DATA lt_listbox TYPE tt_vrm_value.
+    DATA lt_listbox TYPE vrm_values.
     lt_listbox = _get_template_lisbox( ).
     lo_screen->customize( name       = iv_lb_id
                           it_listbox = lt_listbox
@@ -292,9 +292,12 @@ CLASS lcl_demo IMPLEMENTATION.
         iv_objid = iv_template.
 
     CHECK eo_xtt IS REQUESTED.
-    CREATE OBJECT eo_xtt TYPE (lv_class)
+
+    DATA lo_xtt TYPE REF TO object.
+    CREATE OBJECT lo_xtt TYPE (lv_class)
       EXPORTING
         io_file = eo_file.
+    eo_xtt ?= lo_xtt.
   ENDMETHOD.
 
   METHOD on_user_command.

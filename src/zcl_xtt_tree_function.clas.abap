@@ -95,8 +95,12 @@ CLASS ZCL_XTT_TREE_FUNCTION IMPLEMENTATION.
 
 
 METHOD catch_prepare_tree.
-  DATA:
-    lr_ref         TYPE REF TO  data.
+  DATA lr_ref      TYPE REF TO  data.
+  DATA lv_level    TYPE i.
+  DATA lv_all_0    TYPE abap_bool VALUE abap_true.
+  DATA lv_found    TYPE abap_bool VALUE abap_false.
+  DATA lr_sub_data TYPE REF TO data.
+
   FIELD-SYMBOLS:
     <ls_func>      LIKE LINE OF mt_func,
     <lt_sub_item>  TYPE ANY TABLE, " STANDARD ?
@@ -113,9 +117,6 @@ METHOD catch_prepare_tree.
     " If no match was found & all formulas in 0 level then 2 times
     CASE sy-index.
       WHEN 1.
-        DATA lv_level TYPE i.
-        DATA lv_all_0 TYPE abap_bool VALUE abap_true.
-        DATA lv_found TYPE abap_bool VALUE abap_false.
         lv_level = ir_tree->level.
 
       WHEN 2.
@@ -145,7 +146,6 @@ METHOD catch_prepare_tree.
           <lv_field> = lines( <lt_sub_item> ).
 
         WHEN 'FIRST'. " 'LAST'.
-          DATA lr_sub_data TYPE REF TO data.
           LOOP AT <lt_sub_item> REFERENCE INTO lr_sub_data.
             lr_ref = _get_field_value( ir_row  = lr_sub_data
                                        is_func = <ls_func> ).

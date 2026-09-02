@@ -4,7 +4,7 @@
 * You can write in a short form
 * {R:v-VORNA+2(1)}
 *&---------------------------------------------------------------------*
-CLASS lcl_demo_131 DEFINITION INHERITING FROM lcl_demo.
+CLASS lcl_demo_131 DEFINITION INHERITING FROM zcl_xtt_demo.
   PUBLIC SECTION.
     TYPES:
       " dynamic screen
@@ -33,8 +33,6 @@ CLASS lcl_demo_131 DEFINITION INHERITING FROM lcl_demo.
       get_templates  REDEFINITION,
 
       _get_screen_context
-        IMPORTING
-                  io_report                TYPE REF TO lcl_report
         RETURNING VALUE(rs_screen_context) TYPE REF TO ts_screen_context,
 
       _get_root
@@ -48,23 +46,22 @@ CLASS lcl_demo_131 DEFINITION INHERITING FROM lcl_demo.
         RETURNING VALUE(rv_photo) TYPE xstring.
 ENDCLASS.
 
-*&---------------------------------------------------------------------*
-*&---------------------------------------------------------------------*
+
 CLASS lcl_demo_131 IMPLEMENTATION.
+
   METHOD get_desc_text.
     rv_desc_text = 'Shorthand for COND #( )'(131).
+
+*  METHOD get_url_base. rv_url_base = '/xtt/cond/shorthand/'.
   ENDMETHOD.
 
-*  METHOD get_url_base.
-*    rv_url_base = '/xtt/cond/shorthand/'.
-*  ENDMETHOD.
 
   METHOD _get_screen_context.
     CREATE DATA rs_screen_context.
     rs_screen_context->p_max_count = 5.
 
     " Test mode?
-    CHECK io_report->mo_injection IS INITIAL.
+    CHECK mo_report->mv_test_mode <> abap_true.
 
     TRY.
         DATA lo_screen TYPE REF TO zcl_eui_screen.
@@ -152,13 +149,13 @@ CLASS lcl_demo_131 IMPLEMENTATION.
 
   METHOD set_merge_info.
     DATA lr_screen_context TYPE REF TO ts_screen_context.
-    lr_screen_context = _get_screen_context( io_report ).
+    lr_screen_context = _get_screen_context( ).
     CHECK lr_screen_context IS NOT INITIAL.
 
     DATA lt_root TYPE tt_root.
     lt_root = _get_root( lr_screen_context->* ).
 
-    io_report->merge_add_one( lt_root ).
+    mo_report->merge_add_one( lt_root ).
   ENDMETHOD.
 
   METHOD get_templates.

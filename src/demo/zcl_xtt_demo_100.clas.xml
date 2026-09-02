@@ -1,0 +1,46 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_XTT_DEMO_100</CLSNAME>
+    <LANGU>E</LANGU>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>TS_ICON</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>TS_ICON</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>TS_ROOT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>TS_ROOT</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>_GET_ROOT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>_GET_ROOT</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>_GET_ROOT</CMPNAME>
+     <SCONAME>IV_RAW</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>IV_RAW</DESCRIPT>
+    </SEOSUBCOTX>
+    <SEOSUBCOTX>
+     <CMPNAME>_GET_ROOT</CMPNAME>
+     <SCONAME>RS_ROOT</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>RS_ROOT</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
+  </asx:values>
+ </asx:abap>
+</abapGit>

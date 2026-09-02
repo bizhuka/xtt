@@ -166,6 +166,8 @@ ENDMETHOD.
 
 METHOD get_type.
   DATA ls_field_ext TYPE zcl_xtt_replace_block=>ts_field_ext.
+  DATA lt_code      LIKE mt_abap_code.
+
   ls_field_ext =  zcl_xtt_replace_block=>get_field_ext( io_xtt        = mo_xtt
                                                         is_block      = is_data
                                                         iv_block_name = iv_suffix ).
@@ -205,7 +207,7 @@ METHOD get_type.
       WHEN cl_abap_typedescr=>typekind_time.
         ev_type = 't'.
 
-        " No trunsformation for STRING
+        " No transformation for STRING
       WHEN cl_abap_typedescr=>typekind_csequence OR cl_abap_typedescr=>typekind_string OR
            cl_abap_typedescr=>typekind_w OR
            " Binary data in template? Dump ?
@@ -221,7 +223,6 @@ METHOD get_type.
         " Structures
       WHEN cl_abap_typedescr=>typekind_struct1 OR cl_abap_typedescr=>typekind_struct2.
         " Declare in code
-        DATA lt_code LIKE mt_abap_code.
         CONCATENATE `TS_` iv_suffix INTO ev_type.
 
         " Line by line
@@ -455,12 +456,18 @@ METHOD _make_cond_forms.
   DATA lv_form_decl TYPE string.
 
   IF mv_top_is_ddic_type = abap_true.
-    CONCATENATE `value TYPE ` mv_root_type INTO lv_form_decl.
+*    CONCATENATE `value TYPE ` mv_root_type INTO lv_form_decl.
+    CONCATENATE `root TYPE ` mv_root_type INTO lv_form_decl.
   ELSE.
     lv_form_decl = `root TYPE ANY`.
-    CONCATENATE `DATA: VALUE TYPE ` mv_root_type `.` INTO lv_line.
-    APPEND lv_line TO mt_abap_code.                         "#EC NOTEXT
+*    CONCATENATE `DATA: VALUE TYPE ` mv_root_type `.` INTO lv_line.
+*    APPEND lv_line TO mt_abap_code.                         "#EC NOTEXT
   ENDIF.
+
+  " Always declare `VALUE`
+  CONCATENATE `DATA: VALUE TYPE ` mv_root_type `.` INTO lv_line.
+  APPEND lv_line TO mt_abap_code.
+
   APPEND '' TO mt_abap_code.
 
   FIELD-SYMBOLS <ls_match> LIKE LINE OF mt_match.
@@ -480,7 +487,9 @@ METHOD _make_cond_forms.
     APPEND lv_line TO mt_abap_code.
 
     " Use slow MOVE-CORRESPONDING
-    IF mv_top_is_ddic_type <> abap_true.
+    IF mv_top_is_ddic_type = abap_true.
+      APPEND 'value = root.' TO mt_abap_code.
+    ELSE.
       IF sy-saprl >= '740'.
         APPEND 'value = CORRESPONDING #( DEEP root ).'  TO mt_abap_code. "#EC NOTEXT
       ELSE.

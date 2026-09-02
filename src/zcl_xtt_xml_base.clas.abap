@@ -434,7 +434,9 @@ ENDMETHOD.
 
 
 METHOD merge_trees.                                                              .
-  DATA ls_bounds TYPE ts_bounds.
+  DATA ls_bounds       TYPE ts_bounds.
+  DATA lo_tree_handler TYPE REF TO lcl_tree_handler.
+
   CLEAR ls_bounds.
 
   " Detect bounds
@@ -447,7 +449,6 @@ METHOD merge_trees.                                                             
                             cv_middle = cv_content " TODO always empty ???
                 ).
     " For trees
-    DATA lo_tree_handler TYPE REF TO lcl_tree_handler.
     CREATE OBJECT lo_tree_handler
       EXPORTING
         io_xtt        = me

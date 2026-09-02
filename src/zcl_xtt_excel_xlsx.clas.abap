@@ -423,10 +423,11 @@ ENDMETHOD.                    "cell_is_string
 
 
 METHOD cell_read_xml.
-  DATA: ls_cell TYPE REF TO ts_ex_cell,
-        lo_elem TYPE REF TO if_ixml_element,
-        l_ind   TYPE i.
-  DATA  lo_xtt_error TYPE REF TO zcx_xtt_exception.
+  DATA: ls_cell      TYPE REF TO ts_ex_cell,
+        lo_elem      TYPE REF TO if_ixml_element,
+        l_ind        TYPE i,
+        l_val        TYPE string,
+        lo_xtt_error TYPE REF TO zcx_xtt_exception.
 
   " Transform coordinates
   DATA l_cell_ref TYPE string.
@@ -450,7 +451,6 @@ METHOD cell_read_xml.
   lo_elem = io_node->find_from_name( name = 'f' ).
   IF lo_elem IS BOUND.
     " Unescape fm
-    DATA l_val TYPE string.
     l_val = lo_elem->get_value( ).
     l_val = cl_http_utility=>escape_html( l_val ).
 
@@ -808,10 +808,11 @@ ENDMETHOD.
 
 
 METHOD constructor.
-  super->constructor( io_file = io_file ).
+  DATA l_x_value   TYPE xstring.
   DATA lo_no_check TYPE REF TO zcx_eui_no_check.
+
+  super->constructor( io_file = io_file ).
   TRY.
-      DATA l_x_value TYPE xstring.
       io_file->get_content( IMPORTING ev_as_xstring = l_x_value ).
     CATCH zcx_eui_no_check INTO lo_no_check.
       add_log_message( io_exception = lo_no_check ).
@@ -1901,9 +1902,11 @@ METHOD on_match_found.
     c_excel_1900_leap_year TYPE d VALUE '19000228',
     c_time_start           TYPE t VALUE '000000'.
   DATA:
-    l_len   TYPE i,
-    l_value TYPE string,
-    l_date  TYPE float.
+    l_len       TYPE i,
+    l_value     TYPE string,
+    l_date      TYPE float,
+    lv_prev_typ TYPE string,
+    lv_prev_val TYPE REF TO data.
   FIELD-SYMBOLS:
     <l_string> TYPE csequence,
     <l_date>   TYPE d,
@@ -1979,7 +1982,6 @@ METHOD on_match_found.
       ENDIF.
 
       " Save previous type for dates only
-      DATA: lv_prev_typ TYPE string, lv_prev_val TYPE REF TO data.
       lv_prev_typ = is_field->typ.
       lv_prev_val = is_field->dref.
 
@@ -2388,7 +2390,8 @@ ENDMETHOD.
 
 
 METHOD _sheet_merge.
-  DATA lv_name_mask TYPE string.
+  DATA: lv_name_mask TYPE string,
+        lv_position  TYPE i.
   CONCATENATE `*{` iv_block_name `-*}*` INTO lv_name_mask.
 
   " Has template ?
@@ -2397,7 +2400,6 @@ METHOD _sheet_merge.
     CHECK lo_sheet->_name CP lv_name_mask.
 
     " Insert from the next sheet
-    DATA lv_position TYPE i.
     lv_position  = sy-tabix + 1.
 
     " Use several times

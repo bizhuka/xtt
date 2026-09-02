@@ -61,19 +61,22 @@ CLASS ZCL_XTT_IMAGE IMPLEMENTATION.
 
 
 METHOD clone.
-  " Is raw xString?
+  DATA lv_type TYPE char1.
   FIELD-SYMBOLS <lv_xstring> TYPE xstring.
-  TRY.
-      ASSIGN source TO <lv_xstring> CASTING.
-      result = zcl_xtt_image=>create_image( iv_image   = <lv_xstring>
-                                            iv_ext     = me->mv_ext
-                                            iv_width   = me->mv_width
-                                            iv_height  = me->mv_height
-                                            iv_by_decl = me->mv_by_decl
-                                           ).
-    CATCH cx_sy_assign_cast_illegal_cast.
-      CLEAR result.
-  ENDTRY.
+
+  CHECK source IS NOT INITIAL.
+
+  " Is raw xString?
+  DESCRIBE FIELD source TYPE lv_type.
+  CHECK lv_type = cl_abap_typedescr=>typekind_xstring.
+
+  ASSIGN source TO <lv_xstring> CASTING.
+  result = zcl_xtt_image=>create_image( iv_image   = <lv_xstring>
+                                        iv_ext     = me->mv_ext
+                                        iv_width   = me->mv_width
+                                        iv_height  = me->mv_height
+                                        iv_by_decl = me->mv_by_decl
+                                       ).
 ENDMETHOD.
 
 

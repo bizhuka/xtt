@@ -1,6 +1,6 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
-CLASS lcl_demo_060 DEFINITION FINAL INHERITING FROM lcl_demo.
+CLASS lcl_demo_060 DEFINITION FINAL INHERITING FROM zcl_xtt_demo.
   PUBLIC SECTION.
     TYPES:
       BEGIN OF ts_tree_06,
@@ -31,11 +31,11 @@ CLASS lcl_demo_060 DEFINITION FINAL INHERITING FROM lcl_demo.
       get_desc_text  REDEFINITION,
       get_url_base    REDEFINITION,
       set_merge_info  REDEFINITION,
-      get_templates   REDEFINITION.
+      get_templates   REDEFINITION,
 
+      merge           REDEFINITION.
   PROTECTED SECTION.
     METHODS:
-      _merge          REDEFINITION,
       on_prepare_tree_06 FOR EVENT prepare_tree OF zcl_xtt_replace_block
         IMPORTING
           ir_tree
@@ -126,12 +126,12 @@ CLASS lcl_demo_060 IMPLEMENTATION.
        ct_folder = lt_folders->* ).
 
     " Add sums to last elements with no children
-    io_report->init_random_generator( ).
+    mo_report->init_random_generator( ).
     LOOP AT lt_folders->* REFERENCE INTO ls_folder.
       REPLACE FIRST OCCURRENCE OF lv_path: IN ls_folder->par_dir WITH 'R:',
                                            IN ls_folder->dir     WITH 'R:'.
       CHECK ls_folder->has_children <> abap_true.
-      ls_folder->sum = io_report->mo_rand_p->get_next( ).
+      ls_folder->sum = mo_report->mo_rand_p->get_next( ).
     ENDLOOP.
 
     " New way use declarations in a template
@@ -147,7 +147,7 @@ CLASS lcl_demo_060 IMPLEMENTATION.
     ls_root-c  = _make_string_message( 'Tree - REF TO DATA (Old way)'(tre) ).
 
     " Paste data
-    io_report->merge_add_one( ls_root ).
+    mo_report->merge_add_one( ls_root ).
   ENDMETHOD.
 
   METHOD _fill_with_folders.
@@ -191,7 +191,7 @@ CLASS lcl_demo_060 IMPLEMENTATION.
     ENDLOOP.
   ENDMETHOD.
 
-  METHOD _merge.
+  METHOD merge.
     " Make copy
     DATA lt_merge LIKE it_merge.
     lt_merge = it_merge.
@@ -214,8 +214,8 @@ CLASS lcl_demo_060 IMPLEMENTATION.
     SET HANDLER on_prepare_tree_06 ACTIVATION abap_true.
 
     " Pass copy
-    super->_merge( io_xtt   = io_xtt
-                   it_merge = lt_merge[] ).
+    super->merge( io_xtt   = io_xtt
+                  it_merge = lt_merge[] ).
 
     SET HANDLER on_prepare_tree_06 ACTIVATION abap_false.
   ENDMETHOD.

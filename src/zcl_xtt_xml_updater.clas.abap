@@ -159,6 +159,12 @@ METHOD obj_replace.
       DATA lo_elem  TYPE REF TO if_ixml_element.
       lo_elem ?= lo_children->get_item( lv_count ).
 
+      " Fix for open ABAP
+      IF lo_elem IS INITIAL.
+        WRITE : / 'iXML element is not found',  iv_tag, lv_count, / <ls_new_tag>-_from, / <ls_new_tag>-_to, /.
+        CONTINUE.
+      ENDIF.
+
       DATA lv_attribute TYPE string.
       lv_attribute = lo_elem->get_attribute( iv_part_attribute ).
 

@@ -421,7 +421,7 @@ METHOD get_field_ext.
     rs_field_ext-rb_id = rs_field_ext-name.
   ENDIF.
 
-  " Ingone option of grandchildren {R-T-FIELD}
+  " Ignore option of grandchildren {R-T-FIELD}
   FIND ALL OCCURRENCES OF mc_block-name_delim IN rs_field_ext-name MATCH COUNT rs_field_ext-rb_level.
 
   " TODO join with ADD_2_FIELDS
@@ -918,7 +918,14 @@ ENDMETHOD.
 
       " Name and data
       FIELD-SYMBOLS <fs_sub_fld> TYPE any.
-      ASSIGN is_ext-oref->(<ls_attr>-name) TO <fs_sub_fld>.
+
+      " For OPEN ABAP
+      DATA lo_ref TYPE REF TO object.
+      lo_ref = is_ext-oref.
+      ASSIGN lo_ref->(<ls_attr>-name) TO <fs_sub_fld>.
+      IF sy-subrc <> 0.
+        zcx_eui_no_check=>raise_sys_error( iv_message = 'Cannot ASSIGN field!' ).
+      ENDIF.
 
       DATA ls_sub_field TYPE ts_field_ext.
       CONCATENATE is_ext-name mc_block-name_delim <ls_attr>-name INTO ls_sub_field-name.

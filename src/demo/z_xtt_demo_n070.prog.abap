@@ -7,13 +7,16 @@
 * on other hand ON_PREPARE_RAW event always works
 *&---------------------------------------------------------------------*
 
-CLASS lcl_demo_070 DEFINITION FINAL INHERITING FROM lcl_demo.
+CLASS lcl_demo_070 DEFINITION FINAL INHERITING FROM zcl_xtt_demo.
   PUBLIC SECTION.
     METHODS:
       get_desc_text  REDEFINITION,
       get_url_base   REDEFINITION,
       set_merge_info REDEFINITION,
       get_templates  REDEFINITION,
+
+      merge          REDEFINITION,
+      do_download    REDEFINITION,
 
       on_pbo_07 FOR EVENT pbo_event OF zif_eui_manager      "#EC CALLED
         IMPORTING
@@ -22,9 +25,6 @@ CLASS lcl_demo_070 DEFINITION FINAL INHERITING FROM lcl_demo.
 
   PROTECTED SECTION.
     METHODS:
-      _merge          REDEFINITION,
-      _do_download    REDEFINITION,
-
       on_prepare_raw_07 FOR EVENT prepare_raw OF zcl_xtt
         IMPORTING "sender
           iv_path
@@ -54,10 +54,10 @@ CLASS lcl_demo_070 IMPLEMENTATION.
     DATA ls_root TYPE ts_root.
 
     ls_root-message = 'No data at all'(nda).
-    io_report->merge_add_one( ls_root ).
+    mo_report->merge_add_one( ls_root ).
   ENDMETHOD.
 
-  METHOD _merge.
+  METHOD merge.
     SET HANDLER on_prepare_raw_07 FOR io_xtt.
     " do not call io_xtt->merge( ), no data for the example
 
@@ -102,7 +102,7 @@ CLASS lcl_demo_070 IMPLEMENTATION.
                               IMPORTING ev_xstr = ir_content->* ).
   ENDMETHOD.
 
-  METHOD _do_download.
+  METHOD do_download.
     DATA lo_ole TYPE REF TO zif_eui_ole.
     io_xtt->download(        " All parameters are optional
       EXPORTING
@@ -110,7 +110,7 @@ CLASS lcl_demo_070 IMPLEMENTATION.
       IMPORTING
         eo_ole      = lo_ole             " Get ole2_object back
       CHANGING
-        cv_fullpath = p_path ).
+        cv_fullpath = cv_fullpath ).
 
     " Call macro. Works good regardless VBA politics
     check_ole_07( io_ole = lo_ole ).

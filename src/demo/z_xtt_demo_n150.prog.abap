@@ -235,13 +235,13 @@ CLASS lcl_demo_150 IMPLEMENTATION.
     ASSIGN ls_grid_params-r_table->* TO <lt_table>.
 
     " Add Info about merge.
-    io_report->merge_add_one( <lt_table> ).
+    mo_report->merge_add_one( <lt_table> ).
 
     " Do not show merge
     rv_exit = abap_true.
 
     " For test mode
-    IF io_report->mo_injection IS NOT INITIAL.
+    IF mo_report->mv_test_mode = abap_true.
       ms_test_params  = ls_grid_params.
 *      mt_test_catalog = _get_test_catalog( ls_grid_params-r_table ).
 *      mt_test_sort    = _group_by( '_GROUP1' ).
@@ -249,7 +249,9 @@ CLASS lcl_demo_150 IMPLEMENTATION.
     ENDIF.
 
     " Show Flight info table instead
-    io_report->show_alv( EXPORTING is_grid_params = ls_grid_params
+    DATA lo_report TYPE REF TO lcl_report.
+    lo_report ?= mo_report.
+    lo_report->show_alv( EXPORTING is_grid_params = ls_grid_params
                          CHANGING  co_alv         = mo_alv  ).
   ENDMETHOD.
 

@@ -1,192 +1,10 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
 
-CLASS lcl_report DEFINITION DEFERRED.
-
-TYPES:
-  BEGIN OF ts_merge,
-    key TYPE string,
-    val TYPE REF TO data,
-    obj TYPE REF TO object, " For 160 only
-  END OF ts_merge,
-  tt_merge TYPE STANDARD TABLE OF ts_merge WITH DEFAULT KEY, " Same order HASHED  UNIQUE KEY key,
-
-  " Random table data
-  BEGIN OF ts_rand_data,
-    group   TYPE text100, "string,
-    caption TYPE text100, "string,
-    date    TYPE d,
-    sum1    TYPE bf_rbetr, " P with sign
-    sum2    TYPE bf_rbetr, " P with sign
-  END OF ts_rand_data,
-  tt_rand_data TYPE STANDARD TABLE OF ts_rand_data WITH DEFAULT KEY,
-
-  BEGIN OF ts_no_sum,
-    group   TYPE text100, "string,
-    caption TYPE text100, "string,
-    date    TYPE d,
-  END OF ts_no_sum,
-
-  " Dynamic columns new syntax
-*  tt_sums TYPE STANDARD TABLE OF bf_rbetr WITH DEFAULT KEY,
-  BEGIN OF ts_sum_alv,
-    sum TYPE bf_rbetr, " Just 1 field for alv only
-  END OF ts_sum_alv,
-  tt_sums_alv TYPE STANDARD TABLE OF ts_sum_alv WITH DEFAULT KEY,
-
-  BEGIN OF ts_grid_params,
-    r_table   TYPE REF TO data,
-    s_layout  TYPE lvc_s_layo,
-    t_catalog TYPE lvc_t_fcat,
-    t_sort    TYPE lvc_t_sort,
-    t_toolbar TYPE ttb_button,
-  END OF ts_grid_params.
-
-**********************************************************************
-**********************************************************************
-INTERFACE lif_injection.
-  METHODS:
-    send_merge
-      IMPORTING
-        is_merge TYPE ts_merge,
-
-    prepare
-      IMPORTING
-        io_xtt TYPE REF TO zcl_xtt.
-ENDINTERFACE.
-
-**********************************************************************
-**********************************************************************
-CLASS lcl_demo DEFINITION ABSTRACT.
-  PUBLIC SECTION.
-
-    TYPES:
-      BEGIN OF ts_screen_opt,
-        row_count   TYPE abap_bool,
-        colum_count TYPE abap_bool,
-        block_count TYPE abap_bool,
-        zip         TYPE abap_bool,
-        img_size    TYPE abap_bool,
-      END OF ts_screen_opt,
-
-      BEGIN OF ts_template,
-        objid TYPE wwwdata-objid,
-      END OF ts_template,
-      tt_template TYPE STANDARD TABLE OF ts_template WITH DEFAULT KEY.
-
-    DATA:
-      v_desc   TYPE string.
-
-    METHODS:
-      get_desc_text
-        RETURNING VALUE(rv_desc_text) TYPE string,
-
-      get_url_base
-        RETURNING VALUE(rv_url_base) TYPE string,
-
-      get_screen_opt
-        RETURNING VALUE(rs_opt) TYPE ts_screen_opt,
-
-      template FINAL,
-
-      show FINAL
-        IMPORTING
-          it_merge    TYPE tt_merge
-          iv_template TYPE csequence OPTIONAL,
-
-      download FINAL
-        IMPORTING
-          it_merge     TYPE tt_merge
-
-          " test all templates
-          io_injection TYPE REF TO lif_injection OPTIONAL
-          iv_template  TYPE csequence            OPTIONAL,
-
-      get_raw FINAL
-        IMPORTING
-          it_merge     TYPE tt_merge
-          iv_template  TYPE csequence,
-
-      send FINAL
-        IMPORTING
-          it_merge    TYPE tt_merge
-          iv_template TYPE csequence OPTIONAL,
-
-      set_merge_info ABSTRACT
-        IMPORTING
-                  io_report      TYPE REF TO lcl_report
-        RETURNING VALUE(rv_exit) TYPE abap_bool,
-
-      get_templates ABSTRACT
-        RETURNING VALUE(rt_templates) TYPE tt_template,
-
-      download_template
-        IMPORTING
-          io_file      TYPE REF TO zif_xtt_file
-          iv_file_name TYPE csequence OPTIONAL,
-
-      get_from_template
-        IMPORTING
-          iv_template TYPE csequence
-        EXPORTING
-          ev_type     TYPE string
-          eo_xtt      TYPE REF TO zcl_xtt
-          eo_file     TYPE REF TO zif_xtt_file,
-
-      on_user_command FOR EVENT user_command OF cl_gui_alv_grid
-        IMPORTING
-          sender
-          e_ucomm.
-
-  PROTECTED SECTION.
-    METHODS:
-      _merge
-        IMPORTING
-          io_xtt   TYPE REF TO zcl_xtt
-          it_merge TYPE tt_merge,
-
-      _do_download
-        IMPORTING
-          io_xtt TYPE REF TO zcl_xtt,
-
-      _make_string_message
-        IMPORTING
-                  iv_info           TYPE csequence
-        RETURNING VALUE(rr_message) TYPE REF TO string.
-
-  PRIVATE SECTION.
-    TYPES:
-      BEGIN OF ts_vrm_value,
-        key  TYPE wwwdata-objid,
-        text TYPE text80,
-      END OF ts_vrm_value,
-      tt_vrm_value TYPE STANDARD TABLE OF ts_vrm_value WITH DEFAULT KEY.
-
-    METHODS:
-      _show_screen
-        IMPORTING
-                  iv_dynnr           TYPE sydynnr
-                  iv_lb_id           TYPE vrm_id
-                  iv_title           TYPE csequence
-        RETURNING VALUE(rv_template) TYPE string,
-
-      _get_template_lisbox
-        RETURNING VALUE(rt_listbox) TYPE tt_vrm_value,
-
-      _get_template_by_f4
-        RETURNING VALUE(rv_template) TYPE string,
-
-      _send_email
-        IMPORTING
-          io_xtt TYPE REF TO zcl_xtt,
-
-      _is_break_point_active.
-ENDCLASS.
-
 **********************************************************************
 **********************************************************************
 
-CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
+CLASS lcl_report DEFINITION FINAL INHERITING FROM zcl_xtt_report FRIENDS zcl_eui_event_caller.
   PUBLIC SECTION.
     CONSTANTS:
       BEGIN OF c_cmd,
@@ -199,7 +17,7 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
     TYPES:
       BEGIN OF ts_demo,
         ind  TYPE numc3,
-        inst TYPE REF TO lcl_demo,
+        inst TYPE REF TO zcl_xtt_demo,
       END OF ts_demo,
       tt_demo TYPE SORTED TABLE OF ts_demo WITH UNIQUE KEY ind,
 
@@ -212,14 +30,36 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
       END OF ts_merge_alv,
       tt_merge_alv TYPE STANDARD TABLE OF ts_merge_alv WITH DEFAULT KEY.
 
+    " Test mode
+    TYPES:
+      BEGIN OF ts_file,
+        kind     TYPE string,
+        template TYPE string,
+        report   TYPE string,
+      END OF ts_file,
+      BEGIN OF ts_test_demo,
+        id    TYPE numc3,
+        label TYPE string,
+        files TYPE STANDARD TABLE OF ts_file WITH DEFAULT KEY,
+        merge TYPE zcl_xtt_demo=>tt_merge,
+      END OF ts_test_demo,
+      tt_test_demo TYPE STANDARD TABLE OF ts_test_demo WITH DEFAULT KEY.
+    DATA mt_test_demo  TYPE tt_test_demo READ-ONLY.
+
     METHODS:
       constructor
         IMPORTING
-          io_injection TYPE REF TO lif_injection OPTIONAL,
+          iv_test_mode TYPE abap_bool OPTIONAL,
+
+      merge_add_one REDEFINITION,
 
       pbo,
 
-      start_of_selection,
+      start_of_selection
+        IMPORTING
+          iv_r_cnt TYPE int4
+          iv_c_cnt TYPE numc2
+          iv_b_cnt TYPE int4,
 
       f4_full_path
         IMPORTING
@@ -233,38 +73,32 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
         CHANGING
           cv_path  TYPE csequence,
 
-      merge_add_one
-        IMPORTING
-          is_root    TYPE any
-          iv_root_id TYPE string DEFAULT 'R'
-          io_helper  TYPE REF TO object OPTIONAL,
-
-      " Random data for tables
-      get_random_table
-        IMPORTING
-          iv_column_cnt TYPE numc2 DEFAULT 2
-        EXPORTING
-          et_table      TYPE STANDARD TABLE,
-
-      init_random_generator,
-
       show_alv
-        IMPORTING is_grid_params TYPE ts_grid_params
-        CHANGING  co_alv         TYPE REF TO zcl_eui_alv OPTIONAL.
+        IMPORTING is_grid_params TYPE zcl_xtt_demo=>ts_grid_params
+        CHANGING  co_alv         TYPE REF TO zcl_eui_alv OPTIONAL,
+
+      download
+        IMPORTING
+          it_merge    TYPE zcl_xtt_demo=>tt_merge
+          " test all templates
+          iv_template TYPE csequence OPTIONAL,
+
+      prepare
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt,
+      on_prepare_raw FOR EVENT prepare_raw OF zcl_xtt
+        IMPORTING "sender
+          iv_path
+          ir_content. " Type Ref To XSTRING,
 
     CLASS-METHODS:
       class_constructor.
 
-    " Current example
-    DATA o_demo        TYPE REF TO lcl_demo READ-ONLY.
-    DATA t_merge       TYPE tt_merge        READ-ONLY.
-
-    " Random numbers
-    DATA mo_rand_i     TYPE REF TO cl_abap_random_int    READ-ONLY.
-    DATA mo_rand_p     TYPE REF TO cl_abap_random_packed READ-ONLY.
-
-    " Test mode
-    DATA mo_injection  TYPE REF TO lif_injection READ-ONLY.
+    METHODS:
+      create_new_test_demo RETURNING VALUE(rr_test_demo) TYPE REF TO ts_test_demo,
+      fill_file_info
+        IMPORTING iv_objid       TYPE csequence
+        RETURNING VALUE(rr_file) TYPE REF TO ts_file.
 
   PRIVATE SECTION.
     CLASS-DATA:
@@ -273,7 +107,33 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
     DATA t_merge_alv  TYPE tt_merge_alv.
     DATA mo_menu_docu TYPE REF TO zcl_eui_menu.
 
+    " mv_test_mode = abap_true
+    DATA mr_test_demo  TYPE REF TO ts_test_demo.
+    DATA _raw_folder   TYPE string.
+
     METHODS:
+      show
+        IMPORTING
+          it_merge    TYPE zcl_xtt_demo=>tt_merge
+          iv_template TYPE csequence OPTIONAL,
+
+      send
+        IMPORTING
+          it_merge    TYPE zcl_xtt_demo=>tt_merge
+          iv_template TYPE csequence OPTIONAL,
+
+      _send_email
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt,
+
+      _show_screen
+        IMPORTING
+                  iv_dynnr           TYPE sydynnr
+                  iv_lb_id           TYPE vrm_id
+                  iv_title           TYPE csequence
+        RETURNING VALUE(rv_template) TYPE string,
+      _is_break_point_active,
+
       _online_docu_button,
       _on_function_selected FOR EVENT function_selected OF cl_gui_toolbar "#EC CALLED
         IMPORTING
@@ -312,7 +172,7 @@ CLASS lcl_report DEFINITION FINAL FRIENDS zcl_eui_event_caller.
         RETURNING VALUE(rv_text) TYPE string,
 
       _get_grid_params
-        RETURNING VALUE(rs_gp) TYPE ts_grid_params,
+        RETURNING VALUE(rs_gp) TYPE zcl_xtt_demo=>ts_grid_params,
 
       _on_hotspot_click FOR EVENT hotspot_click OF cl_gui_alv_grid "#EC CALLED
         IMPORTING "sender

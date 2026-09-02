@@ -87,6 +87,10 @@ ENDMETHOD.
 METHOD on_match_found.
   CONSTANTS:
     c_date_start      TYPE d VALUE '18991231'.
+  FIELD-SYMBOLS:
+    <lv_string>       TYPE csequence,
+    <lv_date>         TYPE d,
+    <lv_time>         TYPE t.
   DATA:
     l_start           TYPE i,
     lv_cell_block_end TYPE string,
@@ -110,11 +114,8 @@ METHOD on_match_found.
     CASE is_field->typ.
         " Datetime
       WHEN zcl_xtt_replace_block=>mc_type-datetime.
-        FIELD-SYMBOLS <lv_string> TYPE csequence.
         ASSIGN is_field->dref->* TO <lv_string>.
 
-        FIELD-SYMBOLS <lv_date>   TYPE d.
-        FIELD-SYMBOLS <lv_time>   TYPE t.
         ASSIGN <lv_string>(8)     TO <lv_date> CASTING.
         ASSIGN <lv_string>+8(6)   TO <lv_time> CASTING.
 

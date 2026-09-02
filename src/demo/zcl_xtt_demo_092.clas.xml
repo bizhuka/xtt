@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_XTT_DEMO_092</CLSNAME>
+    <LANGU>E</LANGU>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CMPNAME>GET_COLUMNS</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>GET_COLUMNS</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>TS_COLUMN</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>TS_COLUMN</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>TS_ROW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>TS_ROW</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>TT_COLUMN</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>TT_COLUMN</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CMPNAME>TT_ROW</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>TT_ROW</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+   <DESCRIPTIONS_SUB>
+    <SEOSUBCOTX>
+     <CMPNAME>GET_COLUMNS</CMPNAME>
+     <SCONAME>RT_COLUMN</SCONAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>RT_COLUMN</DESCRIPT>
+    </SEOSUBCOTX>
+   </DESCRIPTIONS_SUB>
+  </asx:values>
+ </asx:abap>
+</abapGit>

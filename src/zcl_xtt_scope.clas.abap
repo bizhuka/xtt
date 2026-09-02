@@ -97,10 +97,10 @@ CLASS ZCL_XTT_SCOPE IMPLEMENTATION.
 
 
 METHOD calc_cond_matches.
-  IF iv_init = abap_true.
-    " Dynamic fileds
-    DATA lt_cond_scope LIKE mt_scope.
+  " Dynamic fields
+  DATA lt_cond_scope LIKE mt_scope.
 
+  IF iv_init = abap_true.
     FIELD-SYMBOLS <ls_scope> LIKE LINE OF mt_scope.
     DATA lv_block_level TYPE i.
     lv_block_level = mo_block->ms_ext-rb_level + 1.

@@ -1870,7 +1870,8 @@ METHOD list_object_save_xml.
       DATA lv_content_type TYPE string.
       CONCATENATE `<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml" PartName="/` "#EC NOTEXT
                   lv_path `"/>` INTO lv_content_type.
-      io_sheet->mo_xlsx->_xml_content_types->str_add( lv_content_type ).
+      ASSERT io_sheet->mo_xlsx = me.
+      me->_xml_content_types->str_add( lv_content_type ).
 
       DATA lv_attr TYPE string.
       lv_attr = io_sheet->get_new_id( ls_list_object->_lo_id ).
@@ -1929,18 +1930,29 @@ METHOD on_match_found.
         ASSIGN is_field->dref->* TO <l_string>.
 
         " Both parts
-        ASSIGN <l_string>(8)     TO <l_date> CASTING.
-        ASSIGN <l_string>+8(6)   TO <l_time> CASTING.
+        DATA lv_date TYPE d.
+        DATA lv_time TYPE t.
+        lv_date = <l_string>(8).
+        lv_time = <l_string>+8(6).
+
+        ASSIGN lv_date TO <l_date>.
+        ASSIGN lv_time TO <l_time>.
         CLEAR mo_sheet->ms_cell->c_type.
 
         " Date
       WHEN zcl_xtt_replace_block=>mc_type-date.
-        ASSIGN is_field->dref->* TO <l_date> CASTING. " allow accept char(8) as date
+        ASSIGN is_field->dref->* TO <l_date>.
+        IF sy-subrc <> 0.
+          ASSIGN is_field->dref->* TO <l_date> CASTING. " allow accept char(8) as date
+        ENDIF.
         CLEAR mo_sheet->ms_cell->c_type.
 
         " Time
       WHEN zcl_xtt_replace_block=>mc_type-time.
-        ASSIGN is_field->dref->* TO <l_time> CASTING. " allow accept char(6) as time
+        ASSIGN is_field->dref->* TO <l_time>.
+        IF sy-subrc <> 0.
+          ASSIGN is_field->dref->* TO <l_time> CASTING. " allow accept char(6) as time
+        ENDIF.
         CLEAR mo_sheet->ms_cell->c_type.
 
       WHEN zcl_xtt_replace_block=>mc_type-boolean.

@@ -14,6 +14,7 @@ public section.
       caller TYPE REF TO object,
       type   TYPE string,
       form   TYPE string,
+      o_expr TYPE REF TO object,
     END OF ts_match .
   types:
     tt_match TYPE SORTED TABLE OF ts_match WITH UNIQUE KEY cid .
@@ -46,11 +47,27 @@ public section.
       !EV_PROG type PROGRAMM
     changing
       !CT_ROW_OFFSET type ZCL_XTT_TREE_FUNCTION=>TT_ROW_OFFSET .
+  class-methods EVAL_TREE_COND
+      importing
+        !IO_EXPR type ref to OBJECT
+        !IS_ROW type ANY
+      returning
+        value(RV_OK) type ABAP_BOOL .
 protected section.
 private section.
+    " CREATE DATA types
+  TYPES _integer   TYPE int4.
+  TYPES _double    TYPE p LENGTH 16 DECIMALS 5.
+  TYPES _date      TYPE d.
+  TYPES _time      TYPE t.
+  TYPES _boolean   TYPE abap_bool.
+  TYPES _datetime  TYPE c LENGTH 14.
+  TYPES _string    TYPE string.
+  TYPES: BEGIN OF ts_block,
+           ok TYPE i,
+         END OF ts_block.
+  TYPES _block TYPE STANDARD TABLE OF ts_block WITH DEFAULT KEY. " just any table
 
-*"* private components of class ZCL_XTT_COND
-*"* do not include other source files here!!!
   data MO_XTT type ref to ZCL_XTT .
   data MT_ABAP_CODE type STRINGTAB .
   data MT_MATCH type TT_MATCH .
@@ -101,19 +118,6 @@ METHOD calc_matches.
   " No dynamic fields
   CHECK mt_match[] IS NOT INITIAL.
 
-  " CREATE DATA types
-  TYPES integer   TYPE int4.
-  TYPES double    TYPE p LENGTH 16 DECIMALS 5.
-  TYPES date      TYPE d.
-  TYPES time      TYPE t.
-  TYPES boolean   TYPE abap_bool.
-  TYPES datetime  TYPE c LENGTH 14.
-*  TYPES string    TYPE string.
-  TYPES: BEGIN OF ts_block,
-           ok TYPE i,
-         END OF ts_block.
-  TYPES block TYPE STANDARD TABLE OF ts_block WITH DEFAULT KEY. " just any table
-
   FIELD-SYMBOLS <ls_root>   TYPE any.
   FIELD-SYMBOLS <lv_result> TYPE any.
   ASSIGN io_block->ms_ext-dref->* TO <ls_root>.
@@ -129,26 +133,48 @@ METHOD calc_matches.
       ls_field-typ = zcl_xtt_replace_block=>mc_type-table.
     ENDIF.
 
+    DATA lv_type   TYPE string.
+    DATA lv_result TYPE string.
+
     " Use pseudo types
-    CREATE DATA ls_field-dref TYPE (<ls_match>-type).
+    lv_type = |ZCL_XTT_COND=>_{ <ls_match>-type }|.
+    CREATE DATA ls_field-dref TYPE (lv_type).
     ASSIGN ls_field-dref->* TO <lv_result>.
 
     DATA lo_error TYPE REF TO zcx_eui_no_check.
-    TRY.
+    DATA lv_ok    TYPE abap_bool.
+
+    IF <ls_match>-o_expr IS NOT INITIAL.
+      TRY.
+        DATA lo_expression TYPE REF TO lcl_expression.
+        lo_expression ?= <ls_match>-o_expr.
+
         sy-tabix = iv_tabix.
-        PERFORM (<ls_match>-form) IN PROGRAM (mv_prog) IF FOUND
-          USING
-                <ls_root>
-                <ls_match>-caller
-          CHANGING
-                <lv_result>.
-      CATCH zcx_eui_no_check INTO lo_error.
-        MESSAGE w025(zsy_xtt) WITH <ls_match>-cond INTO sy-msgli.
-        io_xtt->add_log_message( iv_syst = abap_true ).
-        " tech info
-        io_xtt->add_log_message( io_exception = lo_error
-                                 iv_msgty     = 'W' ).
-    ENDTRY.
+        lv_result = lo_expression->evaluate( <ls_root> ).
+        <lv_result> = lv_result.
+        lv_ok = abap_true.
+      CATCH zcx_eui_no_check.
+        lv_ok = abap_false.
+      ENDTRY.
+    ENDIF.
+
+    IF lv_ok <> abap_true AND mv_prog IS NOT INITIAL.
+      TRY.
+          sy-tabix = iv_tabix.
+          PERFORM (<ls_match>-form) IN PROGRAM (mv_prog) IF FOUND
+            USING
+                  <ls_root>
+                  <ls_match>-caller
+            CHANGING
+                  <lv_result>.
+        CATCH zcx_eui_no_check INTO lo_error.
+          MESSAGE w025(zsy_xtt) WITH <ls_match>-cond INTO sy-msgli.
+          io_xtt->add_log_message( iv_syst = abap_true ).
+          " tech info
+          io_xtt->add_log_message( io_exception = lo_error
+                                   iv_msgty     = 'W' ).
+      ENDTRY.
+    ENDIF.
 
     INSERT ls_field INTO TABLE io_block->mt_fields.
     IF sy-subrc <> 0.
@@ -335,6 +361,18 @@ METHOD make_tree_forms.
   FIELD-SYMBOLS <ls_row_off> LIKE LINE OF ct_row_offset.
   LOOP AT ct_row_offset ASSIGNING <ls_row_off> WHERE if_where IS NOT INITIAL. "#EC CI_SORTSEQ
 
+    " Compile AST for OPEN-ABAP (or always as fast-path)
+    IF sy-saprl = 'OPEN'.
+      DATA lo_expression TYPE REF TO lcl_expression.
+      CREATE OBJECT lo_expression.
+      TRY.
+          lo_expression->compile( <ls_row_off>-if_where ).
+          <ls_row_off>-o_expr = lo_expression.
+        CATCH zcx_eui_no_check.
+          CLEAR <ls_row_off>-o_expr.
+      ENDTRY.
+    ENDIF.
+
     " Name of FORM
     <ls_row_off>-if_form = sy-tabix.
     CONDENSE <ls_row_off>-if_form.
@@ -409,6 +447,8 @@ ENDMETHOD.
 
 
 METHOD _generate.
+  CHECK sy-saprl <> 'OPEN'.
+
   " Basic header of app
   INSERT `REPORT DYNAMIC_IF.` INTO mt_abap_code INDEX 1.
   INSERT `TYPE-POOLS ABAP.`   INTO mt_abap_code INDEX 2. " Required for ABAP 7.01
@@ -543,6 +583,17 @@ METHOD _read_scopes.
       CASE <ls_pair>-key.
         WHEN 'cond'.
           ls_match-cond = <ls_pair>-val.
+
+          IF sy-saprl = 'OPEN'.
+            DATA lo_expression TYPE REF TO lcl_expression.
+            CREATE OBJECT lo_expression.
+            TRY.
+              lo_expression->compile( ls_match-cond ).
+              ls_match-o_expr = lo_expression.
+            CATCH zcx_eui_no_check.
+              CLEAR ls_match-o_expr.
+            ENDTRY.
+          ENDIF.
         WHEN 'type'.
           ls_match-type = <ls_pair>-val.
         WHEN 'call'.
@@ -556,5 +607,16 @@ METHOD _read_scopes.
 
     INSERT ls_match INTO TABLE mt_match.
   ENDLOOP.
+ENDMETHOD.
+
+METHOD eval_tree_cond.
+  DATA lo_expression TYPE REF TO lcl_expression.
+  CHECK io_expr IS NOT INITIAL.
+  TRY.
+      lo_expression ?= io_expr.
+      rv_ok = lo_expression->evaluate_bool( is_row ).
+    CATCH zcx_eui_no_check.
+      rv_ok = abap_false.
+  ENDTRY.
 ENDMETHOD.
 ENDCLASS.

@@ -1,45 +1,11 @@
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
-CLASS lcl_demo_060 DEFINITION FINAL INHERITING FROM zcl_xtt_demo.
+CLASS lcl_demo_060 DEFINITION FINAL INHERITING FROM zcl_xtt_demo_060.
   PUBLIC SECTION.
-    TYPES:
-      BEGIN OF ts_tree_06,
-        " Folders hierarchy
-        dir          TYPE string,
-        par_dir      TYPE string,
 
-        " Empty field. Filled in on_prepare_tree_06
-        level        TYPE i,
-
-        sum          TYPE bf_rbetr,
-        has_children TYPE abap_bool,
-      END OF ts_tree_06,
-      tt_tree_06 TYPE STANDARD TABLE OF ts_tree_06 WITH DEFAULT KEY,
-
-      " Document structure
-      BEGIN OF ts_root,
-        title TYPE string,
-
-        " Or just TYPE tt_tree_06
-        t     TYPE REF TO data, " <-- Table of trees (better to use general REF TO)
-
-        " Old way
-        c     TYPE REF TO data,
-      END OF ts_root.
-
-    METHODS:
-      get_desc_text  REDEFINITION,
-      get_url_base    REDEFINITION,
-      set_merge_info  REDEFINITION,
-      get_templates   REDEFINITION,
-
-      merge           REDEFINITION.
   PROTECTED SECTION.
     METHODS:
-      on_prepare_tree_06 FOR EVENT prepare_tree OF zcl_xtt_replace_block
-        IMPORTING
-          ir_tree
-          ir_data,
+      _get_folders REDEFINITION,
 
       _fill_with_folders
         IMPORTING
@@ -52,19 +18,15 @@ ENDCLASS.
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
 CLASS lcl_demo_060 IMPLEMENTATION.
-  METHOD get_desc_text.
-    rv_desc_text = 'Tree (group by field relations)'(060).
-  ENDMETHOD.
 
-  METHOD get_url_base.
-    rv_url_base = '/xtt/tree-group-by-field-relations/'.
-  ENDMETHOD.
+  METHOD _get_folders.
+    DATA lo_screen  TYPE REF TO zcl_eui_screen.
+    DATA ls_folder  TYPE REF TO ts_tree_06.
 
-  METHOD set_merge_info.
+    rt_folder[] = super->_get_folders( ).
     " Show directory.
     IF p_r_path IS INITIAL.
       TRY.
-          DATA lo_screen TYPE REF TO zcl_eui_screen.
           DATA lo_error  TYPE REF TO zcx_eui_exception.
 
           CREATE OBJECT lo_screen
@@ -84,18 +46,13 @@ CLASS lcl_demo_060 IMPLEMENTATION.
       lo_screen->get_dimension( IMPORTING ev_col_end = lv_col_end ).
       lo_screen->popup( iv_col_end = lv_col_end ).
       CHECK lo_screen->show( ) = 'OK'.
+
+      CLEAR rt_folder[].
     ENDIF.
 
     " Ready path
     DATA lv_path LIKE p_r_path.
     lv_path = p_r_path.
-
-    " Document structure
-    DATA ls_root    TYPE ts_root.
-    DATA lt_folders TYPE REF TO tt_tree_06.
-
-    ls_root-title = 'Title'(tit).
-    CREATE DATA lt_folders.
 
     " Delete file separator
     DATA lv_sep TYPE char1.
@@ -112,8 +69,7 @@ CLASS lcl_demo_060 IMPLEMENTATION.
 
     " Add first level or not
     IF p_r_many <> abap_true.
-      DATA ls_folder  TYPE REF TO ts_tree_06.
-      APPEND INITIAL LINE TO lt_folders->* REFERENCE INTO ls_folder.
+      APPEND INITIAL LINE TO rt_folder REFERENCE INTO ls_folder.
       ls_folder->has_children = abap_true.
       ls_folder->dir          = lv_path.
     ENDIF.
@@ -123,31 +79,14 @@ CLASS lcl_demo_060 IMPLEMENTATION.
        iv_dir    = lv_path
        iv_sep    = lv_sep
      CHANGING
-       ct_folder = lt_folders->* ).
+       ct_folder = rt_folder ).
 
     " Add sums to last elements with no children
-    mo_report->init_random_generator( ).
-    LOOP AT lt_folders->* REFERENCE INTO ls_folder.
+    CHECK lo_screen IS NOT INITIAL.
+    LOOP AT rt_folder REFERENCE INTO ls_folder.
       REPLACE FIRST OCCURRENCE OF lv_path: IN ls_folder->par_dir WITH 'R:',
                                            IN ls_folder->dir     WITH 'R:'.
-      CHECK ls_folder->has_children <> abap_true.
-      ls_folder->sum = mo_report->mo_rand_p->get_next( ).
     ENDLOOP.
-
-    " New way use declarations in a template
-    ls_root-t = lt_folders.
-
-    " Old way in code
-*    ls_root-c = zcl_xtt_replace_block=>tree_create_relat(
-*      it_table      = ls_root-t " REF #( lt_folders )
-*      iv_node_key   = 'DIR'
-*      iv_relat_key  = 'PAR_DIR' ).
-
-    " Cannot show TREE in alv
-    ls_root-c  = _make_string_message( 'Tree - REF TO DATA (Old way)'(tre) ).
-
-    " Paste data
-    mo_report->merge_add_one( ls_root ).
   ENDMETHOD.
 
   METHOD _fill_with_folders.
@@ -189,50 +128,5 @@ CLASS lcl_demo_060 IMPLEMENTATION.
         ls_folder->has_children = abap_true.
       ENDIF.
     ENDLOOP.
-  ENDMETHOD.
-
-  METHOD merge.
-    " Make copy
-    DATA lt_merge LIKE it_merge.
-    lt_merge = it_merge.
-
-    " Change R-C
-    FIELD-SYMBOLS <ls_merge> LIKE LINE OF lt_merge.
-    READ TABLE lt_merge ASSIGNING <ls_merge>
-     WITH TABLE KEY key = 'R'.
-
-    DATA lr_root TYPE REF TO ts_root.
-    lr_root ?= <ls_merge>-val.
-
-    " Old way in code (new way in template)
-    lr_root->c = zcl_xtt_replace_block=>tree_create_relat(
-      it_table      = lr_root->t " REF #( lt_folders )
-      iv_node_key   = 'DIR'
-      iv_relat_key  = 'PAR_DIR' ).
-
-    " Fill some fields in ON_PREPARE_TREE_06( )
-    SET HANDLER on_prepare_tree_06 ACTIVATION abap_true.
-
-    " Pass copy
-    super->merge( io_xtt   = io_xtt
-                  it_merge = lt_merge[] ).
-
-    SET HANDLER on_prepare_tree_06 ACTIVATION abap_false.
-  ENDMETHOD.
-
-  METHOD on_prepare_tree_06.
-    FIELD-SYMBOLS <ls_data> TYPE ts_tree_06.
-
-    " Cast to specefic data
-    ASSIGN ir_data->* TO <ls_data>.
-
-    " Can change value since 'R-T' is REF TO DATA
-    <ls_data>-level = ir_tree->level.
-  ENDMETHOD.
-
-  METHOD get_templates.
-    APPEND `ZXXT_DEMO_060-XLSX`      TO rt_templates.
-    APPEND `ZXXT_DEMO_060_FM-XLSX`   TO rt_templates.
-    APPEND `ZXXT_DEMO_060_EXCEL-XML` TO rt_templates.
   ENDMETHOD.
 ENDCLASS.

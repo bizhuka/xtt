@@ -355,8 +355,13 @@ ENDMETHOD.
         ASSIGN is_field->dref->* TO <l_string>.
 
         " Both parts
-        ASSIGN <l_string>(8)     TO <l_date> CASTING.
-        ASSIGN <l_string>+8(6)   TO <l_time> CASTING.
+        DATA lv_date TYPE d.
+        DATA lv_time TYPE t.
+        lv_date = <l_string>(8).
+        lv_time = <l_string>+8(6).
+
+        ASSIGN lv_date TO <l_date>.
+        ASSIGN lv_time TO <l_time>.
 
         " Date
       WHEN mc_type-date.
@@ -382,12 +387,13 @@ ENDMETHOD.
     " Excel uses its own formats for date and time
     " Format depends on country
     IF <l_date> IS ASSIGNED AND <l_date> IS NOT INITIAL.
-      WRITE <l_date> TO l_text.
-      rv_result = l_text.
+      " WRITE <l_date> TO l_text.
+      rv_result = |{ <l_date> DATE = USER }|.
     ENDIF.
 
     IF <l_time> IS ASSIGNED.
-      WRITE <l_time> TO l_text.
+      " WRITE <l_time> TO l_text.
+      l_text = |{ <l_time> TIME = USER }|.
 
       " Datetime ?
       IF <l_date> IS ASSIGNED AND rv_result IS NOT INITIAL.  " Both parts
@@ -920,9 +926,7 @@ ENDMETHOD.
       FIELD-SYMBOLS <fs_sub_fld> TYPE any.
 
       " For OPEN ABAP
-      DATA lo_ref TYPE REF TO object.
-      lo_ref = is_ext-oref.
-      ASSIGN lo_ref->(<ls_attr>-name) TO <fs_sub_fld>.
+      ASSIGN is_ext-oref->(<ls_attr>-name) TO <fs_sub_fld>.
       IF sy-subrc <> 0.
         zcx_eui_no_check=>raise_sys_error( iv_message = 'Cannot ASSIGN field!' ).
       ENDIF.

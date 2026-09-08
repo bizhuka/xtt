@@ -13,6 +13,7 @@ public section.
         if_where TYPE string,
         if_show  TYPE abap_bool, " Show or hide
         if_form  TYPE string,    " Name of preform
+        o_expr   TYPE REF TO object,
         " funcs    TYPE SORTED TABLE OF ts_func WITH UNIQUE KEY name,
 
         first TYPE i,
@@ -318,15 +319,19 @@ METHOD find_match.
       rr_data = <ls_row_off>-_data.
     ENDIF.
 
-    CHECK <ls_row_off>-if_form IS NOT INITIAL AND
-          mv_check_prog IS NOT INITIAL.
-
     CLEAR lv_ok.
-    PERFORM (<ls_row_off>-if_form) IN PROGRAM (mv_check_prog) IF FOUND
-      USING
-            <ls_data>
-      CHANGING
-            lv_ok.
+    IF <ls_row_off>-o_expr IS NOT INITIAL.
+      lv_ok = zcl_xtt_cond=>eval_tree_cond( io_expr = <ls_row_off>-o_expr
+                                            is_row  = <ls_data> ).
+    ELSEIF <ls_row_off>-if_form IS NOT INITIAL AND mv_check_prog IS NOT INITIAL.
+      PERFORM (<ls_row_off>-if_form) IN PROGRAM (mv_check_prog) IF FOUND
+        USING
+              <ls_data>
+        CHANGING
+              lv_ok.
+    ELSE.
+      CONTINUE.
+    ENDIF.
 
     CHECK lv_ok = abap_true.
 

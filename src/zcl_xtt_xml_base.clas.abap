@@ -581,6 +581,8 @@ ENDMETHOD.
 
 
 METHOD zif_xtt~get_raw.
+  CHECK mv_file_content IS NOT INITIAL.
+
   DO 1 TIMES.
     CHECK iv_no_warning <> abap_true.
 

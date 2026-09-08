@@ -4,7 +4,7 @@ CLASS lcl_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
                                  .           "#AU Duration Short
   PUBLIC SECTION.
     METHODS:
-      download
+      _download
         IMPORTING
           io_file     TYPE REF TO zif_xtt_file
           iv_messages TYPE string,
@@ -17,14 +17,14 @@ CLASS zcl_xtt DEFINITION LOCAL FRIENDS lcl_test.
 **********************************************************************
 **********************************************************************
 CLASS lcl_test IMPLEMENTATION.
-  METHOD download.
+  METHOD _download.
     DATA cut TYPE REF TO zcl_xtt.
 
     CREATE OBJECT cut TYPE zcl_xtt_excel_xml
       EXPORTING
         io_file = io_file.
 
-    cut->download( ).
+    cut->download( iv_open = abap_false ).
 
     zcl_xtt_util=>check_log_message( io_logger   = cut->_logger
                                      iv_messages = iv_messages ).
@@ -36,8 +36,8 @@ CLASS lcl_test IMPLEMENTATION.
       EXPORTING
         iv_objid = `no such file.xml`.
 
-    download( io_file     = lo_file
-              iv_messages = 'ZSY_XTT-007' ).
+    _download( io_file     = lo_file
+               iv_messages = 'ZSY_XTT-007' ). ";ZSY_XTT-008
   ENDMETHOD.
 
   METHOD oaor_no_file.
@@ -48,7 +48,7 @@ CLASS lcl_test IMPLEMENTATION.
         iv_object_key = `~!@#$`
         iv_filename   = `no such file.xml`.
 
-    download( io_file     = lo_file
-              iv_messages = 'ZSY_XTT-007' ).
+    _download( io_file     = lo_file
+               iv_messages = 'ZSY_XTT-007' ). ";ZSY_XTT-008
   ENDMETHOD.
 ENDCLASS.

@@ -351,6 +351,7 @@ ENDMETHOD.
 
 
 METHOD zif_xtt~download.
+  DATA lv_content   TYPE xstring.
   DATA lv_filename  TYPE string.
   DATA lv_no_ext    TYPE string.
   DATA lv_ext       TYPE string.
@@ -368,7 +369,6 @@ METHOD zif_xtt~download.
       get_no_warning mv_can_show_menu.
 
       " As a xstring (implemented in subclasses)
-      DATA lv_content   TYPE xstring.
       lv_content = get_raw( iv_no_warning = lv_no_warning ).
     CATCH zcx_eui_no_check INTO lo_no_check.
       add_log_message( io_exception = lo_no_check ).
@@ -472,7 +472,9 @@ METHOD zif_xtt~download.
   " And finally show logs
   _logger->show_as_button( iv_write_message = 'Please read logs for finding issues'(prl)
                            is_profile       = ms_log_profile ).
-  CHECK _logger->has_messages( iv_msg_types = zcl_eui_logger=>mc_msg_types-error ) = abap_true.
+  CHECK _logger->has_messages( iv_msg_types = zcl_eui_logger=>mc_msg_types-error ) = abap_true
+    AND zcl_eui_menu=>can_show( ) = abap_true.
+
   _logger->show( iv_profile = zcl_eui_logger=>mc_profile-popup
                  is_profile = ms_log_profile ).
 ENDMETHOD.

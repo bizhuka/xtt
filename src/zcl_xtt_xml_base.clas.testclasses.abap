@@ -6,7 +6,7 @@ CLASS lcl_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
     DATA:
       tab TYPE STANDARD TABLE OF t000. " Just 1 field
     METHODS:
-      body_tag
+      _body_tag
         IMPORTING
           iv_class    TYPE string
           iv_template TYPE string
@@ -20,7 +20,7 @@ CLASS zcl_xtt_xml_base DEFINITION LOCAL FRIENDS lcl_test.
 **********************************************************************
 **********************************************************************
 CLASS lcl_test IMPLEMENTATION.
-  METHOD body_tag.
+  METHOD _body_tag.
     DATA lo_file TYPE REF TO zif_xtt_file.
     DATA lo_cut  TYPE REF TO object.
     DATA cut     TYPE REF TO zcl_xtt_xml_base.
@@ -43,34 +43,34 @@ CLASS lcl_test IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD excel_xml.
-    body_tag( iv_class    = 'ZCL_XTT_EXCEL_XML'
-              iv_template = '<Worksheet>Ok <Row>{R-TAB}</Row><Worksheet>'
-              iv_messages = '' ).
+    _body_tag( iv_class    = 'ZCL_XTT_EXCEL_XML'
+               iv_template = '<Worksheet>Ok <Row>{R-TAB}</Row><Worksheet>'
+               iv_messages = '' ).
 
-    body_tag( iv_class    = 'ZCL_XTT_EXCEL_XML'
-              iv_template = '<Worksheet>Ok {R-TAB}<Worksheet>'
-              iv_messages = 'ZSY_XTT-012' ).
+    _body_tag( iv_class    = 'ZCL_XTT_EXCEL_XML'
+               iv_template = '<Worksheet>Ok {R-TAB}<Worksheet>'
+               iv_messages = 'ZSY_XTT-012' ).
 
-    body_tag( iv_class    = 'ZCL_XTT_EXCEL_XML'
-              iv_template = '<Worksh Not Ok rksheet>'
-              iv_messages = 'ZSY_XTT-008;ZSY_XTT-010;ZSY_XTT-012' ).
+    _body_tag( iv_class    = 'ZCL_XTT_EXCEL_XML'
+               iv_template = '<Worksh Not Ok rksheet>'
+               iv_messages = 'ZSY_XTT-008;ZSY_XTT-010;ZSY_XTT-012' ).
 
-    body_tag( iv_class    = 'ZCL_XTT_EXCEL_XML'
-              iv_template = '<Worksheet>Ok ?'
-              iv_messages = 'ZSY_XTT-009;ZSY_XTT-010;ZSY_XTT-012' ).
+    _body_tag( iv_class    = 'ZCL_XTT_EXCEL_XML'
+               iv_template = '<Worksheet>Ok ?'
+               iv_messages = 'ZSY_XTT-009;ZSY_XTT-010;ZSY_XTT-012' ).
   ENDMETHOD.
 
   METHOD html.
-    body_tag( iv_class    = 'ZCL_XTT_HTML'
-              iv_template = '<body>Ok <tr> {R-TAB} </tr> <body>'
-              iv_messages = '' ).
+    _body_tag( iv_class    = 'ZCL_XTT_HTML'
+               iv_template = '<body>Ok <tr> {R-TAB} </tr> <body>'
+               iv_messages = '' ).
 
-    body_tag( iv_class    = 'ZCL_XTT_HTML'
-              iv_template = '<Worksh Not Ok rksheet>'
-              iv_messages = 'ZSY_XTT-010;ZSY_XTT-012' ). " Should be no ZSY_XTT-008
+    _body_tag( iv_class    = 'ZCL_XTT_HTML'
+               iv_template = '<Worksh Not Ok rksheet>'
+               iv_messages = 'ZSY_XTT-010;ZSY_XTT-012' ). " Should be no ZSY_XTT-008
 
-    body_tag( iv_class    = 'ZCL_XTT_HTML'
-              iv_template = '<body>Ok ?'
-              iv_messages = 'ZSY_XTT-009;ZSY_XTT-010;ZSY_XTT-012' ).
+    _body_tag( iv_class    = 'ZCL_XTT_HTML'
+               iv_template = '<body>Ok ?'
+               iv_messages = 'ZSY_XTT-009;ZSY_XTT-010;ZSY_XTT-012' ).
   ENDMETHOD.
 ENDCLASS.

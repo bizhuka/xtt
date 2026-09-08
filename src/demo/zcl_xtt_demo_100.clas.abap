@@ -24,6 +24,8 @@ CLASS zcl_xtt_demo_100 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo CREATE PUB
         t     TYPE STANDARD TABLE OF ts_icon WITH DEFAULT KEY, " internal flat table ( In template {R-T} )
       END OF ts_root.
 
+      DATA mv_img_size TYPE abap_bool VALUE abap_true.
+
     METHODS:
       _get_root
         IMPORTING iv_raw         TYPE abap_bool
@@ -106,9 +108,9 @@ CLASS zcl_xtt_demo_100 IMPLEMENTATION.
       " old approach (direct call)
       DATA lv_width  TYPE i.
       DATA lv_height TYPE i.
-*      IF img_size = abap_true. "TODO
+      IF mv_img_size = abap_true.
         lv_width = lv_height = 200000.
-*      ENDIF.
+      ENDIF.
 
       " Create new instance (for internal use only)
       <ls_icon>-img = zcl_xtt_image=>create_image( iv_image  = lv_image

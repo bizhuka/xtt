@@ -39,7 +39,7 @@ CLASS lcl_test IMPLEMENTATION.
     CHECK lt_list IS NOT INITIAL.
 
 
-*DELETE lt_list WHERE key <> '092'.
+DELETE lt_list WHERE key <> '140'.
 ***********************************        p_r_cnt = 15.
 ***********************************        p_c_cnt = 36.
 ***********************************        p_b_cnt = 3.

@@ -4,12 +4,12 @@ CLASS lcl_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
                                 .           "#AU Duration Short
   PUBLIC SECTION.
     METHODS:
-      get_structure      FOR TESTING,
-      get_one_line_table FOR TESTING.
+      _get_structure      FOR TESTING,
+      _get_one_line_table FOR TESTING.
 ENDCLASS.
 
 CLASS lcl_test IMPLEMENTATION.
-  METHOD get_structure.
+  METHOD _get_structure.
     TYPES: BEGIN OF ts_src,
              d TYPE d,
              t TYPE t,
@@ -41,7 +41,7 @@ CLASS lcl_test IMPLEMENTATION.
 
   ENDMETHOD.
 
-  METHOD get_one_line_table.
+  METHOD _get_one_line_table.
     TYPES: BEGIN OF ts_src,
              d TYPE d,
              t TYPE t,

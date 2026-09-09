@@ -13,7 +13,7 @@ CLASS zcl_xtt_demo_160 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo_022 CREATE
       mt_month_name TYPE STANDARD TABLE OF t247 WITH DEFAULT KEY.
 
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       set_merge_info REDEFINITION,
       get_templates  REDEFINITION,
@@ -37,8 +37,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_160 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = ';call'(160).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = ';call'(160).
   ENDMETHOD.
 
   METHOD get_url_base.

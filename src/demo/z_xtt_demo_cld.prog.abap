@@ -15,12 +15,6 @@ CLASS lcl_report DEFINITION FINAL INHERITING FROM zcl_xtt_report FRIENDS zcl_eui
       END OF c_cmd.
 
     TYPES:
-      BEGIN OF ts_demo,
-        ind  TYPE numc3,
-        inst TYPE REF TO zcl_xtt_demo,
-      END OF ts_demo,
-      tt_demo TYPE SORTED TABLE OF ts_demo WITH UNIQUE KEY ind,
-
       BEGIN OF ts_merge_alv,
         root_id TYPE string,
         ui_type TYPE string,
@@ -47,19 +41,14 @@ CLASS lcl_report DEFINITION FINAL INHERITING FROM zcl_xtt_report FRIENDS zcl_eui
     DATA mt_test_demo  TYPE tt_test_demo READ-ONLY.
 
     METHODS:
-      constructor
-        IMPORTING
-          iv_test_mode TYPE abap_bool OPTIONAL,
+      constructor,
 
       merge_add_one REDEFINITION,
 
       pbo,
 
-      start_of_selection
-        IMPORTING
-          iv_r_cnt TYPE int4
-          iv_c_cnt TYPE numc2
-          iv_b_cnt TYPE int4,
+      init REDEFINITION,
+
 
       f4_full_path
         IMPORTING
@@ -83,16 +72,12 @@ CLASS lcl_report DEFINITION FINAL INHERITING FROM zcl_xtt_report FRIENDS zcl_eui
           " test all templates
           iv_template TYPE csequence OPTIONAL,
 
-      prepare
-        IMPORTING
-          io_xtt TYPE REF TO zcl_xtt,
+      prepare REDEFINITION,
+
       on_prepare_raw FOR EVENT prepare_raw OF zcl_xtt
         IMPORTING "sender
           iv_path
           ir_content. " Type Ref To XSTRING,
-
-    CLASS-METHODS:
-      class_constructor.
 
     METHODS:
       create_new_test_demo RETURNING VALUE(rr_test_demo) TYPE REF TO ts_test_demo,
@@ -101,9 +86,6 @@ CLASS lcl_report DEFINITION FINAL INHERITING FROM zcl_xtt_report FRIENDS zcl_eui
         RETURNING VALUE(rr_file) TYPE REF TO ts_file.
 
   PRIVATE SECTION.
-    CLASS-DATA:
-      t_demo TYPE tt_demo.
-
     DATA t_merge_alv  TYPE tt_merge_alv.
     DATA mo_menu_docu TYPE REF TO zcl_eui_menu.
 

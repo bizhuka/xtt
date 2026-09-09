@@ -10,10 +10,12 @@ AT SELECTION-SCREEN OUTPUT.
   go_report->pbo( ).
 
 START-OF-SELECTION.
-  go_report->start_of_selection(
-        iv_r_cnt     = p_r_cnt
-        iv_c_cnt     = p_c_cnt
-        iv_b_cnt     = p_b_cnt
+  go_report->init(
+    iv_ind       = p_exa
+    iv_test_mode = abap_false
+    iv_r_cnt     = p_r_cnt
+    iv_c_cnt     = p_c_cnt
+    iv_b_cnt     = p_b_cnt
   ).
 
 AT SELECTION-SCREEN ON VALUE-REQUEST FOR p_path.
@@ -43,9 +45,10 @@ FORM test USING i_exa    LIKE p_exa
   p_user   = sy-uname.
 
   CREATE OBJECT go_report.
-  go_report->start_of_selection(
-      iv_r_cnt  = 25
-      iv_c_cnt  = 10
-      iv_b_cnt  = 3
-  ).
+  go_report->init(
+      iv_ind       = p_exa
+      iv_test_mode = abap_true
+      iv_r_cnt     = 25
+      iv_c_cnt     = 10
+      iv_b_cnt     = 3 ).
 ENDFORM.

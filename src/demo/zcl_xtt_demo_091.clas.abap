@@ -2,7 +2,7 @@ CLASS zcl_xtt_demo_091 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo CREATE PUB
   PUBLIC SECTION.
 
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_screen_opt REDEFINITION,
       set_merge_info REDEFINITION,
@@ -11,8 +11,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_091 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = '3D example (sheets, columns & rows)'(091).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = '3D example (sheets, columns & rows)'(091).
   ENDMETHOD.
 
   METHOD get_url_base.

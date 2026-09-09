@@ -26,7 +26,7 @@ CLASS zcl_xtt_demo_060 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo CREATE PUB
       END OF ts_root.
 
     METHODS:
-      get_desc_text   REDEFINITION,
+      constructor,
       get_url_base    REDEFINITION,
       set_merge_info  REDEFINITION,
       get_templates   REDEFINITION,
@@ -44,8 +44,9 @@ ENDCLASS.
 
 
 CLASS zcl_xtt_demo_060 IMPLEMENTATION.
-  METHOD get_desc_text.
-    rv_desc_text = 'Tree (group by field relations)'(060).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Tree (group by field relations)'(060).
   ENDMETHOD.
 
   METHOD get_url_base.
@@ -109,8 +110,9 @@ CLASS zcl_xtt_demo_060 IMPLEMENTATION.
     SET HANDLER on_prepare_tree_06 ACTIVATION abap_true.
 
     " Pass copy
-    super->merge( io_xtt   = io_xtt
-                  it_merge = lt_merge[] ).
+    ro_xtt = super->merge( iv_template = iv_template
+                           io_file     = io_file
+                           it_merge    = lt_merge[] ).
 
     SET HANDLER on_prepare_tree_06 ACTIVATION abap_false.
   ENDMETHOD.
@@ -118,7 +120,7 @@ CLASS zcl_xtt_demo_060 IMPLEMENTATION.
   METHOD on_prepare_tree_06.
     FIELD-SYMBOLS <ls_data> TYPE ts_tree_06.
 
-    " Cast to specefic data
+    " Cast to specific data
     ASSIGN ir_data->* TO <ls_data>.
 
     " Can change value since 'R-T' is REF TO DATA

@@ -2,7 +2,7 @@ CLASS zcl_xtt_demo_130 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo_020 CREATE
 
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_templates  REDEFINITION.
 ENDCLASS.
@@ -10,8 +10,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_130 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'COND #( ) operator'(130).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'COND #( ) operator'(130).
   ENDMETHOD.
 
   METHOD get_url_base.

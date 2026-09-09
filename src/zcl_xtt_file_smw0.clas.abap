@@ -28,7 +28,7 @@ ENDCLASS.
 
 
 
-CLASS ZCL_XTT_FILE_SMW0 IMPLEMENTATION.
+CLASS zcl_xtt_file_smw0 IMPLEMENTATION.
 
 
   METHOD constructor.
@@ -41,13 +41,50 @@ CLASS ZCL_XTT_FILE_SMW0 IMPLEMENTATION.
     FROM wwwparams
     WHERE relid = ms_key-relid
       AND objid = ms_key-objid.
+
+    CHECK sy-subrc IS NOT INITIAL AND iv_objid CP 'ZXTT_DEMO_*'.
+
+    DATA lv_file_name TYPE wwwparams-value.
+    DATA lv_file_size TYPE wwwparams-value.
+    DATA lv_ext       TYPE wwwparams-value.
+    DATA ls_param     LIKE LINE OF mt_wwwparams.
+
+    CALL FUNCTION 'WWWPARAMS_READ'
+      EXPORTING
+        relid  = ms_key-relid
+        objid  = ms_key-objid
+        name   = 'filesize'
+      IMPORTING
+        value  = lv_file_size
+      EXCEPTIONS
+        OTHERS = 1.
+    CHECK sy-subrc = 0.
+
+    lv_file_name = iv_objid.
+    REPLACE FIRST OCCURRENCE OF '-' IN lv_file_name WITH '.'.
+
+    zcl_eui_file=>split_file_path(
+      EXPORTING iv_fullpath  = lv_file_name
+      IMPORTING ev_extension = lv_ext ).
+
+    ls_param-name  = 'filesize'.
+    ls_param-value = lv_file_size.
+    INSERT ls_param INTO TABLE mt_wwwparams[].
+
+    ls_param-name  = 'filename'.
+    ls_param-value = lv_file_name.
+    INSERT ls_param INTO TABLE mt_wwwparams[].
+
+    ls_param-name  = 'fileextension'.
+    ls_param-value = lv_ext.
+    INSERT ls_param INTO TABLE mt_wwwparams[].
   ENDMETHOD.
 
 
   METHOD get_param.
     FIELD-SYMBOLS:
      <ls_param>   LIKE LINE OF mt_wwwparams.
-    " Just for optimisation
+    " Just for optimization
     READ TABLE mt_wwwparams ASSIGNING <ls_param>
      WITH TABLE KEY name = iv_name.
     " @see wwwparams db table

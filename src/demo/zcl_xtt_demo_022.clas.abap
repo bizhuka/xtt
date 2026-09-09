@@ -1,7 +1,7 @@
 CLASS zcl_xtt_demo_022 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo_020 CREATE PUBLIC.
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       set_merge_info REDEFINITION,
       get_templates  REDEFINITION.
@@ -36,8 +36,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_022 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'Merging cells (Flight Model)'(022).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Merging cells (Flight Model)'(022).
   ENDMETHOD.
 
   METHOD get_url_base.

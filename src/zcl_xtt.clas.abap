@@ -424,7 +424,7 @@ METHOD zif_xtt~download.
             iv_file_name = lv_ext.
 
         " Download to app server
-        IF iv_open = mc_by-app_server.
+        IF iv_open = zif_xtt~mc_by-app_server.
           lo_eui_file->to_app_server( iv_full_path = lv_fullpath ).
           EXIT.
         ENDIF.

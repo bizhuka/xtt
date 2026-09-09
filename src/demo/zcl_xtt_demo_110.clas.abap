@@ -1,7 +1,7 @@
 CLASS zcl_xtt_demo_110 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo_100 CREATE PUBLIC.
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_screen_opt REDEFINITION,
       set_merge_info REDEFINITION,
@@ -10,8 +10,10 @@ ENDCLASS.
 
 
 CLASS zcl_xtt_demo_110 IMPLEMENTATION.
-  METHOD get_desc_text.
-    rv_desc_text = 'Image template declration'(110).
+
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Image template declration'(110).
   ENDMETHOD.
 
   METHOD get_url_base.

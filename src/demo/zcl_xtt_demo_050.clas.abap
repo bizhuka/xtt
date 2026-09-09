@@ -1,7 +1,7 @@
 CLASS zcl_xtt_demo_050 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo CREATE PUBLIC.
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_screen_opt REDEFINITION,
       set_merge_info REDEFINITION,
@@ -11,8 +11,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_050 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'Tree group by fields'(050).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Tree group by fields'(050).
   ENDMETHOD.
 
   METHOD get_url_base.

@@ -3,7 +3,7 @@ CLASS zcl_xtt_demo_120 DEFINITION INHERITING FROM zcl_xtt_demo PUBLIC.
     " INTERFACES if_serializable_object
 
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_screen_opt REDEFINITION,
       set_merge_info REDEFINITION,
@@ -27,8 +27,9 @@ ENDCLASS.
 
 
 CLASS zcl_xtt_demo_120 IMPLEMENTATION.
-  METHOD get_desc_text.
-    rv_desc_text = 'Class attributes'(120).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Class attributes'(120).
   ENDMETHOD.
 
   METHOD get_url_base.

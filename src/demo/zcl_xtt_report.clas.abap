@@ -1,12 +1,12 @@
 CLASS zcl_xtt_report DEFINITION PUBLIC CREATE PUBLIC .
 
   PUBLIC SECTION.
-    DATA mv_test_mode  TYPE abap_bool    READ-ONLY.
 
     DATA:
-      mv_r_cnt TYPE int4       READ-ONLY,
-      mv_c_cnt TYPE numc2      READ-ONLY,
-      mv_b_cnt TYPE int4       READ-ONLY.
+      mv_test_mode TYPE abap_bool  READ-ONLY,
+      mv_r_cnt     TYPE int4       READ-ONLY,
+      mv_c_cnt     TYPE numc2      READ-ONLY,
+      mv_b_cnt     TYPE int4       READ-ONLY.
 
     " Random numbers
     DATA mo_rand_i     TYPE REF TO cl_abap_random_int.
@@ -17,9 +17,19 @@ CLASS zcl_xtt_report DEFINITION PUBLIC CREATE PUBLIC .
     DATA t_merge       TYPE zcl_xtt_demo=>tt_merge  READ-ONLY.
 
     METHODS:
-      constructor
+      constructor,
+
+      init
         IMPORTING
-          iv_test_mode TYPE abap_bool OPTIONAL,
+          iv_ind       TYPE char3
+          iv_test_mode TYPE abap_bool
+          iv_r_cnt     TYPE int4
+          iv_c_cnt     TYPE numc2
+          iv_b_cnt     TYPE int4,
+
+      prepare
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt,
 
       merge_add_one
         IMPORTING
@@ -41,16 +51,42 @@ CLASS zcl_xtt_report DEFINITION PUBLIC CREATE PUBLIC .
         RETURNING VALUE(rv_template) TYPE string.
 
   PROTECTED SECTION.
+    TYPES:
+      BEGIN OF ts_demo,
+        ind  TYPE char3,
+        inst TYPE REF TO zcl_xtt_demo,
+      END OF ts_demo,
+      tt_demo TYPE SORTED TABLE OF ts_demo WITH UNIQUE KEY ind.
 
+    DATA:
+      t_demo TYPE tt_demo.
 ENDCLASS.
 
 
 
 CLASS zcl_xtt_report IMPLEMENTATION.
-
-
   METHOD constructor.
+    t_demo[] = lcl_helper=>get_all_demos( me ).
+  ENDMETHOD.
+
+  METHOD init.
+    DATA lr_demo TYPE REF TO ts_demo.
+
     mv_test_mode = iv_test_mode.
+    mv_r_cnt     = iv_r_cnt.
+    mv_c_cnt     = iv_c_cnt.
+    mv_b_cnt     = iv_b_cnt.
+
+    " Data for report & ALV items
+    CLEAR: o_demo, t_merge.
+
+    READ TABLE t_demo REFERENCE INTO lr_demo WITH TABLE KEY ind = iv_ind.
+    IF sy-subrc = 0.
+      o_demo = lr_demo->inst.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD prepare.
   ENDMETHOD.
 
   METHOD merge_add_one.

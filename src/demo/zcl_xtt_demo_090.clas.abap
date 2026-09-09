@@ -17,7 +17,7 @@ CLASS zcl_xtt_demo_090 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo CREATE PUB
       ltt_merge TYPE STANDARD TABLE OF lts_merge WITH DEFAULT KEY.
 
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_screen_opt REDEFINITION,
       set_merge_info REDEFINITION,
@@ -33,8 +33,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_090 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'Dynamic table (tree)'(090).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Dynamic table (tree)'(090).
   ENDMETHOD.
 
   METHOD get_url_base.

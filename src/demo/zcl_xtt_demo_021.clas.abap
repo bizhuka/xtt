@@ -2,7 +2,7 @@ CLASS zcl_xtt_demo_021 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo_020 CREATE
 
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       set_merge_info REDEFINITION,
       get_templates  REDEFINITION.
@@ -11,8 +11,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_021 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'Different formulas'(021).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Different formulas'(021).
   ENDMETHOD.
 
   METHOD get_url_base.

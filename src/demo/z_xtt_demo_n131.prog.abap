@@ -27,7 +27,7 @@ CLASS lcl_demo_131 DEFINITION INHERITING FROM zcl_xtt_demo.
       tt_root TYPE STANDARD TABLE OF ts_root WITH DEFAULT KEY.
 
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
 *      get_url_base   REDEFINITION,
       set_merge_info REDEFINITION,
       get_templates  REDEFINITION,
@@ -49,8 +49,9 @@ ENDCLASS.
 
 CLASS lcl_demo_131 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'Shorthand for COND #( )'(131).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Shorthand for COND #( )'(131).
 
 *  METHOD get_url_base. rv_url_base = '/xtt/cond/shorthand/'.
   ENDMETHOD.

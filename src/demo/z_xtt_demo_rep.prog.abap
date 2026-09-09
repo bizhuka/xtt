@@ -2,49 +2,15 @@
 *&---------------------------------------------------------------------*
 
 CLASS lcl_report IMPLEMENTATION.
-  METHOD class_constructor.
-    DATA lt_include TYPE STANDARD TABLE OF trdirt.
-    SELECT name text INTO CORRESPONDING FIELDS OF TABLE lt_include "#EC TOO_MANY_ITAB_FIELDS "#EC "#EC CI_GENBUFF or "#EC "#EC CI_SGLSELECT
-    FROM trdirt
-    WHERE name LIKE 'Z_XTT_DEMO_N%'
-      AND sprsl = 'E'.
-
-    DATA lr_include TYPE REF TO trdirt.
-    LOOP AT lt_include REFERENCE INTO lr_include.
-      DATA ls_demo TYPE ts_demo.
-
-      " Index of demo
-      ls_demo-ind = lr_include->name+12.
-
-      " Dynamic class name
-      DATA lv_cl_name TYPE string.
-      CONCATENATE `LCL_DEMO_` ls_demo-ind INTO lv_cl_name.
-      CREATE OBJECT ls_demo-inst TYPE (lv_cl_name).
-
-      " Description
-      ls_demo-inst->v_desc = ls_demo-inst->get_desc_text( ).
-      IF ls_demo-inst->v_desc IS INITIAL.
-        ls_demo-inst->v_desc = lr_include->text.
-      ENDIF.
-
-      " All instances
-      INSERT ls_demo INTO TABLE t_demo.
-    ENDLOOP.
-  ENDMETHOD.
-
   METHOD constructor.
     FIELD-SYMBOLS: <ls_demo> TYPE ts_demo.
-    super->constructor( iv_test_mode ).
-
-    LOOP AT t_demo ASSIGNING <ls_demo>.
-      <ls_demo>-inst->set_report( me ).
-    ENDLOOP.
+    super->constructor( ).
 
     _online_docu_button( ).
     _update_demo_listbox( ).
   ENDMETHOD.
 
-  method merge_add_one.
+  METHOD merge_add_one.
     rs_merge = super->merge_add_one(
        is_root    = is_root
        iv_root_id = iv_root_id
@@ -169,7 +135,7 @@ CLASS lcl_report IMPLEMENTATION.
     CHECK sy-subrc = 0.
 
     " What PARAMETRS to show
-    DATA ls_screen_opt TYPE ZCL_XTT_DEMO=>ts_screen_opt.
+    DATA ls_screen_opt TYPE zcl_xtt_demo=>ts_screen_opt.
     ls_screen_opt = lr_demo->inst->get_screen_opt( ).
 
     TRY.
@@ -231,21 +197,21 @@ CLASS lcl_report IMPLEMENTATION.
     lo_screen->pbo( ).
   ENDMETHOD.
 
-  METHOD start_of_selection.
-    mv_r_cnt = iv_r_cnt.
-    mv_c_cnt = iv_c_cnt.
-    mv_b_cnt = iv_b_cnt.
+  METHOD init.
+    super->init(
+        iv_ind       = iv_ind
+        iv_test_mode = iv_test_mode
+        iv_r_cnt     = iv_r_cnt
+        iv_c_cnt     = iv_c_cnt
+        iv_b_cnt     = iv_b_cnt ).
     _hide_online_docu( ).
 
     " Data for report & ALV items
-    CLEAR: o_demo, t_merge, t_merge_alv.
-
-    DATA lr_demo TYPE REF TO ts_demo.
-    READ TABLE t_demo REFERENCE INTO lr_demo WITH TABLE KEY ind = p_exa.
-    CHECK sy-subrc = 0.
+    CLEAR t_merge_alv.
 
     " Current demo
-    o_demo = lr_demo->inst.
+    CHECK o_demo IS NOT INITIAL.
+
     DATA lv_exit TYPE abap_bool.
     lv_exit = o_demo->set_merge_info( ).
 
@@ -271,7 +237,7 @@ CLASS lcl_report IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    DATA ls_grid_params TYPE ZCL_XTT_DEMO=>ts_grid_params.
+    DATA ls_grid_params TYPE zcl_xtt_demo=>ts_grid_params.
     ls_grid_params = _get_grid_params( ).
     show_alv( ls_grid_params ).
   ENDMETHOD.
@@ -636,14 +602,10 @@ CLASS lcl_report IMPLEMENTATION.
       lv_template = get_template_by_f4( ).
     ENDIF.
 
-    DATA: lo_xtt TYPE REF TO zcl_xtt.
-    o_demo->get_from_template( EXPORTING iv_template = lv_template
-                               IMPORTING eo_xtt      = lo_xtt ).
-    CHECK lo_xtt IS NOT INITIAL.
-
     " Paste data
-    o_demo->merge( io_xtt   = lo_xtt
-                   it_merge = it_merge[] ).
+    DATA lo_xtt TYPE REF TO zif_xtt.
+    lo_xtt = o_demo->merge( iv_template = lv_template
+                            it_merge    = it_merge[] ).
 
     " For PAI & PBO events
     lo_xtt->show( io_handler = me ).
@@ -662,23 +624,15 @@ CLASS lcl_report IMPLEMENTATION.
                                   iv_title = 'Download'(dwn) ).
     ENDIF.
 
-    o_demo->get_from_template( EXPORTING iv_template = lv_template
-                               IMPORTING eo_xtt      = lo_xtt ).
-    CHECK lo_xtt IS NOT INITIAL.
-
-    " Stop befor merge
+    " Stop before merge
     IF p_stop = abap_true.
       _is_break_point_active( ).
       BREAK-POINT ID zxtt_break_point.    " Double click here --> it_merge[] <--
     ENDIF.
 
-    IF mv_test_mode = abap_true.
-      prepare( lo_xtt ).
-    ENDIF.
-
     " Paste data
-    o_demo->merge( io_xtt   = lo_xtt
-                   it_merge = it_merge[] ).
+    lo_xtt = o_demo->merge( iv_template = lv_template
+                            it_merge    = it_merge[] ).
 
     o_demo->do_download( EXPORTING io_xtt      = lo_xtt
                                    iv_open     = p_open
@@ -702,12 +656,8 @@ CLASS lcl_report IMPLEMENTATION.
                                   iv_title = 'Send options'(snd) ).
     ENDIF.
 
-    o_demo->get_from_template( EXPORTING iv_template = lv_template
-                               IMPORTING eo_xtt      = lo_xtt ).
-    CHECK lo_xtt IS NOT INITIAL.
-
     " Paste data
-    o_demo->merge( io_xtt   = lo_xtt
+    o_demo->merge( iv_template = lv_template
                    it_merge = it_merge[] ).
 
     _send_email( lo_xtt ).
@@ -781,7 +731,7 @@ CLASS lcl_report IMPLEMENTATION.
         RETURN.
     ENDTRY.
 
-    " Prepare scrren
+    " Prepare screen
     DATA lt_listbox TYPE vrm_values.
     lt_listbox = o_demo->get_template_lisbox( ).
     lo_screen->customize( name       = iv_lb_id
@@ -814,6 +764,8 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD prepare.
+    CHECK mv_test_mode = abap_true.
+
     SET HANDLER on_prepare_raw FOR io_xtt.
 
     DATA lo_class TYPE REF TO cl_abap_classdescr.

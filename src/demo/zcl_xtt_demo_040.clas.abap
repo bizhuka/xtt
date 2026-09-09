@@ -2,7 +2,7 @@ CLASS zcl_xtt_demo_040 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo CREATE PUB
 
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_screen_opt REDEFINITION,
       set_merge_info REDEFINITION,
@@ -19,8 +19,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_040 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'Data types'(040).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Data types'(040).
   ENDMETHOD.
 
   METHOD get_url_base.

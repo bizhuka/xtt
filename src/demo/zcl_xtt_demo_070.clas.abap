@@ -1,11 +1,11 @@
 CLASS zcl_xtt_demo_070 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo.
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       set_merge_info REDEFINITION,
       get_templates  REDEFINITION,
-
+      prepare        REDEFINITION,
       merge          REDEFINITION,
       do_download    REDEFINITION,
 
@@ -29,8 +29,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_070 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'Macro call & on_prepare_raw'(070).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Macro call & on_prepare_raw'(070).
   ENDMETHOD.
 
   METHOD get_url_base.
@@ -49,8 +50,17 @@ CLASS zcl_xtt_demo_070 IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD merge.
+    DATA lt_merge LIKE it_merge.
+
+    ro_xtt = super->merge( iv_template = iv_template
+                           io_file     = io_file
+                           it_merge    = lt_merge[] " no data for the example
+                          ).
+  ENDMETHOD.
+
+  METHOD prepare.
+    super->prepare( io_xtt ).
     SET HANDLER on_prepare_raw_07 FOR io_xtt.
-    " do not call io_xtt->merge( ), no data for the example
 
     " For Excel only
     io_xtt->add_raw_event( 'xl/worksheets/sheet1.xml' ).    "#EC NOTEXT

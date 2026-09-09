@@ -3,11 +3,11 @@
 CLASS lcl_demo_150 DEFINITION FINAL INHERITING FROM lcl_demo_022.
   PUBLIC SECTION.
     METHODS:
-      get_desc_text     REDEFINITION,
+      constructor,
       get_url_base      REDEFINITION,
       set_merge_info    REDEFINITION,
       get_templates     REDEFINITION,
-      get_from_template REDEFINITION,
+      get_file_info     REDEFINITION,
       on_user_command   REDEFINITION.
 
   PRIVATE SECTION.
@@ -44,8 +44,9 @@ ENDCLASS.
 *&---------------------------------------------------------------------*
 *&---------------------------------------------------------------------*
 CLASS lcl_demo_150 IMPLEMENTATION.
-  METHOD get_desc_text.
-    rv_desc_text = 'No template. Grid-based'(150).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'No template. Grid-based'(150).
   ENDMETHOD.
 
   METHOD get_url_base.
@@ -260,14 +261,9 @@ CLASS lcl_demo_150 IMPLEMENTATION.
     APPEND 'ZXXT_DEMO_150-XLSX' TO rt_templates.
   ENDMETHOD.
 
-  METHOD get_from_template.
-    CLEAR: eo_file, eo_xtt, ev_type.
-
-    ev_type  = 'Excel'.                                     "#EC NOTEXT
-
+  METHOD get_file_info.
     " Based directly on CL_GUI_ALV_GRID
-    CHECK iv_template IS NOT INITIAL
-      AND ( eo_file IS REQUESTED OR eo_xtt IS REQUESTED ).
+    CHECK iv_template IS NOT INITIAL.
 
     " Normal visible mode
     IF mo_alv IS NOT INITIAL.
@@ -276,22 +272,16 @@ CLASS lcl_demo_150 IMPLEMENTATION.
     ENDIF.
 
     IF lo_grid IS NOT INITIAL.
-      CREATE OBJECT eo_file TYPE zcl_xtt_file_grid
+      CREATE OBJECT ro_file TYPE zcl_xtt_file_grid
         EXPORTING
           io_grid = lo_grid.
     ELSE.
       " For test mode only
-      eo_file = zcl_xtt_file_grid=>create(
+      ro_file = zcl_xtt_file_grid=>create(
         ir_table   = ms_test_params-r_table
         it_catalog = ms_test_params-t_catalog
         it_sort    = ms_test_params-t_sort
         is_layout  = ms_test_params-s_layout ).
     ENDIF.
-
-
-    CHECK eo_xtt IS REQUESTED.
-    CREATE OBJECT eo_xtt TYPE zcl_xtt_excel_xlsx
-      EXPORTING
-        io_file = eo_file.
   ENDMETHOD.
 ENDCLASS.

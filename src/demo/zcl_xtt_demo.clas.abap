@@ -61,13 +61,10 @@ CLASS zcl_xtt_demo DEFINITION PUBLIC ABSTRACT CREATE PUBLIC .
       tt_vrm_value TYPE STANDARD TABLE OF ts_vrm_value WITH DEFAULT KEY.
 
     DATA:
-      v_desc    TYPE string.
+      v_desc    TYPE string READ-ONLY.
 
     METHODS:
       set_report IMPORTING io_report TYPE REF TO zcl_xtt_report,
-
-      get_desc_text
-        RETURNING VALUE(rv_desc_text) TYPE string,
 
       get_url_base
         RETURNING VALUE(rv_url_base) TYPE string,
@@ -79,13 +76,10 @@ CLASS zcl_xtt_demo DEFINITION PUBLIC ABSTRACT CREATE PUBLIC .
 
       merge
         IMPORTING
-          io_xtt   TYPE REF TO zcl_xtt
-          it_merge TYPE tt_merge,
-
-      get_raw FINAL
-        IMPORTING
-          it_merge    TYPE tt_merge
-          iv_template TYPE csequence,
+                  it_merge      TYPE tt_merge
+                  iv_template   TYPE csequence
+                  io_file       TYPE REF TO zif_xtt_file OPTIONAL
+        RETURNING VALUE(ro_xtt) TYPE REF TO zcl_xtt,
 
       set_merge_info ABSTRACT
         RETURNING VALUE(rv_exit) TYPE abap_bool,
@@ -103,9 +97,16 @@ CLASS zcl_xtt_demo DEFINITION PUBLIC ABSTRACT CREATE PUBLIC .
           iv_template TYPE csequence
         EXPORTING
           ev_class    TYPE string
-          ev_type     TYPE string
-          eo_xtt      TYPE REF TO zcl_xtt
-          eo_file     TYPE REF TO zif_xtt_file,
+          ev_type     TYPE string,
+
+      get_file_info
+        IMPORTING
+                  iv_template    TYPE csequence
+        RETURNING VALUE(ro_file) TYPE REF TO zif_xtt_file,
+
+      prepare
+        IMPORTING
+          io_xtt TYPE REF TO zcl_xtt,
 
       on_user_command FOR EVENT user_command OF cl_gui_alv_grid
         IMPORTING
@@ -137,12 +138,9 @@ ENDCLASS.
 
 
 CLASS zcl_xtt_demo IMPLEMENTATION.
+
   METHOD set_report.
     mo_report = io_report.
-  ENDMETHOD.
-
-  METHOD get_desc_text.
-    rv_desc_text = ''.
   ENDMETHOD.
 
   METHOD get_url_base.
@@ -155,17 +153,43 @@ CLASS zcl_xtt_demo IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD merge.
+    DATA:
+      lo_file TYPE REF TO  zif_xtt_file.
     FIELD-SYMBOLS: <ls_merge> LIKE LINE OF it_merge,
                    <ls_root>  TYPE any.
+
+    IF io_file IS NOT INITIAL.
+      lo_file = io_file.
+    ELSE.
+      CREATE OBJECT lo_file TYPE zcl_xtt_file_smw0
+        EXPORTING
+          iv_objid = iv_template.
+    ENDIF.
+
+    DATA lv_class TYPE string.
+    get_from_template( EXPORTING iv_template = iv_template
+                       IMPORTING ev_class    = lv_class ).
+
+    DATA lo_xtt_ref TYPE REF TO object.
+    CREATE OBJECT lo_xtt_ref TYPE (lv_class)
+      EXPORTING
+        io_file = lo_file.
+
+    ro_xtt ?= lo_xtt_ref.
+    prepare( ro_xtt ).
 
     LOOP AT it_merge ASSIGNING <ls_merge>.
       ASSIGN <ls_merge>-val->* TO <ls_root>.
 
-      io_xtt->merge( is_block      = <ls_root>
+      ro_xtt->merge( is_block      = <ls_root>
                      iv_block_name = <ls_merge>-key " <--- 'R' by defualt
                      io_helper     = <ls_merge>-obj " For 160 example only
                      ).
     ENDLOOP.
+  ENDMETHOD.
+
+  METHOD prepare.
+    mo_report->prepare( io_xtt ).
   ENDMETHOD.
 
   METHOD do_download.
@@ -185,24 +209,12 @@ CLASS zcl_xtt_demo IMPLEMENTATION.
     DATA: lv_template TYPE string, lo_file TYPE REF TO zif_xtt_file.
     lv_template = mo_report->get_template_by_f4( ).
 
-    get_from_template( EXPORTING iv_template = lv_template
-                       IMPORTING eo_file     = lo_file ).
+    lo_file = get_file_info( lv_template ).
     download_template( lo_file ).
   ENDMETHOD.
 
-  METHOD get_raw.
-    DATA lo_xtt TYPE REF TO zcl_xtt.
-    get_from_template( EXPORTING iv_template = iv_template
-                       IMPORTING eo_xtt      = lo_xtt ).
-    CHECK lo_xtt IS NOT INITIAL.
-
-    " Paste data
-    merge( io_xtt   = lo_xtt
-           it_merge = it_merge[] ).
-
-    " Take binary file
-    DATA lv_file TYPE xstring.
-    lv_file = lo_xtt->get_raw( ).
+  METHOD get_file_info.
+    CREATE OBJECT ro_file TYPE zcl_xtt_file_smw0 EXPORTING iv_objid = iv_template.
   ENDMETHOD.
 
   METHOD get_template_lisbox.
@@ -244,7 +256,7 @@ CLASS zcl_xtt_demo IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_from_template.
-    CLEAR: eo_file, eo_xtt, ev_type, ev_class.
+    CLEAR: ev_type, ev_class.
     CHECK iv_template IS NOT INITIAL.
 
     IF iv_template CP '*-DOC*'.
@@ -266,20 +278,6 @@ CLASS zcl_xtt_demo IMPLEMENTATION.
       ev_class = 'ZCL_XTT_HTML'.
       ev_type  = 'Html'.                                    "#EC NOTEXT
     ENDIF.
-
-    " SMW0 reader
-    CHECK eo_file IS REQUESTED OR eo_xtt IS REQUESTED.
-    CREATE OBJECT eo_file TYPE zcl_xtt_file_smw0
-      EXPORTING
-        iv_objid = iv_template.
-
-    CHECK eo_xtt IS REQUESTED.
-
-    DATA lo_xtt TYPE REF TO object.
-    CREATE OBJECT lo_xtt TYPE (ev_class)
-      EXPORTING
-        io_file = eo_file.
-    eo_xtt ?= lo_xtt.
   ENDMETHOD.
 
   METHOD on_user_command.

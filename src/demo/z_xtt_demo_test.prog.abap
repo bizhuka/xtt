@@ -18,9 +18,7 @@ ENDCLASS.
 
 CLASS lcl_test IMPLEMENTATION.
   METHOD setup.
-    CREATE OBJECT cut
-      EXPORTING
-        iv_test_mode = abap_true.
+    CREATE OBJECT cut.
 
     " Folders for report
     p_r_path = 'C:\Users\modekz\Desktop\arc\xtt-image\'.
@@ -39,7 +37,7 @@ CLASS lcl_test IMPLEMENTATION.
     CHECK lt_list IS NOT INITIAL.
 
 
-DELETE lt_list WHERE key <> '140'.
+*DELETE lt_list WHERE key <> '140'.
 ***********************************        p_r_cnt = 15.
 ***********************************        p_c_cnt = 36.
 ***********************************        p_b_cnt = 3.
@@ -57,10 +55,12 @@ DELETE lt_list WHERE key <> '140'.
       _set_sy( ).
 
       " Launch current example
-      cut->start_of_selection(
-        iv_r_cnt = 15 " p_r_cnt
-        iv_c_cnt = 36 " p_c_cnt
-        iv_b_cnt = 3 " p_b_cnt
+      cut->init(
+        iv_ind       = p_exa
+        iv_test_mode = abap_true
+        iv_r_cnt     = 15 " p_r_cnt
+        iv_c_cnt     = 36 " p_c_cnt
+        iv_b_cnt     = 3  " p_b_cnt
       ).
       lo_demo = cut->o_demo.
       lr_test_demo->label = lo_demo->v_desc.
@@ -80,8 +80,7 @@ DELETE lt_list WHERE key <> '140'.
 
         " Download template
         DATA lo_xtt_file TYPE REF TO zif_xtt_file.
-        lo_demo->get_from_template( EXPORTING iv_template = lr_template->objid
-                                    IMPORTING eo_file     = lo_xtt_file ).
+        lo_xtt_file = lo_demo->get_file_info( lr_template->objid ).
         lo_demo->download_template( io_file      = lo_xtt_file
                                     iv_file_name = lr_file->template ).
       ENDLOOP.

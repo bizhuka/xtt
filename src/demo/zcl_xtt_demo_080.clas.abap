@@ -1,7 +1,7 @@
 CLASS zcl_xtt_demo_080 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo CREATE PUBLIC.
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_screen_opt REDEFINITION,
       set_merge_info REDEFINITION,
@@ -36,8 +36,9 @@ ENDCLASS.
 
 CLASS zcl_xtt_demo_080 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'direction=column'(080).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'direction=column'(080).
   ENDMETHOD.
 
   METHOD get_url_base.
@@ -96,8 +97,9 @@ CLASS zcl_xtt_demo_080 IMPLEMENTATION.
     SET HANDLER on_prepare_tree_08 ACTIVATION abap_true.
 
     " Pass copy
-    super->merge( io_xtt   = io_xtt
-                  it_merge = lt_merge[] ).
+    ro_xtt = super->merge( iv_template = iv_template
+                           io_file     = io_file
+                           it_merge    = lt_merge[] ).
 
     SET HANDLER on_prepare_tree_08 ACTIVATION abap_false.
   ENDMETHOD.

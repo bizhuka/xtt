@@ -2,15 +2,16 @@ CLASS zcl_xtt_demo_140 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo_010 CREATE
 
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_templates  REDEFINITION.
 ENDCLASS.
 
 CLASS zcl_xtt_demo_140 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = ';type=block'(140).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = ';type=block'(140).
   ENDMETHOD.
 
   METHOD get_url_base.

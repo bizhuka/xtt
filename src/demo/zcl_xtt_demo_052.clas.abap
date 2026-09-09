@@ -1,15 +1,16 @@
 CLASS zcl_xtt_demo_052 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo_050 CREATE PUBLIC.
   PUBLIC SECTION.
     METHODS:
-      get_desc_text  REDEFINITION,
+      constructor,
       get_url_base   REDEFINITION,
       get_templates  REDEFINITION.
 ENDCLASS.
 
 CLASS zcl_xtt_demo_052 IMPLEMENTATION.
 
-  METHOD get_desc_text.
-    rv_desc_text = 'Aggregation functions'(052).
+  METHOD constructor.
+    super->constructor( ).
+    v_desc = 'Aggregation functions'(052).
   ENDMETHOD.
 
   METHOD get_url_base.

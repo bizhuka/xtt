@@ -6,7 +6,7 @@ CLASS lcl_ast_node IMPLEMENTATION.
     TRY.
         rv_number = lv_val.
       CATCH cx_sy_conversion_error.
-        zcx_eui_no_check=>raise_sys_error( iv_message = |Operand '{ iv_value }' cannot be converted to number| ).
+        zcx_xtt_exception=>raise_sys_error( iv_message = |Operand '{ iv_value }' cannot be converted to number| ).
     ENDTRY.
   ENDMETHOD.
 
@@ -67,7 +67,7 @@ CLASS lcl_node_var IMPLEMENTATION.
     DATA lv_part        TYPE string.
     DATA lv_len         TYPE i.
     DATA lv_pos         TYPE i.
-    DATA lv_in_brk      TYPE abap_bool VALUE abap_false.
+    DATA lv_in_brk      TYPE abap_bool.
     DATA lv_char_str    TYPE string.
     DATA lv_in_quote    TYPE char1.
     DATA lv_start       TYPE i.
@@ -82,6 +82,15 @@ CLASS lcl_node_var IMPLEMENTATION.
     DATA lv_upper_tab   TYPE string.
     DATA lo_cond_expr   TYPE REF TO lcl_expression.
     DATA lv_found       TYPE abap_bool.
+    DATA lv_fld_name    TYPE string.
+    DATA lv_off_str     TYPE string.
+    DATA lv_len_str     TYPE string.
+    DATA lv_offset      TYPE i.
+    DATA lv_length      TYPE i.
+    DATA lv_has_off     TYPE abap_bool.
+    DATA lv_upper_fld   TYPE string.
+    DATA lv_raw_str     TYPE string.
+    DATA lv_avail_len   TYPE i.
 
     FIELD-SYMBOLS <sy_val> TYPE any.
     FIELD-SYMBOLS <curr>   TYPE any.
@@ -93,22 +102,56 @@ CLASS lcl_node_var IMPLEMENTATION.
     mv_is_num = abap_false.
     ASSIGN is_context TO <curr>.
 
-    " 1. System variables
-    lv_upper_path = to_upper( mv_path ).
+    " 1. System variables (e.g. SY-DATUM, SY-DATUM+0(4), SY-TABIX)
+    lv_upper_path = mv_path.
+    TRANSLATE lv_upper_path TO UPPER CASE.
     IF lv_upper_path CP 'SY-*'.
       lv_sy_fld = lv_upper_path+3.
+      lv_has_off = abap_false.
+
+      IF lv_sy_fld CS '+' AND lv_sy_fld CS '(' AND lv_sy_fld CS ')'.
+        SPLIT lv_sy_fld AT '+' INTO lv_sy_fld lv_off_str.
+        SPLIT lv_off_str AT '(' INTO lv_off_str lv_len_str.
+        SPLIT lv_len_str AT ')' INTO lv_len_str lv_dummy.
+        SHIFT lv_sy_fld LEFT DELETING LEADING space.
+        SHIFT lv_sy_fld RIGHT DELETING TRAILING space.
+        SHIFT lv_off_str LEFT DELETING LEADING space.
+        SHIFT lv_off_str RIGHT DELETING TRAILING space.
+        SHIFT lv_len_str LEFT DELETING LEADING space.
+        SHIFT lv_len_str RIGHT DELETING TRAILING space.
+        IF lv_off_str CO '0123456789 ' AND lv_len_str CO '0123456789 '.
+          lv_offset  = lv_off_str.
+          lv_length  = lv_len_str.
+          lv_has_off = abap_true.
+        ENDIF.
+      ENDIF.
+
       ASSIGN COMPONENT lv_sy_fld OF STRUCTURE sy TO <sy_val>.
       ASSERT sy-subrc = 0.
 
-      rv_val = <sy_val>.
+      IF lv_has_off = abap_true.
+        lv_raw_str = |{ <sy_val> }|.
+        IF strlen( lv_raw_str ) >= lv_offset + lv_length.
+          rv_val = lv_raw_str+lv_offset(lv_length).
+        ELSEIF strlen( lv_raw_str ) > lv_offset.
+          lv_avail_len = strlen( lv_raw_str ) - lv_offset.
+          rv_val = lv_raw_str+lv_offset(lv_avail_len).
+        ELSE.
+          CLEAR rv_val.
+        ENDIF.
+      ELSE.
+        rv_val = <sy_val>.
+      ENDIF.
       mv_is_num = _is_number( <sy_val> ).
       RETURN.
     ENDIF.
 
     " 2. Dynamic path split at '-' (ignoring '-' inside [...])
-    lv_len   = strlen( mv_path ).
-    lv_pos   = 0.
-    lv_start = 0.
+    lv_len      = strlen( mv_path ).
+    lv_pos      = 0.
+    lv_start    = 0.
+    lv_in_brk   = abap_false.
+    CLEAR lv_in_quote.
     CLEAR lt_parts.
 
     WHILE lv_pos < lv_len.
@@ -148,7 +191,8 @@ CLASS lcl_node_var IMPLEMENTATION.
     ENDIF.
 
     LOOP AT lt_parts INTO lv_part.
-      lv_upper_part = to_upper( lv_part ).
+      lv_upper_part = lv_part.
+      TRANSLATE lv_upper_part TO UPPER CASE.
       IF sy-tabix = 1 AND ( lv_upper_part = 'ROW' OR lv_upper_part = 'VALUE' OR lv_upper_part = 'ROOT' ).
         CONTINUE.
       ENDIF.
@@ -163,18 +207,19 @@ CLASS lcl_node_var IMPLEMENTATION.
         SHIFT lv_cond_str LEFT DELETING LEADING space.
         SHIFT lv_cond_str RIGHT DELETING TRAILING space.
 
-        lv_upper_tab = to_upper( lv_tab_name ).
+        lv_upper_tab = lv_tab_name.
+        TRANSLATE lv_upper_tab TO UPPER CASE.
         ASSIGN COMPONENT lv_upper_tab OF STRUCTURE <curr> TO <next>.
         IF sy-subrc <> 0.
           ASSIGN COMPONENT lv_tab_name OF STRUCTURE <curr> TO <next>.
         ENDIF.
         IF sy-subrc <> 0.
-          zcx_eui_no_check=>raise_sys_error( iv_message = |Table '{ lv_tab_name }' in path '{ mv_path }' not found.| ).
+          zcx_xtt_exception=>raise_sys_error( iv_message = |Table '{ lv_tab_name }' in path '{ mv_path }' not found.| ).
         ENDIF.
 
         ASSIGN <next> TO <lt_tab>.
         IF sy-subrc <> 0.
-          zcx_eui_no_check=>raise_sys_error( iv_message = |Field '{ lv_tab_name }' is not an internal table.| ).
+          zcx_xtt_exception=>raise_sys_error( iv_message = |Field '{ lv_tab_name }' is not an internal table.| ).
         ENDIF.
 
         " Case A: Numeric index [ 1 ]
@@ -182,7 +227,7 @@ CLASS lcl_node_var IMPLEMENTATION.
           lv_idx = lv_cond_str.
           READ TABLE <lt_tab> INDEX lv_idx ASSIGNING <ls_row>.
           IF sy-subrc <> 0.
-            zcx_eui_no_check=>raise_sys_error( iv_message = |Index { lv_idx } out of bounds for table '{ lv_tab_name }'.| ).
+            zcx_xtt_exception=>raise_sys_error( iv_message = |Index { lv_idx } out of bounds for table '{ lv_tab_name }'.| ).
           ENDIF.
           ASSIGN <ls_row> TO <curr>.
         ELSE.
@@ -200,7 +245,7 @@ CLASS lcl_node_var IMPLEMENTATION.
           ENDLOOP.
 
           IF lv_found = abap_false.
-            zcx_eui_no_check=>raise_sys_error(
+            zcx_xtt_exception=>raise_sys_error(
               iv_message = |Line with condition '{ lv_cond_str }' not found in table '{ lv_tab_name }'.| ).
           ENDIF.
         ENDIF.
@@ -208,14 +253,51 @@ CLASS lcl_node_var IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      " Standard structure component assignment
-      ASSIGN COMPONENT lv_upper_part OF STRUCTURE <curr> TO <next>.
+      " --- Substring offset + length: FIELD+10(3) ---
+      lv_has_off = abap_false.
+      IF lv_part CS '+' AND lv_part CS '(' AND lv_part CS ')'.
+        SPLIT lv_part AT '+' INTO lv_fld_name lv_off_str.
+        SPLIT lv_off_str AT '(' INTO lv_off_str lv_len_str.
+        SPLIT lv_len_str AT ')' INTO lv_len_str lv_dummy.
+        SHIFT lv_fld_name LEFT DELETING LEADING space.
+        SHIFT lv_fld_name RIGHT DELETING TRAILING space.
+        SHIFT lv_off_str LEFT DELETING LEADING space.
+        SHIFT lv_off_str RIGHT DELETING TRAILING space.
+        SHIFT lv_len_str LEFT DELETING LEADING space.
+        SHIFT lv_len_str RIGHT DELETING TRAILING space.
+        IF lv_off_str CO '0123456789 ' AND lv_len_str CO '0123456789 '.
+          lv_offset  = lv_off_str.
+          lv_length  = lv_len_str.
+          lv_has_off = abap_true.
+        ENDIF.
+      ELSE.
+        lv_fld_name = lv_part.
+      ENDIF.
+
+      lv_upper_fld = lv_fld_name.
+      TRANSLATE lv_upper_fld TO UPPER CASE.
+      ASSIGN COMPONENT lv_upper_fld OF STRUCTURE <curr> TO <next>.
       IF sy-subrc <> 0.
-        ASSIGN COMPONENT lv_part OF STRUCTURE <curr> TO <next>.
+        ASSIGN COMPONENT lv_fld_name OF STRUCTURE <curr> TO <next>.
       ENDIF.
       IF sy-subrc <> 0.
-        zcx_eui_no_check=>raise_sys_error( iv_message = |Field '{ lv_part }' in path '{ mv_path }' not found.| ).
+        zcx_xtt_exception=>raise_sys_error( iv_message = |Field '{ lv_fld_name }' in path '{ mv_path }' not found.| ).
       ENDIF.
+
+      IF lv_has_off = abap_true.
+        lv_raw_str = |{ <next> }|.
+        IF strlen( lv_raw_str ) >= lv_offset + lv_length.
+          rv_val = lv_raw_str+lv_offset(lv_length).
+        ELSEIF strlen( lv_raw_str ) > lv_offset.
+          lv_avail_len = strlen( lv_raw_str ) - lv_offset.
+          rv_val = lv_raw_str+lv_offset(lv_avail_len).
+        ELSE.
+          CLEAR rv_val.
+        ENDIF.
+        ASSIGN rv_val TO <curr>.
+        CONTINUE.
+      ENDIF.
+
       ASSIGN <next> TO <curr>.
     ENDLOOP.
 
@@ -253,7 +335,7 @@ CLASS lcl_node_arith IMPLEMENTATION.
       WHEN '*'. lv_res = lv_l * lv_r.
       WHEN '/'.
         IF lv_r = 0.
-          zcx_eui_no_check=>raise_sys_error( iv_message = 'Division by zero' ).
+          zcx_xtt_exception=>raise_sys_error( iv_message = 'Division by zero' ).
         ENDIF.
         lv_res = lv_l / lv_r.
     ENDCASE.
@@ -269,7 +351,8 @@ ENDCLASS.
 CLASS lcl_node_compare IMPLEMENTATION.
   METHOD constructor.
     super->constructor( ).
-    mv_op    = to_upper( iv_op ).
+    mv_op    = iv_op.
+    TRANSLATE mv_op TO UPPER CASE.
     mo_left  = io_left.
     mo_right = io_right.
   ENDMETHOD.
@@ -289,7 +372,7 @@ CLASS lcl_node_compare IMPLEMENTATION.
           lv_num_l  = _to_number( lv_l ).
           lv_num_r  = _to_number( lv_r ).
           lv_is_num = abap_true.
-        CATCH zcx_eui_no_check.
+        CATCH zcx_xtt_exception.
           lv_is_num = abap_false.
       ENDTRY.
     ENDIF.
@@ -346,7 +429,7 @@ CLASS lcl_node_compare IMPLEMENTATION.
         WHEN 'CN'.
           IF lv_l CN lv_r. rv_val = abap_true. ENDIF.
         WHEN OTHERS.
-          zcx_eui_no_check=>raise_sys_error( iv_message = |Unsupported operator: { mv_op }| ).
+          zcx_xtt_exception=>raise_sys_error( iv_message = |Unsupported operator: { mv_op }| ).
       ENDCASE.
     ENDIF.
   ENDMETHOD.
@@ -388,7 +471,8 @@ ENDCLASS.
 CLASS lcl_node_logical IMPLEMENTATION.
   METHOD constructor.
     super->constructor( ).
-    mv_op    = to_upper( iv_op ).
+    mv_op    = iv_op.
+    TRANSLATE mv_op TO UPPER CASE.
     mo_left  = io_left.
     mo_right = io_right.
   ENDMETHOD.
@@ -499,6 +583,92 @@ CLASS lcl_node_cond IMPLEMENTATION.
   ENDMETHOD.
 ENDCLASS.
 
+CLASS lcl_node_switch IMPLEMENTATION.
+  METHOD eval.
+    DATA lv_switch_val TYPE string.
+    DATA lv_branch_val TYPE string.
+    DATA ls_branch     LIKE LINE OF mt_branches.
+    DATA lv_num_s      TYPE decfloat34.
+    DATA lv_num_b      TYPE decfloat34.
+    DATA lv_is_num     TYPE abap_bool.
+
+    lv_switch_val = mo_switch_expr->eval( is_context ).
+
+    LOOP AT mt_branches INTO ls_branch.
+      lv_branch_val = ls_branch-val_from->eval( is_context ).
+      lv_is_num     = abap_false.
+
+      IF mo_switch_expr->is_numeric( ) = abap_true OR ls_branch-val_from->is_numeric( ) = abap_true.
+        TRY.
+            lv_num_s  = _to_number( lv_switch_val ).
+            lv_num_b  = _to_number( lv_branch_val ).
+            lv_is_num = abap_true.
+          CATCH zcx_xtt_exception.
+            lv_is_num = abap_false.
+        ENDTRY.
+      ENDIF.
+
+      IF ( lv_is_num = abap_true AND lv_num_s = lv_num_b ) OR
+         ( lv_is_num = abap_false AND lv_switch_val = lv_branch_val ).
+        rv_val = ls_branch-val_to->eval( is_context ).
+        RETURN.
+      ENDIF.
+    ENDLOOP.
+
+    IF mo_else IS BOUND.
+      rv_val = mo_else->eval( is_context ).
+    ELSE.
+      CLEAR rv_val.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD is_numeric.
+    DATA ls_b LIKE LINE OF mt_branches.
+    READ TABLE mt_branches INTO ls_b INDEX 1.
+    IF sy-subrc = 0.
+      rv_num = ls_b-val_to->is_numeric( ).
+    ELSEIF mo_else IS BOUND.
+      rv_num = mo_else->is_numeric( ).
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_node_func IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( ).
+    mv_func_name = iv_name.
+    mo_arg       = io_arg.
+  ENDMETHOD.
+
+  METHOD eval.
+    rv_val = mo_arg->eval( is_context ).
+    CASE mv_func_name.
+      WHEN 'TO_LOWER'.
+        TRANSLATE rv_val TO LOWER CASE.
+      WHEN 'TO_UPPER'.
+        TRANSLATE rv_val TO UPPER CASE.
+      WHEN 'TO_MIXED'.
+        DATA lt_parts TYPE STANDARD TABLE OF string.
+        DATA lv_part  TYPE string.
+        DATA lv_char  TYPE c LENGTH 1.
+
+        SPLIT rv_val AT '_' INTO TABLE lt_parts.
+        CLEAR rv_val.
+        LOOP AT lt_parts INTO lv_part.
+          CHECK lv_part IS NOT INITIAL.
+          TRANSLATE lv_part TO LOWER CASE.
+          lv_char = lv_part(1).
+          TRANSLATE lv_char TO UPPER CASE.
+          SHIFT lv_part BY 1 PLACES.
+          CONCATENATE rv_val lv_char lv_part INTO rv_val.
+        ENDLOOP.
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD is_numeric.
+    rv_num = mo_arg->is_numeric( ).
+  ENDMETHOD.
+ENDCLASS.
 " ====================================================================
 " Tokenizer Implementation
 " ====================================================================
@@ -515,9 +685,13 @@ CLASS lcl_tokenizer IMPLEMENTATION.
     DATA lv_next_pos TYPE i.
     DATA lv_two      TYPE string.
     DATA lv_kw       TYPE string.
+    DATA lv_next     TYPE i.
+    DATA lv_abcde    TYPE c LENGTH 26.
 
     lv_len = strlen( iv_text ).
     lv_pos = 0.
+    lv_abcde = sy-abcde.
+    TRANSLATE lv_abcde TO LOWER CASE.
 
     WHILE lv_pos < lv_len.
       lv_char = iv_text+lv_pos(1).
@@ -636,7 +810,7 @@ CLASS lcl_tokenizer IMPLEMENTATION.
       ENDIF.
 
       " 8. Words, Keywords, and Identifiers
-      IF lv_char CA sy-abcde OR lv_char CA to_lower( sy-abcde ) OR lv_char = '_'.
+      IF lv_char CA sy-abcde OR lv_char CA lv_abcde OR lv_char = '_'.
         CLEAR lv_ident.
         WHILE lv_pos < lv_len.
           c = iv_text+lv_pos(1).
@@ -654,10 +828,28 @@ CLASS lcl_tokenizer IMPLEMENTATION.
             CONTINUE.
           ENDIF.
 
+          " Substring offset+length: +10(3)
+          IF c = '+'.
+            DATA lv_rem         TYPE string.
+            DATA lv_close_paren TYPE i.
+            DATA lv_sub_spec    TYPE string.
+            lv_rem = iv_text+lv_pos.
+            lv_close_paren = find( val = lv_rem sub = ')' ).
+            IF lv_close_paren > 1.
+              lv_sub_spec = substring( val = lv_rem off = 1 len = lv_close_paren ).
+              IF lv_sub_spec CA '(' AND lv_sub_spec CA ')'.
+                lv_next = lv_close_paren + 1.
+                lv_ident = |{ lv_ident }{ iv_text+lv_pos(lv_next) }|.
+                lv_pos = lv_pos + lv_close_paren + 1.
+                CONTINUE.
+              ENDIF.
+            ENDIF.
+          ENDIF.
+
           IF c = '-'.
             lv_next_pos = lv_pos + 1.
             IF lv_next_pos < lv_len AND ( iv_text+lv_next_pos(1) CA sy-abcde OR
-                                          iv_text+lv_next_pos(1) CA to_lower( sy-abcde ) OR
+                                          iv_text+lv_next_pos(1) CA lv_abcde OR
                                           iv_text+lv_next_pos(1) = '_' ).
               lv_ident = |{ lv_ident }{ c }|.
               lv_pos   = lv_pos + 1.
@@ -667,7 +859,7 @@ CLASS lcl_tokenizer IMPLEMENTATION.
             ENDIF.
           ENDIF.
 
-          IF c CA sy-abcde OR c CA to_lower( sy-abcde ) OR c CA '0123456789_'.
+          IF c CA sy-abcde OR c CA lv_abcde OR c CA '0123456789_'.
             lv_ident = |{ lv_ident }{ c }|.
             lv_pos   = lv_pos + 1.
           ELSE.
@@ -675,7 +867,8 @@ CLASS lcl_tokenizer IMPLEMENTATION.
           ENDIF.
         ENDWHILE.
 
-        lv_kw = to_upper( lv_ident ).
+        lv_kw = lv_ident.
+        TRANSLATE lv_kw TO UPPER CASE.
 
         CLEAR ls_token.
         CASE lv_kw.
@@ -697,6 +890,11 @@ CLASS lcl_tokenizer IMPLEMENTATION.
             ls_token-type = 'COND'.
           WHEN 'WHEN'.
             ls_token-type = 'WHEN'.
+          WHEN 'SWITCH'.
+            ls_token-type = 'SWITCH'.
+          WHEN 'TO_LOWER' OR 'TO_UPPER' OR 'TO_MIXED'.
+            ls_token-type  = 'FUNC'.
+            ls_token-value = lv_kw.
           WHEN 'IS'.
             ls_token-type = 'IS'.
           WHEN 'INITIAL'.
@@ -718,7 +916,38 @@ CLASS lcl_tokenizer IMPLEMENTATION.
         CONTINUE.
       ENDIF.
 
-      zcx_eui_no_check=>raise_sys_error( iv_message = |Unexpected character: { lv_char }| ).
+      " String template |...|
+      IF lv_char = '|'.
+        DATA lv_tmpl_str  TYPE string.
+        DATA lv_in_braces TYPE i.
+        CLEAR: lv_tmpl_str, lv_in_braces.
+        lv_pos = lv_pos + 1.
+        WHILE lv_pos < lv_len.
+          c = iv_text+lv_pos(1).
+          IF c = '\' AND lv_pos + 1 < lv_len.
+            lv_tmpl_str = |{ lv_tmpl_str }{ iv_text+lv_pos(2) }|.
+            lv_pos = lv_pos + 2.
+            CONTINUE.
+          ENDIF.
+          IF c = '{'.
+            lv_in_braces = lv_in_braces + 1.
+          ELSEIF c = '}'.
+            lv_in_braces = lv_in_braces - 1.
+          ELSEIF c = '|' AND lv_in_braces = 0.
+            lv_pos = lv_pos + 1.
+            EXIT.
+          ENDIF.
+          lv_tmpl_str = |{ lv_tmpl_str }{ c }|.
+          lv_pos = lv_pos + 1.
+        ENDWHILE.
+        CLEAR ls_token.
+        ls_token-type  = 'TMPL'.
+        ls_token-value = lv_tmpl_str.
+        APPEND ls_token TO rt_tokens.
+        CONTINUE.
+      ENDIF.
+
+      zcx_xtt_exception=>raise_sys_error( iv_message = |Unexpected character: { lv_char }| ).
     ENDWHILE.
 
     CLEAR ls_token.
@@ -748,7 +977,7 @@ CLASS lcl_parser IMPLEMENTATION.
 
   METHOD consume.
     IF iv_expected IS NOT INITIAL AND current( )-type <> iv_expected.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |Expected token '{ iv_expected }' but found '{ current( )-value }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |Expected token '{ iv_expected }' but found '{ current( )-value }'| ).
     ENDIF.
     mv_idx = mv_idx + 1.
   ENDMETHOD.
@@ -756,7 +985,7 @@ CLASS lcl_parser IMPLEMENTATION.
   METHOD parse.
     ro_root = parse_cond( ).
     IF current( )-type <> 'EOF'.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |Unexpected token at end: { current( )-value }| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |Unexpected token at end: { current( )-value }| ).
     ENDIF.
   ENDMETHOD.
 
@@ -799,6 +1028,18 @@ CLASS lcl_parser IMPLEMENTATION.
     DATA lo_cond      TYPE REF TO lcl_ast_node.
     DATA lo_val       TYPE REF TO lcl_ast_node.
     DATA ls_branch    LIKE LINE OF lo_cond_node->mt_branches.
+
+    " Syntax: SWITCH #( expr WHEN val THEN res ... ELSE default )
+    IF current( )-type = 'SWITCH'.
+      consume( 'SWITCH' ).
+      IF current( )-type = 'HASH' OR current( )-type = 'IDENT'.
+        consume( ).
+      ENDIF.
+      consume( 'LPAREN' ).
+      ro_node = parse_switch( ).
+      consume( 'RPAREN' ).
+      RETURN.
+    ENDIF.
 
     " Syntax COND #( ... ) or COND type( ... )
     IF current( )-type = 'COND'.
@@ -851,6 +1092,30 @@ CLASS lcl_parser IMPLEMENTATION.
       ENDIF.
       ro_node = lo_cond_node.
     ENDIF.
+  ENDMETHOD.
+
+  METHOD parse_switch.
+    DATA lo_switch TYPE REF TO lcl_node_switch.
+    DATA ls_branch LIKE LINE OF lo_switch->mt_branches.
+
+    CREATE OBJECT lo_switch.
+    lo_switch->mo_switch_expr = parse_or( ).
+
+    WHILE current( )-type = 'WHEN'.
+      consume( 'WHEN' ).
+      CLEAR ls_branch.
+      ls_branch-val_from = parse_or( ).
+      consume( 'THEN' ).
+      ls_branch-val_to   = parse_or( ).
+      APPEND ls_branch TO lo_switch->mt_branches.
+    ENDWHILE.
+
+    IF current( )-type = 'ELSE'.
+      consume( 'ELSE' ).
+      lo_switch->mo_else = parse_cond( ).
+    ENDIF.
+
+    ro_node = lo_switch.
   ENDMETHOD.
 
   METHOD parse_not.
@@ -1042,8 +1307,35 @@ CLASS lcl_parser IMPLEMENTATION.
         consume( 'LPAREN' ).
         ro_node = parse_operand( ).
         consume( 'RPAREN' ).
+
+      WHEN 'SWITCH'.
+        ro_node = parse_cond( ).
+
+        " String template |...|
+      WHEN 'TMPL'.
+        consume( 'TMPL' ).
+        ro_node = lcl_expression=>_compile_template( ls_tok-value ).
+
+        " Functions: to_lower( ... ), to_upper( ... ), to_mixed( ... )
+      WHEN 'FUNC'.
+        DATA lv_fname TYPE string.
+        DATA lo_arg   TYPE REF TO lcl_ast_node.
+        DATA lo_func  TYPE REF TO lcl_node_func.
+
+        lv_fname = ls_tok-value.
+        consume( 'FUNC' ).
+        consume( 'LPAREN' ).
+        lo_arg = parse_cond( ).
+        consume( 'RPAREN' ).
+
+        CREATE OBJECT lo_func
+          EXPORTING
+            iv_name = lv_fname
+            io_arg  = lo_arg.
+        ro_node = lo_func.
+
       WHEN OTHERS.
-        zcx_eui_no_check=>raise_sys_error( iv_message = |Unexpected operand: { ls_tok-value }| ).
+        zcx_xtt_exception=>raise_sys_error( iv_message = |Unexpected operand: { ls_tok-value }| ).
     ENDCASE.
   ENDMETHOD.
 ENDCLASS.
@@ -1062,7 +1354,7 @@ CLASS lcl_expression IMPLEMENTATION.
     SHIFT lv_expr LEFT DELETING LEADING space.
     SHIFT lv_expr RIGHT DELETING TRAILING space.
 
-    " Strip outer pipes |...|
+    " Strip outer pipes |...| only if the entire expression is enclosed in pipes
     lv_len = strlen( lv_expr ).
     IF lv_len >= 2 AND lv_expr(1) = '|'.
       lv_len_m1 = lv_len - 1.
@@ -1074,13 +1366,13 @@ CLASS lcl_expression IMPLEMENTATION.
       ENDIF.
     ENDIF.
 
-    " Contains placeholders { ... }
-    IF lv_expr CS '{' AND lv_expr CS '}'.
+    " Legacy unquoted templates without pipes (e.g. ABC { sy-datum })
+    IF lv_expr CS '{' AND lv_expr CS '}' AND lv_expr NS '|'.  " <--- ADDED: AND lv_expr NS '|'
       mo_ast = _compile_template( lv_expr ).
       RETURN.
     ENDIF.
 
-    " Arithmetic / standard expression
+    " Arithmetic / functions / conditional expressions
     mo_ast = _compile_sub_expr( lv_expr ).
   ENDMETHOD.
 
@@ -1132,7 +1424,7 @@ CLASS lcl_expression IMPLEMENTATION.
         lv_open_pos  = lv_pos + 1.
         lv_close_pos = find( val = iv_template sub = '}' off = lv_open_pos ).
         IF lv_close_pos < 0.
-          zcx_eui_no_check=>raise_sys_error( iv_message = 'Unclosed "{" in string template' ).
+          zcx_xtt_exception=>raise_sys_error( iv_message = 'Unclosed "{" in string template' ).
         ENDIF.
 
         lv_sub_len  = lv_close_pos - lv_open_pos.
@@ -1159,14 +1451,14 @@ CLASS lcl_expression IMPLEMENTATION.
 
   METHOD evaluate.
     IF mo_ast IS NOT BOUND.
-      zcx_eui_no_check=>raise_sys_error( iv_message = 'Expression not compiled.' ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'Expression not compiled.' ).
     ENDIF.
     rv_result = mo_ast->eval( is_context ).
   ENDMETHOD.
 
   METHOD evaluate_bool.
     IF mo_ast IS NOT BOUND.
-      zcx_eui_no_check=>raise_sys_error( iv_message = 'Expression not compiled.' ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'Expression not compiled.' ).
     ENDIF.
     IF mo_ast->eval( is_context ) = abap_true.
       rv_result = abap_true.

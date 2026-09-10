@@ -132,6 +132,36 @@ CLASS lcl_node_cond DEFINITION INHERITING FROM lcl_ast_node.
     METHODS eval REDEFINITION.
     METHODS is_numeric REDEFINITION.
 ENDCLASS.
+
+" SWITCH #( expr WHEN val THEN res ... ELSE default )
+CLASS lcl_node_switch DEFINITION INHERITING FROM lcl_ast_node.
+  PUBLIC SECTION.
+    TYPES:
+      BEGIN OF ts_branch,
+        val_from TYPE REF TO lcl_ast_node,
+        val_to   TYPE REF TO lcl_ast_node,
+      END OF ts_branch,
+      tt_branch TYPE STANDARD TABLE OF ts_branch WITH DEFAULT KEY.
+
+    DATA mo_switch_expr TYPE REF TO lcl_ast_node.
+    DATA mt_branches    TYPE tt_branch.
+    DATA mo_else        TYPE REF TO lcl_ast_node.
+
+    METHODS eval REDEFINITION.
+    METHODS is_numeric REDEFINITION.
+ENDCLASS.
+
+" Built-in functions: to_lower( ... ), to_upper( ... )
+CLASS lcl_node_func DEFINITION INHERITING FROM lcl_ast_node.
+  PUBLIC SECTION.
+    DATA mv_func_name TYPE string.
+    DATA mo_arg       TYPE REF TO lcl_ast_node.
+
+    METHODS constructor IMPORTING iv_name TYPE string io_arg TYPE REF TO lcl_ast_node.
+    METHODS eval REDEFINITION.
+    METHODS is_numeric REDEFINITION.
+ENDCLASS.
+
 " ====================================================================
 " 2. Tokenizer / Lexer
 " ====================================================================
@@ -166,6 +196,7 @@ CLASS lcl_parser DEFINITION.
     METHODS consume IMPORTING iv_expected TYPE string OPTIONAL RAISING zcx_xtt_exception.
     METHODS parse_or RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_cond RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
+    METHODS parse_switch RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_and RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_not RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_predicate RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
@@ -194,15 +225,15 @@ CLASS lcl_expression DEFINITION.
       RETURNING VALUE(rv_result) TYPE abap_bool
       RAISING   zcx_xtt_exception.
 
-  PRIVATE SECTION.
-    DATA mo_ast TYPE REF TO lcl_ast_node.
-
-    METHODS _compile_template
+    CLASS-METHODS _compile_template
       IMPORTING iv_template    TYPE string
       RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node
       RAISING   zcx_xtt_exception.
 
-    METHODS _compile_sub_expr
+  PRIVATE SECTION.
+    DATA mo_ast TYPE REF TO lcl_ast_node.
+
+    CLASS-METHODS _compile_sub_expr
       IMPORTING iv_sub_expr    TYPE string
       RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node
       RAISING   zcx_xtt_exception.

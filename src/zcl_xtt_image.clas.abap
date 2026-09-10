@@ -185,7 +185,12 @@ METHOD create_image_decl.
 *    RETURN.
 *  ENDIF.
 
-  ir_field->oref = create_image( iv_image   = <lv_xstring>
+  DATA lv_xstring TYPE xstring.
+  IF <lv_xstring> IS ASSIGNED AND <lv_xstring> IS NOT INITIAL.
+    lv_xstring = <lv_xstring>.
+  ENDIF.
+
+  ir_field->oref = create_image( iv_image   = lv_xstring
                                  iv_ext     = ls_option-ext
                                  iv_width   = ls_option-width
                                  iv_height  = ls_option-height

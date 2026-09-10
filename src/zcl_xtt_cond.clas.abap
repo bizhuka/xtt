@@ -141,7 +141,7 @@ METHOD calc_matches.
     CREATE DATA ls_field-dref TYPE (lv_type).
     ASSIGN ls_field-dref->* TO <lv_result>.
 
-    DATA lo_error TYPE REF TO zcx_eui_no_check.
+    DATA lo_error TYPE REF TO zcx_xtt_exception.
     DATA lv_ok    TYPE abap_bool.
 
     IF <ls_match>-o_expr IS NOT INITIAL.
@@ -153,12 +153,13 @@ METHOD calc_matches.
         lv_result = lo_expression->evaluate( <ls_root> ).
         <lv_result> = lv_result.
         lv_ok = abap_true.
-      CATCH zcx_eui_no_check.
+      CATCH zcx_xtt_exception.
         lv_ok = abap_false.
       ENDTRY.
     ENDIF.
 
     IF lv_ok <> abap_true AND mv_prog IS NOT INITIAL.
+      DATA lo_error_eui TYPE REF TO zcx_eui_no_check.
       TRY.
           sy-tabix = iv_tabix.
           PERFORM (<ls_match>-form) IN PROGRAM (mv_prog) IF FOUND
@@ -167,7 +168,7 @@ METHOD calc_matches.
                   <ls_match>-caller
             CHANGING
                   <lv_result>.
-        CATCH zcx_eui_no_check INTO lo_error.
+        CATCH zcx_eui_no_check INTO lo_error_eui.
           MESSAGE w025(zsy_xtt) WITH <ls_match>-cond INTO sy-msgli.
           io_xtt->add_log_message( iv_syst = abap_true ).
           " tech info
@@ -368,7 +369,7 @@ METHOD make_tree_forms.
       TRY.
           lo_expression->compile( <ls_row_off>-if_where ).
           <ls_row_off>-o_expr = lo_expression.
-        CATCH zcx_eui_no_check.
+        CATCH zcx_xtt_exception.
           CLEAR <ls_row_off>-o_expr.
       ENDTRY.
     ENDIF.
@@ -590,7 +591,7 @@ METHOD _read_scopes.
             TRY.
               lo_expression->compile( ls_match-cond ).
               ls_match-o_expr = lo_expression.
-            CATCH zcx_eui_no_check.
+            CATCH zcx_xtt_exception.
               CLEAR ls_match-o_expr.
             ENDTRY.
           ENDIF.
@@ -615,7 +616,7 @@ METHOD eval_tree_cond.
   TRY.
       lo_expression ?= io_expr.
       rv_ok = lo_expression->evaluate_bool( is_row ).
-    CATCH zcx_eui_no_check.
+    CATCH zcx_xtt_exception.
       rv_ok = abap_false.
   ENDTRY.
 ENDMETHOD.

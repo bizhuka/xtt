@@ -5,36 +5,41 @@ CLASS lcl_test  DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
                                  .           "#AU Duration Short
   PUBLIC SECTION.
     METHODS:
-      generate    FOR TESTING,
-      _702_cond   FOR TESTING,
-      _702_concat FOR TESTING.
+      generate    FOR TESTING RAISING zcx_xtt_exception,
+      _702_cond   FOR TESTING RAISING zcx_xtt_exception,
+      _702_concat FOR TESTING RAISING zcx_xtt_exception.
 ENDCLASS.
 
 CLASS lcl_expression_text_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
                                                 .           "#AU Duration Short
   PUBLIC SECTION.
     METHODS:
-      system_fields         FOR TESTING,
-      pipe_template         FOR TESTING,
-      arithmetic            FOR TESTING,
-      multiple_spaces       FOR TESTING,
-      negative_arithmetic   FOR TESTING,
-      table_expression      FOR TESTING,
-      table_condition_expr  FOR TESTING,
-      conditional_then_else FOR TESTING.
+      system_fields         FOR TESTING RAISING zcx_xtt_exception,
+      pipe_template         FOR TESTING RAISING zcx_xtt_exception,
+      arithmetic            FOR TESTING RAISING zcx_xtt_exception,
+      multiple_spaces       FOR TESTING RAISING zcx_xtt_exception,
+      negative_arithmetic   FOR TESTING RAISING zcx_xtt_exception,
+      table_expression      FOR TESTING RAISING zcx_xtt_exception,
+      table_condition_expr  FOR TESTING RAISING zcx_xtt_exception,
+      conditional_then_else FOR TESTING RAISING zcx_xtt_exception,
+      switch_expression     FOR TESTING RAISING zcx_xtt_exception,
+      to_lower_function     FOR TESTING RAISING zcx_xtt_exception,
+      to_upper_function     FOR TESTING RAISING zcx_xtt_exception,
+      to_mixed_function     FOR TESTING RAISING zcx_xtt_exception,
+      substring_offset_len  FOR TESTING RAISING zcx_xtt_exception.
 ENDCLASS.
 
 CLASS lcl_expression_boolean_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
                                                    .           "#AU Duration Short
   PUBLIC SECTION.
     METHODS:
-      compound_condition FOR TESTING,
-      equality_condition FOR TESTING,
-      raw_dynamic_form   FOR TESTING,
-      nested_parentheses    FOR TESTING, " NEW
-      numeric_comparisons   FOR TESTING, " NEW
-      is_initial_test       FOR TESTING, " NEW
-      string_contains_cs_ns FOR TESTING. " NEW
+      compound_condition FOR TESTING RAISING zcx_xtt_exception,
+      equality_condition FOR TESTING RAISING zcx_xtt_exception,
+      raw_dynamic_form   FOR TESTING RAISING zcx_xtt_exception,
+      nested_parentheses    FOR TESTING RAISING zcx_xtt_exception, " NEW
+      numeric_comparisons   FOR TESTING RAISING zcx_xtt_exception, " NEW
+      is_initial_test       FOR TESTING RAISING zcx_xtt_exception, " NEW
+      string_contains_cs_ns FOR TESTING RAISING zcx_xtt_exception. " NEW
 ENDCLASS.
 
 **********************************************************************
@@ -48,12 +53,12 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     CREATE OBJECT lo_calc.
     TRY.
         lo_calc->compile( `|ABC { sy-datum } { sy-uzeit }|` ).
-      CATCH zcx_eui_no_check.
+      CATCH zcx_xtt_exception.
     ENDTRY.
 
     lv_result = lo_calc->evaluate( sy ).
     IF lv_result <> |ABC { sy-datum } { sy-uzeit }|.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |system_fields: { lv_result }| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |system_fields: { lv_result }| ).
     ENDIF.
   ENDMETHOD.
 
@@ -77,13 +82,13 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     CREATE OBJECT lo_calc.
     TRY.
         lo_calc->compile( `|Total: { value-SUM1 * (value-SUM2 + value-SUM3) } USD (Date: { sy-datum })|` ).
-      CATCH zcx_eui_no_check.
+      CATCH zcx_xtt_exception.
     ENDTRY.
 
     lv_result = lo_calc->evaluate( ls_value ).
     lv_total  = ls_value-sum1 * ( ls_value-sum2 + ls_value-sum3 ).
     IF lv_result <> |Total: { lv_total } USD (Date: { sy-datum })|.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |pipe_template: { lv_result }| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |pipe_template: { lv_result }| ).
     ENDIF.
   ENDMETHOD.
 
@@ -110,7 +115,7 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     lv_number = lv_result.
 
     IF lv_number <> 22.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |arithmetic: expected 22 but got '{ lv_result }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |arithmetic: expected 22 but got '{ lv_result }'| ).
     ENDIF.
   ENDMETHOD.
 
@@ -122,7 +127,7 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     lo_calc->compile( `|Hello    World|` ).
     lv_res = lo_calc->evaluate( sy ).
     IF lv_res <> `Hello    World`.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |multiple_spaces failed: '{ lv_res }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |multiple_spaces failed: '{ lv_res }'| ).
     ENDIF.
   ENDMETHOD.
 
@@ -136,7 +141,7 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     lv_res = lo_calc->evaluate( sy ).
     lv_num = lv_res.
     IF lv_num <> -18.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |negative_arithmetic: expected -18 got '{ lv_res }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |negative_arithmetic: expected -18 got '{ lv_res }'| ).
     ENDIF.
   ENDMETHOD.
 
@@ -170,7 +175,7 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     lo_calc->compile( `value-T_SUMS[ 1 ]-SUM` ).
     lv_res1 = lo_calc->evaluate( ls_data ).
     IF lv_res1 <> '10.50'.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |table_expression 1 failed: expected 10.50 got '{ lv_res1 }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |table_expression 1 failed: expected 10.50 got '{ lv_res1 }'| ).
     ENDIF.
 
     " 2. Inside arithmetic
@@ -178,14 +183,14 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     lv_res2 = lo_calc->evaluate( ls_data ).
     lv_num  = lv_res2.
     IF lv_num <> 31.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |table_expression 2 failed: expected 31 got '{ lv_res2 }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |table_expression 2 failed: expected 31 got '{ lv_res2 }'| ).
     ENDIF.
 
     " 3. Inside string template
     lo_calc->compile( `|Sum1: { value-T_SUMS[ 1 ]-SUM } USD, Sum2: { value-T_SUMS[ 2 ]-SUM } USD|` ).
     lv_res3 = lo_calc->evaluate( ls_data ).
     IF lv_res3 <> `Sum1: 10.50 USD, Sum2: 20.50 USD`.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |table_expression 3 failed: '{ lv_res3 }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |table_expression 3 failed: '{ lv_res3 }'| ).
     ENDIF.
   ENDMETHOD.
 
@@ -230,21 +235,21 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     lo_calc->compile( `|First caption in group 'A' { value-t[ group = 'GRP A' ]-caption }|` ).
     lv_res1 = lo_calc->evaluate( ls_data ).
     IF lv_res1 <> `First caption in group 'A' Cap A`.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |table_condition 1 failed: '{ lv_res1 }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |table_condition 1 failed: '{ lv_res1 }'| ).
     ENDIF.
 
     " 2. Compound condition with AND
     lo_calc->compile( `value-t[ group = 'GRP A' AND amount = 50 ]-caption` ).
     lv_res2 = lo_calc->evaluate( ls_data ).
     IF lv_res2 <> 'Cap A'.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |table_condition 2 failed: '{ lv_res2 }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |table_condition 2 failed: '{ lv_res2 }'| ).
     ENDIF.
 
     " 3. Numeric index
     lo_calc->compile( `value-t[ 1 ]-caption` ).
     lv_res3 = lo_calc->evaluate( ls_data ).
     IF lv_res3 <> 'Cap B'.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |table_condition 3 failed: '{ lv_res3 }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |table_condition 3 failed: '{ lv_res3 }'| ).
     ENDIF.
   ENDMETHOD.
 
@@ -277,20 +282,165 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     " 1. True branch: 10 + 5 = 15
     lv_res_a = lo_calc->evaluate( ls_row_a ).
     IF lv_res_a <> '15'.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |conditional_then_else A failed: expected 15 got '{ lv_res_a }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |conditional_then_else A failed: expected 15 got '{ lv_res_a }'| ).
     ENDIF.
 
     " 2. False branch: 10 - 5 = 5
     lv_res_b = lo_calc->evaluate( ls_row_b ).
     IF lv_res_b <> '5'.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |conditional_then_else B failed: expected 5 got '{ lv_res_b }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |conditional_then_else B failed: expected 5 got '{ lv_res_b }'| ).
     ENDIF.
 
     " 3. Inside string template with COND #( ... )
     lo_calc->compile( `|Result: { COND #( WHEN value-GROUP cp '*A*' THEN value-SUM1 + value-SUM2 ELSE value-SUM1 - value-SUM2 ) }|` ).
     lv_res_tmpl = lo_calc->evaluate( ls_row_a ).
     IF lv_res_tmpl <> `Result: 15`.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |conditional_then_else template failed: '{ lv_res_tmpl }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |conditional_then_else template failed: '{ lv_res_tmpl }'| ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD switch_expression.
+    TYPES:
+      BEGIN OF ts_person,
+        gesch TYPE c LENGTH 1,
+      END OF ts_person.
+
+    DATA ls_person TYPE ts_person.
+    DATA lo_calc   TYPE REF TO lcl_expression.
+    DATA lv_res    TYPE string.
+
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( `SWITCH #( value-GESCH WHEN '1' THEN 'M' WHEN '2' THEN 'F' ELSE 'U' )` ).
+
+    " 1. Test WHEN '1' -> 'M'
+    ls_person-gesch = '1'.
+    lv_res = lo_calc->evaluate( ls_person ).
+    IF lv_res <> 'M'.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |switch WHEN 1 failed: expected M got '{ lv_res }'| ).
+    ENDIF.
+
+    " 2. Test WHEN '2' -> 'F'
+    ls_person-gesch = '2'.
+    lv_res = lo_calc->evaluate( ls_person ).
+    IF lv_res <> 'F'.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |switch WHEN 2 failed: expected F got '{ lv_res }'| ).
+    ENDIF.
+
+    " 3. Test ELSE -> 'U'
+    ls_person-gesch = '9'.
+    lv_res = lo_calc->evaluate( ls_person ).
+    IF lv_res <> 'U'.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |switch ELSE failed: expected U got '{ lv_res }'| ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD to_lower_function.
+    TYPES:
+      BEGIN OF ts_person,
+        nachn TYPE string,
+        vorna TYPE string,
+        midnm TYPE string,
+      END OF ts_person.
+
+    DATA ls_person   TYPE ts_person.
+    DATA lo_calc     TYPE REF TO lcl_expression.
+    DATA lv_res      TYPE string.
+    DATA lv_expected TYPE string.
+
+    ls_person-nachn = 'DOE'.
+    ls_person-vorna = 'JOHN'.
+    ls_person-midnm = 'FITZGERALD'.
+
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( `to_lower( |{ value-NACHN } { value-VORNA } { value-MIDNM }| )` ).
+
+    lv_res = lo_calc->evaluate( ls_person ).
+
+    lv_expected = |{ ls_person-nachn } { ls_person-vorna } { ls_person-midnm }|.
+    TRANSLATE lv_expected TO LOWER CASE.
+
+    IF lv_res <> lv_expected.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |to_lower failed: expected '{ lv_expected }' got '{ lv_res }'| ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD to_upper_function.
+    TYPES:
+      BEGIN OF ts_person,
+        nachn TYPE string,
+        vorna TYPE string,
+        midnm TYPE string,
+      END OF ts_person.
+
+    DATA ls_person   TYPE ts_person.
+    DATA lo_calc     TYPE REF TO lcl_expression.
+    DATA lv_res      TYPE string.
+    DATA lv_expected TYPE string.
+
+    ls_person-nachn = 'doe'.
+    ls_person-vorna = 'john'.
+    ls_person-midnm = 'fitzgerald'.
+
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( `to_upper( |{ value-NACHN } { value-VORNA } { value-MIDNM }| )` ).
+
+    lv_res = lo_calc->evaluate( ls_person ).
+
+    lv_expected = |{ ls_person-nachn } { ls_person-vorna } { ls_person-midnm }|.
+    TRANSLATE lv_expected TO UPPER CASE.
+
+    IF lv_res <> lv_expected.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |to_upper failed: expected '{ lv_expected }' got '{ lv_res }'| ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD to_mixed_function.
+    TYPES:
+      BEGIN OF ts_person,
+        nachn TYPE string,
+        vorna TYPE string,
+        midnm TYPE string,
+      END OF ts_person.
+
+    DATA ls_person   TYPE ts_person.
+    DATA lo_calc     TYPE REF TO lcl_expression.
+    DATA lv_res      TYPE string.
+    DATA lv_expected TYPE string.
+
+    ls_person-nachn = 'DOE'.
+    ls_person-vorna = 'JOHN'.
+    ls_person-midnm = 'FITZGERALD'.
+
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( `to_mixed( |{ value-NACHN }_{ value-VORNA }_{ value-MIDNM }| )` ).
+
+    lv_res = lo_calc->evaluate( ls_person ).
+
+    lv_expected = 'DoeJohnFitzgerald'.
+
+    IF lv_res <> lv_expected.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |to_mixed failed: expected '{ lv_expected }' got '{ lv_res }'| ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD substring_offset_len.
+    TYPES:
+      BEGIN OF ts_person,
+        midnm TYPE string,
+      END OF ts_person.
+
+    DATA ls_person TYPE ts_person.
+    DATA lo_calc   TYPE REF TO lcl_expression.
+    DATA lv_res    TYPE string.
+
+    ls_person-midnm = '0123456789ABCDEF'.
+
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( `value-MIDNM+10(3)` ).
+
+    lv_res = lo_calc->evaluate( ls_person ).
+    IF lv_res <> 'ABC'.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |substring offset+len failed: expected ABC got '{ lv_res }'| ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
@@ -315,7 +465,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     lv_result = lo_calc->evaluate_bool( ls_row ).
 
     IF lv_result <> abap_true.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |compound_condition: expected X but got '{ lv_result }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |compound_condition: expected X but got '{ lv_result }'| ).
     ENDIF.
   ENDMETHOD.
 
@@ -338,7 +488,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     lv_result = lo_calc->evaluate_bool( ls_row ).
 
     IF lv_result <> abap_false.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |equality_condition: expected blank but got '{ lv_result }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |equality_condition: expected blank but got '{ lv_result }'| ).
     ENDIF.
   ENDMETHOD.
 
@@ -361,7 +511,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     lv_result = lo_calc->evaluate_bool( ls_row ).
 
     IF lv_result <> abap_true.
-      zcx_eui_no_check=>raise_sys_error( iv_message = |raw_dynamic_form: expected X but got '{ lv_result }'| ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = |raw_dynamic_form: expected X but got '{ lv_result }'| ).
     ENDIF.
   ENDMETHOD.
 
@@ -381,12 +531,12 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     CREATE OBJECT lo_calc.
     lo_calc->compile( `( ( row-a = 1 ) AND ( row-b = 2 ) )` ).
     IF lo_calc->evaluate_bool( ls_row ) <> abap_true.
-      zcx_eui_no_check=>raise_sys_error( iv_message = 'nested_parentheses failed for true' ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'nested_parentheses failed for true' ).
     ENDIF.
 
     lo_calc->compile( `( ( row-a = 2 ) OR ( row-b = 99 ) )` ).
     IF lo_calc->evaluate_bool( ls_row ) <> abap_false.
-      zcx_eui_no_check=>raise_sys_error( iv_message = 'nested_parentheses failed for false' ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'nested_parentheses failed for false' ).
     ENDIF.
   ENDMETHOD.
 
@@ -404,12 +554,12 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     CREATE OBJECT lo_calc.
     lo_calc->compile( `row-val > 10 AND row-val <= 20` ).
     IF lo_calc->evaluate_bool( ls_row ) <> abap_true.
-      zcx_eui_no_check=>raise_sys_error( iv_message = 'numeric_comparisons failed' ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'numeric_comparisons failed' ).
     ENDIF.
 
     lo_calc->compile( `row-val >= 20` ).
     IF lo_calc->evaluate_bool( ls_row ) <> abap_false.
-      zcx_eui_no_check=>raise_sys_error( iv_message = 'numeric_comparisons >= failed' ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'numeric_comparisons >= failed' ).
     ENDIF.
   ENDMETHOD.
 
@@ -429,7 +579,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     CREATE OBJECT lo_calc.
     lo_calc->compile( `row-text IS INITIAL AND row-num IS NOT INITIAL` ).
     IF lo_calc->evaluate_bool( ls_row ) <> abap_true.
-      zcx_eui_no_check=>raise_sys_error( iv_message = 'is_initial_test failed' ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'is_initial_test failed' ).
     ENDIF.
   ENDMETHOD.
 
@@ -447,7 +597,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     CREATE OBJECT lo_calc.
     lo_calc->compile( `row-name CS 'brown' AND row-name NS 'cat'` ).
     IF lo_calc->evaluate_bool( ls_row ) <> abap_true.
-      zcx_eui_no_check=>raise_sys_error( iv_message = 'string_contains_cs_ns failed' ).
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'string_contains_cs_ns failed' ).
     ENDIF.
   ENDMETHOD.
 ENDCLASS.
@@ -487,7 +637,7 @@ CLASS lcl_test IMPLEMENTATION.
 *    cut->get_type( EXPORTING is_data = ls_root
 *                   IMPORTING ev_type = cut->mv_root_type ).
 *
-*    cut->_make_cond_forms( ). " zcx_eui_no_check
+*    cut->_make_cond_forms( ). " zcx_xtt_exception
   ENDMETHOD.
 
   METHOD _702_cond.

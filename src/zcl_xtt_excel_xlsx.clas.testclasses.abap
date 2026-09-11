@@ -85,7 +85,20 @@ CLASS lcl_test IMPLEMENTATION.
           'INDIRECT("RC[4]",FALSE)'            1      1      'INDIRECT("RC[4]",FALSE)',
           `'A1'!$A$1`                          1      1      `'A1'!$A$1`,
           'Tbl[[#This Row],[Air fare]]'        1      1      'Tbl[[#This Row],[Air fare]]',
-          'Tbl[[#This Row],[Air]]+A1'          1      1      'Tbl[[#This Row],[Air]]+B2'
+          'Tbl[[#This Row],[Air]]+A1'          1      1      'Tbl[[#This Row],[Air]]+B2',
+
+          " Whole column and whole row references
+          'SUM(A:A)'                           1      0      'SUM(B:B)',
+          'SUM(A:A)'                           0      5      'SUM(A:A)',
+          'SUM($A:$A)'                         1      0      'SUM($A:$A)',
+          'SUM(A:C)'                           2      0      'SUM(C:E)',
+          'SUM(1:1)'                           0      1      'SUM(2:2)',
+          'SUM(1:1)'                           3      0      'SUM(1:1)',
+          'SUMIF($AC:$AC,"<>",Q:Q)'            1      0      'SUMIF($AC:$AC,"<>",R:R)',
+          'Sheet2!A:A'                         1      0      'Sheet2!B:B',
+
+          " A colon is what tells a range from a name: no colon, no shift
+          'RNGNAME1+A1'                        1      0      'RNGNAME1+B1'
           .
   ENDMETHOD.
 ENDCLASS.

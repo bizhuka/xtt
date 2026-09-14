@@ -14,23 +14,30 @@ CLASS zcl_xtt_demo_040 DEFINITION PUBLIC INHERITING FROM zcl_xtt_demo CREATE PUB
           iv_field     TYPE csequence
         CHANGING
           ct_table     TYPE STANDARD TABLE.
+protected section.
+private section.
 ENDCLASS.
 
 
-CLASS zcl_xtt_demo_040 IMPLEMENTATION.
+
+CLASS ZCL_XTT_DEMO_040 IMPLEMENTATION.
+
 
   METHOD constructor.
     super->constructor( ).
     v_desc = 'Data types'(040).
   ENDMETHOD.
 
+
   METHOD get_url_base.
     rv_url_base = '/xtt/data-types/'.
   ENDMETHOD.
 
+
   METHOD get_screen_opt.
     rs_opt-row_count = abap_true.
   ENDMETHOD.
+
 
   METHOD set_merge_info.
     TYPES:
@@ -58,13 +65,13 @@ CLASS zcl_xtt_demo_040 IMPLEMENTATION.
 
     " Assign Internal to Language-Dependent Unit
     SELECT msehi msehl INTO CORRESPONDING FIELDS OF TABLE ls_root-u "#EC TOO_MANY_ITAB_FIELDS
-*     UP TO mo_report->mv_r_cnt ROWS
+     UP TO mo_report->mv_r_cnt ROWS
     FROM t006a
     WHERE spras = sy-langu.
 
     " Country Names
     SELECT land1 landx50 INTO CORRESPONDING FIELDS OF TABLE ls_root-c "#EC TOO_MANY_ITAB_FIELDS
-*     UP TO mo_report->mv_r_cnt ROWS
+     UP TO mo_report->mv_r_cnt ROWS
     FROM t005t
     WHERE spras = sy-langu.
 
@@ -81,6 +88,7 @@ CLASS zcl_xtt_demo_040 IMPLEMENTATION.
     mo_report->merge_add_one( ls_root ).
   ENDMETHOD.
 
+
   METHOD _add_delimiter.
     FIELD-SYMBOLS <ls_row>   TYPE any.
     FIELD-SYMBOLS <lv_field> TYPE csequence.
@@ -92,6 +100,7 @@ CLASS zcl_xtt_demo_040 IMPLEMENTATION.
                   <lv_field> INTO <lv_field>.
     ENDLOOP.
   ENDMETHOD.
+
 
   METHOD get_templates.
     APPEND `ZXXT_DEMO_040-XLSX`      TO rt_templates.

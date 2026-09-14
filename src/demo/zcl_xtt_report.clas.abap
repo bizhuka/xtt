@@ -59,7 +59,14 @@ CLASS zcl_xtt_report DEFINITION PUBLIC CREATE PUBLIC .
       tt_demo TYPE SORTED TABLE OF ts_demo WITH UNIQUE KEY ind.
 
     DATA:
-      t_demo TYPE tt_demo.
+      t_demo       TYPE tt_demo,
+      mv_raw_folder TYPE string.
+
+  PRIVATE SECTION.
+    METHODS on_prepare_raw FOR EVENT prepare_raw OF zcl_xtt
+      IMPORTING
+        iv_path
+        ir_content.
 ENDCLASS.
 
 
@@ -87,6 +94,61 @@ CLASS zcl_xtt_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD prepare.
+    CHECK mv_test_mode = abap_true
+      AND mv_raw_folder IS NOT INITIAL.
+
+    SET HANDLER on_prepare_raw FOR io_xtt.
+
+    DATA lo_class TYPE REF TO cl_abap_classdescr.
+    lo_class ?= cl_abap_classdescr=>describe_by_object_ref( io_xtt ).
+
+    CASE lo_class->absolute_name.
+      WHEN '\CLASS=ZCL_XTT_WORD_DOCX'.
+        " io_xtt->add_raw_event( 'word/document.xml' ).
+        io_xtt->add_raw_event( 'word/header1.xml' ).
+        io_xtt->add_raw_event( 'word/footer1.xml' ).
+
+      WHEN '\CLASS=ZCL_XTT_EXCEL_XLSX'.
+        io_xtt->add_raw_event( 'xl/workbook.xml' ).
+        io_xtt->add_raw_event( 'xl/_rels/workbook.xml.rels' ).
+
+        DO 12 TIMES.
+          DATA lv_path TYPE string.
+          lv_path = sy-index.
+          CONDENSE lv_path NO-GAPS.
+          CONCATENATE `xl/worksheets/sheet` lv_path `.xml` INTO lv_path.
+          io_xtt->add_raw_event( lv_path ).
+        ENDDO.
+        io_xtt->add_raw_event( `xl/worksheets/sheet999.xml` ).
+        io_xtt->add_raw_event( `xl/sharedStrings.xml` ).
+    ENDCASE.
+  ENDMETHOD.
+
+  METHOD on_prepare_raw.
+    CHECK iv_path IS NOT INITIAL.
+
+    DATA lv_content TYPE xstring.
+    lv_content = lcl_helper=>pretty_print( ir_content->* ).
+
+    DATA lv_path TYPE string.
+    IF sy-saprl = 'OPEN'.
+      CONCATENATE `./output/result/raw/` mv_raw_folder `/` iv_path INTO lv_path.
+    ELSE.
+      CONCATENATE `C:\Users\modekz\AppData\Local\SAP\SAP GUI\tmp\`
+                  mv_raw_folder `\` iv_path INTO lv_path.
+      REPLACE ALL OCCURRENCES OF `/` IN lv_path WITH `\`.
+    ENDIF.
+
+    DATA lo_file  TYPE REF TO zcl_eui_file.
+    DATA lo_error TYPE REF TO zcx_eui_exception.
+
+    TRY.
+        CREATE OBJECT lo_file.
+        lo_file->import_from_xstring( lv_content ).
+        lo_file->download( iv_full_path = lv_path ).
+      CATCH zcx_eui_exception INTO lo_error.
+        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
+    ENDTRY.
   ENDMETHOD.
 
   METHOD merge_add_one.

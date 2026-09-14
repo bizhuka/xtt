@@ -763,89 +763,6 @@ CLASS lcl_report IMPLEMENTATION.
     rv_template = <lv_template>.
   ENDMETHOD.
 
-  METHOD prepare.
-    CHECK mv_test_mode = abap_true.
-
-    SET HANDLER on_prepare_raw FOR io_xtt.
-
-    DATA lo_class TYPE REF TO cl_abap_classdescr.
-    lo_class ?= cl_abap_classdescr=>describe_by_object_ref( io_xtt ).
-
-    " For data exporting
-    CASE lo_class->absolute_name.
-      WHEN '\CLASS=ZCL_XTT_WORD_DOCX'.
-        " io_xtt->add_raw_event( 'word/document.xml' ).
-        io_xtt->add_raw_event( 'word/header1.xml' ).
-        io_xtt->add_raw_event( 'word/footer1.xml' ).
-
-      WHEN '\CLASS=ZCL_XTT_EXCEL_XLSX'.
-        io_xtt->add_raw_event( 'xl/workbook.xml' ).
-        io_xtt->add_raw_event( 'xl/_rels/workbook.xml.rels' ).
-
-        " Max number of sheets
-        DO 12 TIMES.
-          " Path to file
-          DATA lv_path TYPE string.
-
-          lv_path = sy-index.
-          CONDENSE lv_path NO-GAPS.
-
-          CONCATENATE `xl/worksheets/sheet` lv_path `.xml` INTO lv_path.
-
-          io_xtt->add_raw_event( lv_path ).
-        ENDDO.
-      WHEN OTHERS.
-    ENDCASE.
-  ENDMETHOD.
-
-  METHOD on_prepare_raw.
-    " No need to export entire file
-    CHECK iv_path IS NOT INITIAL.
-
-    " Work with copy
-    DATA lv_content TYPE xstring.
-    lv_content = ir_content->*.
-
-    DO 1 TIMES.
-      DATA lo_dom TYPE REF TO if_ixml_document.
-      CALL FUNCTION 'SDIXML_XML_TO_DOM'
-        EXPORTING
-          xml      = lv_content
-        IMPORTING
-          document = lo_dom
-        EXCEPTIONS
-          OTHERS   = 1.
-      CHECK sy-subrc = 0.
-
-      CALL FUNCTION 'SDIXML_DOM_TO_XML'
-        EXPORTING
-          document      = lo_dom
-          pretty_print  = 'X'
-        IMPORTING
-          xml_as_string = lv_content
-        EXCEPTIONS
-          OTHERS        = 1.
-      CHECK sy-subrc = 0.
-    ENDDO.
-
-    DATA lv_path TYPE string.
-    "TODO check path
-    CONCATENATE `C:\Users\modekz\AppData\Local\SAP\SAP GUI\tmp\` _raw_folder `\` iv_path INTO lv_path.
-    REPLACE ALL OCCURRENCES OF `/` IN lv_path WITH `\`.
-
-    " Export file
-    DATA lo_file   TYPE REF TO zcl_eui_file.
-    DATA lo_error  TYPE REF TO zcx_eui_exception.
-
-    TRY.
-        CREATE OBJECT lo_file.
-        lo_file->import_from_xstring( lv_content ).
-        lo_file->download( iv_full_path = lv_path ).
-      CATCH zcx_eui_exception INTO lo_error.
-        MESSAGE lo_error TYPE 'S' DISPLAY LIKE 'E'.
-    ENDTRY.
-  ENDMETHOD.
-
   METHOD create_new_test_demo.
     APPEND INITIAL LINE TO mt_test_demo REFERENCE INTO rr_test_demo.
     mr_test_demo = rr_test_demo.
@@ -867,6 +784,6 @@ CLASS lcl_report IMPLEMENTATION.
     " Download preparations
     p_path = rr_file->report.
 
-    CONCATENATE p_exa `_` iv_objid  INTO _raw_folder.
+    CONCATENATE p_exa `_` iv_objid INTO mv_raw_folder.
   ENDMETHOD.
 ENDCLASS.

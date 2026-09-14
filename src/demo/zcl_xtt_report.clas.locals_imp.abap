@@ -7,7 +7,11 @@ CLASS lcl_helper DEFINITION FINAL.
   PUBLIC SECTION.
     CLASS-METHODS:
       get_all_demos IMPORTING io_report      TYPE REF TO zcl_xtt_report
-                    RETURNING VALUE(rt_demo) TYPE zcl_xtt_report=>tt_demo.
+                    RETURNING VALUE(rt_demo) TYPE zcl_xtt_report=>tt_demo,
+
+      pretty_print IMPORTING iv_xml         TYPE xstring
+                             iv_indent_size TYPE i DEFAULT 2
+                   RETURNING VALUE(rv_xml)  TYPE xstring.
 ENDCLASS.
 
 CLASS lcl_helper IMPLEMENTATION.
@@ -55,5 +59,71 @@ CLASS lcl_helper IMPLEMENTATION.
 
       INSERT ls_demo INTO TABLE rt_demo[].
     ENDLOOP.
+  ENDMETHOD.
+
+  METHOD pretty_print.
+    rv_xml = iv_xml.
+
+    IF sy-saprl = 'OPEN'.
+      DATA lv_xml TYPE string.
+      lv_xml = zcl_eui_conv=>xstring_to_string( iv_xml ).
+
+      WRITE '@KERNEL let xml = lv_xml.get();'.
+      WRITE '@KERNEL let indentSize = iv_indent_size.get();'.
+      WRITE '@KERNEL let indent = " ".repeat(indentSize);'.
+      WRITE '@KERNEL let depth = 0;'.
+
+      WRITE '@KERNEL let tokens = xml'.
+      WRITE '@KERNEL   .replace(/>\s+</g, "><")'.
+      WRITE '@KERNEL   .trim()'.
+      WRITE '@KERNEL   .match(/(<\[CDATA\[.*?\]\]>|<!--.*?-->|<[^>]+>|[^<]+)/gs) || [];'.
+
+      WRITE '@KERNEL let formatted = tokens.map(token => {'.
+      WRITE '@KERNEL   if (!token.trim()) return "";'.
+      WRITE '@KERNEL   if (token.startsWith("<!--") || token.startsWith("<![CDATA[")) {'.
+      WRITE '@KERNEL     return indent.repeat(depth) + token.trim();'.
+      WRITE '@KERNEL   }'.
+      WRITE '@KERNEL   if (token.match(/^<[^>]+?\/>$/) || token.startsWith("<?")) {'.
+      WRITE '@KERNEL     return indent.repeat(depth) + token;'.
+      WRITE '@KERNEL   }'.
+      WRITE '@KERNEL   if (token.startsWith("</")) {'.
+      WRITE '@KERNEL     depth = Math.max(0, depth - 1);'.
+      WRITE '@KERNEL     return indent.repeat(depth) + token;'.
+      WRITE '@KERNEL   }'.
+      WRITE '@KERNEL   if (token.startsWith("<")) {'.
+      WRITE '@KERNEL     let line = indent.repeat(depth) + token;'.
+      WRITE '@KERNEL     depth++;'.
+      WRITE '@KERNEL     return line;'.
+      WRITE '@KERNEL   }'.
+      WRITE '@KERNEL   return indent.repeat(depth) + token.trim();'.
+      WRITE '@KERNEL }).filter(line => line.length > 0).join("\n");'.
+      WRITE '@KERNEL lv_xml.set(formatted);'.
+
+      rv_xml = zcl_eui_conv=>string_to_xstring( lv_xml ).
+      RETURN.
+    ENDIF.
+
+    DATA lo_dom TYPE REF TO if_ixml_document.
+    CALL FUNCTION 'SDIXML_XML_TO_DOM'
+      EXPORTING
+        xml      = iv_xml
+      IMPORTING
+        document = lo_dom
+      EXCEPTIONS
+        OTHERS   = 1.
+    CHECK sy-subrc = 0.
+
+    DATA lv_pretty_xml TYPE xstring.
+    CALL FUNCTION 'SDIXML_DOM_TO_XML'
+      EXPORTING
+        document       = lo_dom
+        pretty_print   = 'X'
+      IMPORTING
+        xml_as_string  = lv_pretty_xml
+      EXCEPTIONS
+        OTHERS         = 1.
+    CHECK sy-subrc = 0.
+
+    rv_xml = lv_pretty_xml.
   ENDMETHOD.
 ENDCLASS.

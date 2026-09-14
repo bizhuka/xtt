@@ -182,7 +182,7 @@ CLASS zcl_xtt_demo IMPLEMENTATION.
       ASSIGN <ls_merge>-val->* TO <ls_root>.
 
       ro_xtt->merge( is_block      = <ls_root>
-                     iv_block_name = <ls_merge>-key " <--- 'R' by defualt
+                     iv_block_name = <ls_merge>-key " <--- 'R' by default
                      io_helper     = <ls_merge>-obj " For 160 example only
                      ).
     ENDLOOP.

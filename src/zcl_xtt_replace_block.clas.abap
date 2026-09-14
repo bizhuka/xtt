@@ -516,7 +516,8 @@ METHOD get_simple_type.
       rv_type = mc_type-table.
 
       " Integer, byte, short
-    WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int1  OR cl_abap_typedescr=>typekind_int2.
+    WHEN cl_abap_typedescr=>typekind_int OR cl_abap_typedescr=>typekind_int1  OR cl_abap_typedescr=>typekind_int2
+      OR cl_abap_typedescr=>typekind_num OR cl_abap_typedescr=>typekind_numeric.
       rv_type = mc_type-integer.
 
       " Double

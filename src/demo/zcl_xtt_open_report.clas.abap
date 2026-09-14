@@ -48,7 +48,7 @@ CLASS zcl_xtt_open_report IMPLEMENTATION.
 
     WRITE / |{ sy-datum DATE = ENVIRONMENT } { sy-uzeit TIME = USER }|.
 
-    "DELETE t_demo WHERE ind <> '131'.
+    DELETE t_demo WHERE ind <> '090'.
     LOOP AT t_demo ASSIGNING <lfs_demo>.
       WRITE / |Running { <lfs_demo>-ind }|.
 
@@ -68,6 +68,8 @@ CLASS zcl_xtt_open_report IMPLEMENTATION.
       o_demo->set_merge_info( ).
 
       LOOP AT lt_templates ASSIGNING <ls_template>.
+        mv_raw_folder = |{ <lfs_demo>-ind }_{ <ls_template>-objid }|.
+
         " Paste data
         lo_xtt = o_demo->merge( iv_template = <ls_template>-objid
                                 it_merge    = t_merge[] ).
@@ -82,6 +84,8 @@ CLASS zcl_xtt_open_report IMPLEMENTATION.
         WRITE / |Saved { lv_filepath }|.
       ENDLOOP.
     ENDLOOP.
+
+    CLEAR mv_raw_folder.
   ENDMETHOD.
 
   METHOD get_all_examples.

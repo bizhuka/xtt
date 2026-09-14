@@ -42,7 +42,7 @@ CLASS zcl_xtt_file_smw0 IMPLEMENTATION.
     WHERE relid = ms_key-relid
       AND objid = ms_key-objid.
 
-    CHECK sy-subrc IS NOT INITIAL AND iv_objid CP 'ZXTT_DEMO_*'.
+    CHECK sy-subrc IS NOT INITIAL AND iv_objid CP 'ZXXT_DEMO_*'. " <-- Instead of XTT :)
 
     DATA lv_file_name TYPE wwwparams-value.
     DATA lv_file_size TYPE wwwparams-value.

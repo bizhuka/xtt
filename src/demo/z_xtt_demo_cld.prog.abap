@@ -72,14 +72,6 @@ CLASS lcl_report DEFINITION FINAL INHERITING FROM zcl_xtt_report FRIENDS zcl_eui
           " test all templates
           iv_template TYPE csequence OPTIONAL,
 
-      prepare REDEFINITION,
-
-      on_prepare_raw FOR EVENT prepare_raw OF zcl_xtt
-        IMPORTING "sender
-          iv_path
-          ir_content. " Type Ref To XSTRING,
-
-    METHODS:
       create_new_test_demo RETURNING VALUE(rr_test_demo) TYPE REF TO ts_test_demo,
       fill_file_info
         IMPORTING iv_objid       TYPE csequence
@@ -90,8 +82,7 @@ CLASS lcl_report DEFINITION FINAL INHERITING FROM zcl_xtt_report FRIENDS zcl_eui
     DATA mo_menu_docu TYPE REF TO zcl_eui_menu.
 
     " mv_test_mode = abap_true
-    DATA mr_test_demo  TYPE REF TO ts_test_demo.
-    DATA _raw_folder   TYPE string.
+    DATA mr_test_demo TYPE REF TO ts_test_demo.
 
     METHODS:
       show

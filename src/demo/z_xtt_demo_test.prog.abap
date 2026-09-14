@@ -21,7 +21,7 @@ CLASS lcl_test IMPLEMENTATION.
     CREATE OBJECT cut.
 
     " Folders for report
-    p_r_path = 'C:\Users\modekz\Desktop\arc\xtt-image\'.
+    p_r_path = 'C:\Users\modek\Desktop\arc\xtt-image\'.
   ENDMETHOD.
 
   METHOD export_all. " For live demo in https://bizhuka.github.io/xtt/
@@ -37,7 +37,7 @@ CLASS lcl_test IMPLEMENTATION.
     CHECK lt_list IS NOT INITIAL.
 
 
-*DELETE lt_list WHERE key <> '140'.
+DELETE lt_list WHERE key <> '090'.
 ***********************************        p_r_cnt = 15.
 ***********************************        p_c_cnt = 36.
 ***********************************        p_b_cnt = 3.

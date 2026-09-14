@@ -115,13 +115,12 @@ METHOD on_match_found.
         " Datetime
       WHEN zcl_xtt_replace_block=>mc_type-datetime.
         ASSIGN is_field->dref->* TO <lv_string>.
-
-        ASSIGN <lv_string>(8)     TO <lv_date> CASTING.
-        ASSIGN <lv_string>+8(6)   TO <lv_time> CASTING.
+        lv_date = <lv_string>(8).
+        lv_time = <lv_string>+8(6).
 
         " Both parts
-        lv_date = <lv_date>.
-        lv_time = <lv_time>.
+        ASSIGN lv_date TO <lv_date>.
+        ASSIGN lv_time TO <lv_time>.
         me->mv_prefix = 'DateTime">'.                      "#EC NO_TEXT
 
         " Date

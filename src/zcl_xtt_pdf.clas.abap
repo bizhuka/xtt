@@ -211,8 +211,12 @@ METHOD zif_xtt~get_raw.
     lo_fp     TYPE REF TO if_fp,
     lo_pdfobj TYPE REF TO if_fp_pdf_object,
     lo_err    TYPE REF TO cx_fp_exception.
+
   " Get ready XML file
   rv_content = super->get_raw( iv_no_warning  = iv_no_warning ).
+  IF sy-saprl = 'OPEN'.
+    RETURN.
+  ENDIF.
 
   " Create an instance
   lo_fp = cl_fp=>get_reference( ).

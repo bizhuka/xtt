@@ -48,7 +48,7 @@ CLASS zcl_xtt_open_report IMPLEMENTATION.
 
     WRITE / |{ sy-datum DATE = ENVIRONMENT } { sy-uzeit TIME = USER }|.
 
-    DELETE t_demo WHERE ind <> '090'.
+    "DELETE t_demo WHERE ind <> '010'.
     LOOP AT t_demo ASSIGNING <lfs_demo>.
       WRITE / |Running { <lfs_demo>-ind }|.
 
@@ -115,7 +115,6 @@ CLASS zcl_xtt_open_report IMPLEMENTATION.
 
     es_opt = <ls_demo>-inst->get_screen_opt( ).
     et_templates = <ls_demo>-inst->get_templates( ).
-    DELETE et_templates WHERE objid CP '*-PDF' OR objid CP '*-XDP'.
   ENDMETHOD.
 
   METHOD web_generate.
@@ -132,8 +131,8 @@ CLASS zcl_xtt_open_report IMPLEMENTATION.
       ev_error = 'mv_r_cnt must be between 1 and 25'.
       RETURN.
     ENDIF.
-    IF iv_c_cnt < 1 OR iv_c_cnt > 3.
-      ev_error = 'mv_c_cnt must be between 1 and 3'.
+    IF iv_c_cnt < 1 OR iv_c_cnt > 12.
+      ev_error = 'mv_c_cnt must be between 1 and 12'.
       RETURN.
     ENDIF.
     IF iv_b_cnt < 1 OR iv_b_cnt > 3.
@@ -177,6 +176,8 @@ CLASS zcl_xtt_open_report IMPLEMENTATION.
         ev_mimetype = 'text/html'.
       WHEN '.xml'.
         ev_mimetype = 'application/xml'.
+      WHEN '.xdp'.
+        ev_mimetype = 'application/vnd.adobe.xdp+xml'.
       WHEN OTHERS.
         ev_mimetype = 'application/octet-stream'.
     ENDCASE.

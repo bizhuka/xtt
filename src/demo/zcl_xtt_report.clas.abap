@@ -134,7 +134,14 @@ CLASS zcl_xtt_report IMPLEMENTATION.
     IF sy-saprl = 'OPEN'.
       CONCATENATE `./output/result/raw/` mv_raw_folder `/` iv_path INTO lv_path.
     ELSE.
-      CONCATENATE `C:\Users\modekz\AppData\Local\SAP\SAP GUI\tmp\`
+      cl_gui_frontend_services=>get_temp_directory(
+        CHANGING temp_dir = lv_path
+        EXCEPTIONS OTHERS = 0
+      ).
+      cl_gui_cfw=>flush( EXCEPTIONS OTHERS = 0 ).
+      ASSERT lv_path IS NOT INITIAL.
+
+      CONCATENATE lv_path `\`
                   mv_raw_folder `\` iv_path INTO lv_path.
       REPLACE ALL OCCURRENCES OF `/` IN lv_path WITH `\`.
     ENDIF.

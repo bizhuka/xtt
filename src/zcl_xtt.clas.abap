@@ -709,6 +709,8 @@ METHOD _logger_as_xml.
   lt_message = _logger->get_messages( ).
   CHECK lt_message IS NOT INITIAL.
 
+  DATA lv_row_index TYPE i VALUE 1. " Row 1 contains the headings.
+  DATA lv_row_text TYPE string.
   FIELD-SYMBOLS <ls_message>  LIKE LINE OF lt_message.
   LOOP AT lt_message ASSIGNING <ls_message>.
     DATA lv_msgli TYPE string.
@@ -718,6 +720,10 @@ METHOD _logger_as_xml.
 
     DATA lv_row_copy TYPE string.
     lv_row_copy = iv_row.
+    lv_row_index = lv_row_index + 1.
+    lv_row_text = lv_row_index.
+    CONDENSE lv_row_text NO-GAPS.
+    REPLACE ALL OCCURRENCES OF '{ROW_INDEX}' IN lv_row_copy WITH lv_row_text.
 
     REPLACE FIRST OCCURRENCE OF: `{MSGTY}` IN lv_row_copy WITH <ls_message>-msgty,
                                  `{MSGID}` IN lv_row_copy WITH <ls_message>-msgid,

@@ -148,31 +148,36 @@ METHOD obj_replace.
 
   IF iv_part_attribute <> abap_undefined.
     " Delete children elemts by condition
+    DATA lo_iterator TYPE REF TO if_ixml_node_iterator.
+    DATA lo_node TYPE REF TO if_ixml_node.
+    DATA lt_remove TYPE STANDARD TABLE OF REF TO if_ixml_node WITH DEFAULT KEY.
+
     DATA lo_children TYPE REF TO if_ixml_node_list.
     lo_children = rr_tag->get_children( ).
+    lo_iterator = lo_children->create_iterator( ).
 
-    DATA lv_count TYPE i.
-    lv_count = lo_children->get_length( ).
-    " Delete from the end
-    WHILE lv_count >= 1.
-      lv_count = lv_count - 1.
-      DATA lo_elem  TYPE REF TO if_ixml_element.
-      lo_elem ?= lo_children->get_item( lv_count ).
+    DO.
+      lo_node = lo_iterator->get_next( ).
+      IF lo_node IS INITIAL.
+        EXIT.
+      ENDIF.
 
-      " Fix for open ABAP
+      DATA lo_elem TYPE REF TO if_ixml_element.
+      lo_elem ?= lo_node.
       IF lo_elem IS INITIAL.
-        WRITE : / 'iXML element is not found',  iv_tag, lv_count, / <ls_new_tag>-_from, / <ls_new_tag>-_to, /.
         CONTINUE.
       ENDIF.
 
       DATA lv_attribute TYPE string.
       lv_attribute = lo_elem->get_attribute( iv_part_attribute ).
+      IF lv_attribute CP iv_part_value.
+        APPEND lo_node TO lt_remove.
+      ENDIF.
+    ENDDO.
 
-      " Yes delete child element
-      CHECK lv_attribute CP iv_part_value.
-
-      rr_tag->remove_child( lo_elem ).
-    ENDWHILE.
+    LOOP AT lt_remove INTO lo_node.
+      rr_tag->remove_child( lo_node ).
+    ENDLOOP.
   ENDIF.
 
   " To the end

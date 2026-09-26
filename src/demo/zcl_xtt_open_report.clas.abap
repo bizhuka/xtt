@@ -48,7 +48,7 @@ CLASS zcl_xtt_open_report IMPLEMENTATION.
 
     WRITE / |{ sy-datum DATE = ENVIRONMENT } { sy-uzeit TIME = USER }|.
 
-    "DELETE t_demo WHERE ind <> '010'.
+    "DELETE t_demo WHERE ind <> '160'.
     LOOP AT t_demo ASSIGNING <lfs_demo>.
       WRITE / |Running { <lfs_demo>-ind }|.
 

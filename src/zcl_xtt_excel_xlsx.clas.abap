@@ -2378,16 +2378,22 @@ ENDMETHOD.
 METHOD _add_logs_sheet.
   DATA lv_row TYPE string.
   CONCATENATE
-          `<row r="2" spans="1:2" x14ac:dyDescent="0.25">`
-          `<c r="A2" t="inlineStr">{MSGTY}</c>`
-          `<c r="B2" t="inlineStr">{MSGID}</c>`
-          `<c r="C2" t="inlineStr">{MSGNO}</c>`
-          `<c r="D2" t="inlineStr">{MSGLI}</c>`
+          `<row r="{ROW_INDEX}" spans="1:4" x14ac:dyDescent="0.25">`
+          `<c r="A{ROW_INDEX}" t="inlineStr">{MSGTY}</c>`
+          `<c r="B{ROW_INDEX}" t="inlineStr">{MSGID}</c>`
+          `<c r="C{ROW_INDEX}" t="inlineStr">{MSGNO}</c>`
+          `<c r="D{ROW_INDEX}" t="inlineStr">{MSGLI}</c>`
         `</row>` INTO lv_row.
   DATA ls_xml TYPE ts_log_xml.
 
   ls_xml = _logger_as_xml( iv_row = lv_row ).
   CHECK ls_xml IS NOT INITIAL.
+
+  DATA lv_last_row TYPE i.
+  FIND ALL OCCURRENCES OF '<row ' IN ls_xml-rows MATCH COUNT lv_last_row.
+  lv_last_row = lv_last_row + 1.
+  DATA lv_dimension TYPE string.
+  lv_dimension = |<dimension ref="A1:D{ lv_last_row }"/>|.
 
   DATA lv_content TYPE string.
   IF ls_xml-has_axe = abap_true.
@@ -2400,7 +2406,7 @@ METHOD _add_logs_sheet.
     `mc:Ignorable="x14ac xr xr2 xr3" xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac" xmlns:xr="http://schemas.microsoft.com/office/spreadsheetml/2014/revision" `
     `xmlns:xr2="http://schemas.microsoft.com/office/spreadsheetml/2015/revision2" xmlns:xr3="http://schemas.microsoft.com/office/spreadsheetml/2016/revision3" xr:uid="{34516DE1-841D-4CC5-B679-4B9DADE1A673}"> `
       lv_content
-      `<dimension ref="A1:D2"/>`
+      lv_dimension
       `<sheetViews>`
         `<sheetView workbookViewId="0"/>`
       `</sheetViews>`
@@ -2412,7 +2418,7 @@ METHOD _add_logs_sheet.
         `<col min="4" max="4" width="110" customWidth="1"/>`
       `</cols>`
       `<sheetData>`
-        `<row r="1" spans="1:2" x14ac:dyDescent="0.25">`
+        `<row r="1" spans="1:4" x14ac:dyDescent="0.25">`
           `<c r="A1" t="inlineStr">Type</c>`
           `<c r="B1" t="inlineStr">Class</c>`
           `<c r="C1" t="inlineStr">Number</c>`

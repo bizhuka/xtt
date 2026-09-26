@@ -62,6 +62,19 @@ CLASS lcl_node_var IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD eval.
+    DATA lr_value TYPE REF TO data.
+    DATA lo_type TYPE REF TO cl_abap_typedescr.
+    FIELD-SYMBOLS <value> TYPE any.
+    lr_value = resolve( is_context ).
+    ASSIGN lr_value->* TO <value>.
+    rv_val = |{ <value> }|.
+    mv_is_num = _is_number( <value> ).
+    lo_type = cl_abap_typedescr=>describe_by_data( <value> ).
+    mv_kind = lo_type->type_kind.
+  ENDMETHOD.
+
+  METHOD resolve.
+    DATA rv_val TYPE string.
     DATA lv_sy_fld      TYPE string.
     DATA lt_parts       TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
     DATA lv_part        TYPE string.
@@ -100,6 +113,7 @@ CLASS lcl_node_var IMPLEMENTATION.
     FIELD-SYMBOLS <ls_row> TYPE any.
 
     mv_is_num = abap_false.
+    CLEAR mv_kind.
     ASSIGN is_context TO <curr>.
 
     " 1. System variables (e.g. SY-DATUM, SY-DATUM+0(4), SY-TABIX)
@@ -124,6 +138,18 @@ CLASS lcl_node_var IMPLEMENTATION.
           lv_length  = lv_len_str.
           lv_has_off = abap_true.
         ENDIF.
+      ELSEIF lv_sy_fld CS '(' AND lv_sy_fld CS ')'.
+        SPLIT lv_sy_fld AT '(' INTO lv_sy_fld lv_len_str.
+        SPLIT lv_len_str AT ')' INTO lv_len_str lv_dummy.
+        SHIFT lv_sy_fld LEFT DELETING LEADING space.
+        SHIFT lv_sy_fld RIGHT DELETING TRAILING space.
+        SHIFT lv_len_str LEFT DELETING LEADING space.
+        SHIFT lv_len_str RIGHT DELETING TRAILING space.
+        IF lv_len_str CO '0123456789 '.
+          lv_offset  = 0.
+          lv_length  = lv_len_str.
+          lv_has_off = abap_true.
+        ENDIF.
       ENDIF.
 
       ASSIGN COMPONENT lv_sy_fld OF STRUCTURE sy TO <sy_val>.
@@ -142,7 +168,11 @@ CLASS lcl_node_var IMPLEMENTATION.
       ELSE.
         rv_val = <sy_val>.
       ENDIF.
-      mv_is_num = _is_number( <sy_val> ).
+      IF lv_has_off = abap_true.
+        GET REFERENCE OF rv_val INTO rr_value.
+      ELSE.
+        GET REFERENCE OF <sy_val> INTO rr_value.
+      ENDIF.
       RETURN.
     ENDIF.
 
@@ -227,6 +257,9 @@ CLASS lcl_node_var IMPLEMENTATION.
           lv_idx = lv_cond_str.
           READ TABLE <lt_tab> INDEX lv_idx ASSIGNING <ls_row>.
           IF sy-subrc <> 0.
+            IF iv_optional = abap_true.
+              RETURN.
+            ENDIF.
             zcx_xtt_exception=>raise_sys_error( iv_message = |Index { lv_idx } out of bounds for table '{ lv_tab_name }'.| ).
           ENDIF.
           ASSIGN <ls_row> TO <curr>.
@@ -237,7 +270,7 @@ CLASS lcl_node_var IMPLEMENTATION.
           lo_cond_expr->compile( lv_cond_str ).
 
           LOOP AT <lt_tab> ASSIGNING <ls_row>.
-            IF lo_cond_expr->evaluate_bool( <ls_row> ) = abap_true.
+            IF lo_cond_expr->evaluate( <ls_row> ) = abap_true.
               ASSIGN <ls_row> TO <curr>.
               lv_found = abap_true.
               EXIT.
@@ -245,6 +278,9 @@ CLASS lcl_node_var IMPLEMENTATION.
           ENDLOOP.
 
           IF lv_found = abap_false.
+            IF iv_optional = abap_true.
+              RETURN.
+            ENDIF.
             zcx_xtt_exception=>raise_sys_error(
               iv_message = |Line with condition '{ lv_cond_str }' not found in table '{ lv_tab_name }'.| ).
           ENDIF.
@@ -267,6 +303,18 @@ CLASS lcl_node_var IMPLEMENTATION.
         SHIFT lv_len_str RIGHT DELETING TRAILING space.
         IF lv_off_str CO '0123456789 ' AND lv_len_str CO '0123456789 '.
           lv_offset  = lv_off_str.
+          lv_length  = lv_len_str.
+          lv_has_off = abap_true.
+        ENDIF.
+      ELSEIF lv_part CS '(' AND lv_part CS ')'.
+        SPLIT lv_part AT '(' INTO lv_fld_name lv_len_str.
+        SPLIT lv_len_str AT ')' INTO lv_len_str lv_dummy.
+        SHIFT lv_fld_name LEFT DELETING LEADING space.
+        SHIFT lv_fld_name RIGHT DELETING TRAILING space.
+        SHIFT lv_len_str LEFT DELETING LEADING space.
+        SHIFT lv_len_str RIGHT DELETING TRAILING space.
+        IF lv_len_str CO '0123456789 '.
+          lv_offset  = 0.
           lv_length  = lv_len_str.
           lv_has_off = abap_true.
         ENDIF.
@@ -301,8 +349,130 @@ CLASS lcl_node_var IMPLEMENTATION.
       ASSIGN <next> TO <curr>.
     ENDLOOP.
 
-    rv_val = |{ <curr> }|.
-    mv_is_num = _is_number( <curr> ).
+    GET REFERENCE OF <curr> INTO rr_value.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_node_user_format IMPLEMENTATION.
+  METHOD eval.
+    DATA lv_text TYPE string.
+    DATA lv_date TYPE d.
+    DATA lv_number TYPE decfloat34.
+    DATA lo_var TYPE REF TO lcl_node_var.
+    DATA lr_value TYPE REF TO data.
+    FIELD-SYMBOLS <value> TYPE any.
+    lv_text = mo_value->eval( is_context ).
+    CASE mv_option.
+      WHEN 'DATE'.
+        IF NOT mo_value IS INSTANCE OF lcl_node_var.
+          zcx_xtt_exception=>raise_sys_error( iv_message = 'DATE currently supports date fields only' ).
+        ENDIF.
+        lo_var ?= mo_value.
+        IF lo_var->mv_kind <> cl_abap_typedescr=>typekind_date.
+          zcx_xtt_exception=>raise_sys_error( iv_message = 'DATE requires a date field' ).
+        ENDIF.
+        lv_date = lv_text.
+        rv_val = |{ lv_date DATE = USER }|.
+      WHEN 'NUMBER'.
+        IF mo_value->is_numeric( ) = abap_false.
+          zcx_xtt_exception=>raise_sys_error( iv_message = 'NUMBER requires a numeric operand' ).
+        ENDIF.
+        " Preserve a field's declared decimals when it is formatted directly.
+        IF mo_value IS INSTANCE OF lcl_node_var.
+          lo_var ?= mo_value.
+          lr_value = lo_var->resolve( is_context ).
+          ASSIGN lr_value->* TO <value>.
+          lv_number = <value>.
+          rv_val = |{ lv_number NUMBER = USER }|.
+          RETURN.
+        ENDIF.
+        lv_number = _to_number( lv_text ).
+        rv_val = |{ lv_number NUMBER = USER }|.
+    ENDCASE.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_node_reduce IMPLEMENTATION.
+  METHOD is_numeric.
+    rv_num = abap_true.
+  ENDMETHOD.
+
+  METHOD eval.
+    DATA lr_table TYPE REF TO data.
+    DATA lr_context TYPE REF TO data.
+    DATA lo_table TYPE REF TO cl_abap_tabledescr.
+    DATA lo_context TYPE REF TO cl_abap_structdescr.
+    DATA lt_components TYPE cl_abap_structdescr=>component_table.
+    DATA ls_component LIKE LINE OF lt_components.
+    DATA lv_accumulator TYPE decfloat34.
+    FIELD-SYMBOLS <table> TYPE ANY TABLE.
+    FIELD-SYMBOLS <row> TYPE any.
+    FIELD-SYMBOLS <context> TYPE any.
+    FIELD-SYMBOLS <accumulator> TYPE any.
+    FIELD-SYMBOLS <iterator> TYPE any.
+    lr_table = mo_table->resolve( is_context ).
+    ASSIGN lr_table->* TO <table>.
+    IF sy-subrc <> 0.
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'REDUCE requires an internal table' ).
+    ENDIF.
+    lo_table ?= cl_abap_typedescr=>describe_by_data( <table> ).
+    ls_component-name = mv_accumulator.
+    ls_component-type ?= cl_abap_typedescr=>describe_by_data( lv_accumulator ).
+    APPEND ls_component TO lt_components.
+    ls_component-name = mv_iterator.
+    ls_component-type = lo_table->get_table_line_type( ).
+    APPEND ls_component TO lt_components.
+    lo_context = cl_abap_structdescr=>create( lt_components ).
+    CREATE DATA lr_context TYPE HANDLE lo_context.
+    ASSIGN lr_context->* TO <context>.
+    ASSIGN COMPONENT mv_accumulator OF STRUCTURE <context> TO <accumulator>.
+    ASSIGN COMPONENT mv_iterator OF STRUCTURE <context> TO <iterator>.
+    LOOP AT <table> ASSIGNING <row>.
+      <iterator> = <row>.
+      <accumulator> = _to_number( mo_next->eval( <context> ) ).
+    ENDLOOP.
+    rv_val = |{ <accumulator> }|.
+  ENDMETHOD.
+ENDCLASS.
+
+CLASS lcl_node_country_date IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( ).
+    mo_value = io_value.
+    mo_country = io_country.
+  ENDMETHOD.
+
+  METHOD eval.
+    DATA lv_date TYPE d.
+    DATA lv_country TYPE t005x-land.
+    DATA lv_format TYPE t005x-datfm.
+
+    rv_val = mo_value->eval( is_context ).
+    IF mo_value->mv_kind <> cl_abap_typedescr=>typekind_date.
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'COUNTRY currently supports date fields only' ).
+    ENDIF.
+    lv_date = rv_val.
+    lv_country = mo_country->eval( is_context ).
+    IF lv_country IS INITIAL.
+      rv_val = |{ lv_date DATE = USER }|.
+      RETURN.
+    ENDIF.
+
+    SELECT SINGLE datfm INTO lv_format FROM t005x WHERE land = lv_country.
+    IF sy-subrc <> 0.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |Unknown COUNTRY: { lv_country }| ).
+    ENDIF.
+    " Gregorian SAP date formats. Do not change the session's SET COUNTRY.
+    CASE lv_format.
+      WHEN '1'. rv_val = |{ lv_date+6(2) }.{ lv_date+4(2) }.{ lv_date(4) }|.
+      WHEN '2'. rv_val = |{ lv_date+4(2) }/{ lv_date+6(2) }/{ lv_date(4) }|.
+      WHEN '3'. rv_val = |{ lv_date+4(2) }-{ lv_date+6(2) }-{ lv_date(4) }|.
+      WHEN '4'. rv_val = |{ lv_date(4) }.{ lv_date+4(2) }.{ lv_date+6(2) }|.
+      WHEN '5'. rv_val = |{ lv_date(4) }/{ lv_date+4(2) }/{ lv_date+6(2) }|.
+      WHEN '6'. rv_val = |{ lv_date(4) }-{ lv_date+4(2) }-{ lv_date+6(2) }|.
+      WHEN OTHERS.
+        zcx_xtt_exception=>raise_sys_error( iv_message = |Unsupported COUNTRY date format: { lv_format }| ).
+    ENDCASE.
   ENDMETHOD.
 ENDCLASS.
 
@@ -326,8 +496,29 @@ CLASS lcl_node_arith IMPLEMENTATION.
     DATA lv_r   TYPE decfloat34.
     DATA lv_res TYPE decfloat34.
 
-    lv_l = _to_number( mo_left->eval( is_context ) ).
-    lv_r = _to_number( mo_right->eval( is_context ) ).
+    DATA lv_left TYPE string.
+    DATA lv_right TYPE string.
+    DATA lo_left TYPE REF TO lcl_node_var.
+    DATA lo_right TYPE REF TO lcl_node_var.
+    DATA lv_date_left TYPE d.
+    DATA lv_date_right TYPE d.
+    lv_left = mo_left->eval( is_context ).
+    lv_right = mo_right->eval( is_context ).
+    " Date-to-date subtraction counts days, not YYYYMMDD numbers.
+    IF mv_op = '-' AND mo_left IS INSTANCE OF lcl_node_var AND mo_right IS INSTANCE OF lcl_node_var.
+      lo_left ?= mo_left.
+      lo_right ?= mo_right.
+      IF lo_left->mv_kind = cl_abap_typedescr=>typekind_date AND
+         lo_right->mv_kind = cl_abap_typedescr=>typekind_date.
+        lv_date_left = lv_left.
+        lv_date_right = lv_right.
+        lv_res = lv_date_left - lv_date_right.
+        rv_val = |{ lv_res }|.
+        RETURN.
+      ENDIF.
+    ENDIF.
+    lv_l = _to_number( lv_left ).
+    lv_r = _to_number( lv_right ).
 
     CASE mv_op.
       WHEN '+'. lv_res = lv_l + lv_r.
@@ -478,11 +669,11 @@ CLASS lcl_node_logical IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD eval.
-    DATA lv_l TYPE abap_bool.
+    DATA lv_l TYPE string.
     lv_l = mo_left->eval( is_context ).
 
     IF mv_op = 'AND'.
-      IF lv_l = abap_false.
+      IF lv_l <> abap_true.
         rv_val = abap_false.
         RETURN.
       ENDIF.
@@ -641,8 +832,28 @@ CLASS lcl_node_func IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD eval.
+    IF mv_func_name = 'LINE_EXISTS'.
+      DATA lo_var TYPE REF TO lcl_node_var.
+      DATA lr_value TYPE REF TO data.
+      IF NOT mo_arg IS INSTANCE OF lcl_node_var.
+        zcx_xtt_exception=>raise_sys_error( iv_message = 'LINE_EXISTS requires a table expression' ).
+      ENDIF.
+      lo_var ?= mo_arg.
+      IF lo_var->mv_path NS '[' OR lo_var->mv_path CS '[]'.
+        zcx_xtt_exception=>raise_sys_error( iv_message = 'LINE_EXISTS requires a table expression' ).
+      ENDIF.
+      lr_value = lo_var->resolve( is_context = is_context iv_optional = abap_true ).
+      IF lr_value IS BOUND.
+        rv_val = abap_true.
+      ENDIF.
+      RETURN.
+    ENDIF.
     rv_val = mo_arg->eval( is_context ).
     CASE mv_func_name.
+      WHEN 'STRLEN'.
+        rv_val = |{ strlen( rv_val ) }|.
+      WHEN 'CONDENSE'.
+        CONDENSE rv_val.
       WHEN 'TO_LOWER'.
         TRANSLATE rv_val TO LOWER CASE.
       WHEN 'TO_UPPER'.
@@ -666,9 +877,112 @@ CLASS lcl_node_func IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD is_numeric.
-    rv_num = mo_arg->is_numeric( ).
+    IF mv_func_name = 'STRLEN'.
+      rv_num = abap_true.
+    ELSE.
+      rv_num = mo_arg->is_numeric( ).
+    ENDIF.
   ENDMETHOD.
 ENDCLASS.
+" ====================================================================
+" Method Call Implementation
+" ====================================================================
+CLASS lcl_node_call IMPLEMENTATION.
+  METHOD constructor.
+    super->constructor( ).
+    IF io_caller IS NOT BOUND.
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'Please pass IO_HELPER to MERGE( ) method' ).
+    ENDIF.
+    mo_caller = io_caller.
+    mo_descr ?= cl_abap_objectdescr=>describe_by_object_ref( mo_caller ).
+
+    DATA lv_method TYPE string.
+    lv_method = iv_method.
+    TRANSLATE lv_method TO UPPER CASE.
+    READ TABLE mo_descr->methods INTO ms_method WITH KEY name = lv_method.
+    IF sy-subrc <> 0 OR ms_method-visibility <> cl_abap_objectdescr=>public.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |No public method "{ lv_method }" in IO_HELPER| ).
+    ENDIF.
+
+    DATA ls_return TYPE abap_parmdescr.
+    READ TABLE ms_method-parameters INTO ls_return WITH KEY parm_kind = cl_abap_objectdescr=>returning.
+    IF sy-subrc <> 0.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |No returning parameter in method "{ lv_method }"| ).
+    ENDIF.
+    mv_return_name = ls_return-name.
+    mo_return_type = mo_descr->get_method_parameter_type(
+      p_method_name = ms_method-name p_parameter_name = mv_return_name ).
+  ENDMETHOD.
+
+  METHOD add_argument.
+    DATA ls_argument TYPE ts_argument.
+    ls_argument-name = iv_name.
+    TRANSLATE ls_argument-name TO UPPER CASE.
+    READ TABLE ms_method-parameters TRANSPORTING NO FIELDS
+      WITH KEY name = ls_argument-name parm_kind = cl_abap_objectdescr=>importing.
+    IF sy-subrc <> 0.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |Unknown input parameter "{ iv_name }" in { ms_method-name }| ).
+    ENDIF.
+    ls_argument-expression = io_value.
+    ls_argument-datatype = mo_descr->get_method_parameter_type(
+      p_method_name = ms_method-name p_parameter_name = ls_argument-name ).
+    INSERT ls_argument INTO TABLE mt_arguments.
+    IF sy-subrc <> 0.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |Duplicate parameter "{ iv_name }" in { ms_method-name }| ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD eval.
+    DATA lt_parameters TYPE abap_parmbind_tab.
+    DATA ls_parameter TYPE abap_parmbind.
+    DATA ls_argument TYPE ts_argument.
+    DATA ls_formal TYPE abap_parmdescr.
+    DATA lo_error TYPE REF TO cx_root.
+    FIELD-SYMBOLS <value> TYPE any.
+    FIELD-SYMBOLS <result> TYPE any.
+
+    TRY.
+        LOOP AT mt_arguments INTO ls_argument.
+          CLEAR ls_parameter.
+          ls_parameter-name = ls_argument-name.
+          ls_parameter-kind = cl_abap_objectdescr=>exporting.
+          CREATE DATA ls_parameter-value TYPE HANDLE ls_argument-datatype.
+          ASSIGN ls_parameter-value->* TO <value>.
+          <value> = ls_argument-expression->eval( is_context ).
+          INSERT ls_parameter INTO TABLE lt_parameters.
+        ENDLOOP.
+
+        " Supply the current root/row only when the helper declares IS_ROOT.
+        LOOP AT ms_method-parameters INTO ls_formal WHERE parm_kind = cl_abap_objectdescr=>importing.
+          READ TABLE lt_parameters TRANSPORTING NO FIELDS WITH TABLE KEY name = ls_formal-name.
+          IF sy-subrc = 0.
+            CONTINUE.
+          ENDIF.
+          IF ls_formal-name = 'IS_ROOT'.
+            CLEAR ls_parameter.
+            ls_parameter-name = ls_formal-name.
+            ls_parameter-kind = cl_abap_objectdescr=>exporting.
+            GET REFERENCE OF is_context INTO ls_parameter-value.
+            INSERT ls_parameter INTO TABLE lt_parameters.
+          ENDIF.
+        ENDLOOP.
+
+        " Allocate the declared return type, including fixed length and numeric types.
+        CLEAR ls_parameter.
+        ls_parameter-name = mv_return_name.
+        ls_parameter-kind = cl_abap_objectdescr=>receiving.
+        CREATE DATA ls_parameter-value TYPE HANDLE mo_return_type.
+        ASSIGN ls_parameter-value->* TO <result>.
+        INSERT ls_parameter INTO TABLE lt_parameters.
+
+        CALL METHOD mo_caller->(ms_method-name) PARAMETER-TABLE lt_parameters.
+        rv_val = <result>.
+      CATCH cx_root INTO lo_error.
+        zcx_xtt_exception=>raise_sys_error( io_error = lo_error ).
+    ENDTRY.
+  ENDMETHOD.
+ENDCLASS.
+
 " ====================================================================
 " Tokenizer Implementation
 " ====================================================================
@@ -754,6 +1068,14 @@ CLASS lcl_tokenizer IMPLEMENTATION.
       " 4. Comparison operator symbols: <>, ><, <=, >=, =, <, >
       IF lv_pos + 1 < lv_len.
         lv_two = iv_text+lv_pos(2).
+        IF lv_two = '&&'.
+          CLEAR ls_token.
+          ls_token-type = 'CONCAT'.
+          ls_token-value = lv_two.
+          APPEND ls_token TO rt_tokens.
+          lv_pos = lv_pos + 2.
+          CONTINUE.
+        ENDIF.
         IF lv_two = '<>' OR lv_two = '><' OR lv_two = '<=' OR lv_two = '>='.
           CLEAR ls_token.
           ls_token-type  = 'COMP'.
@@ -846,6 +1168,32 @@ CLASS lcl_tokenizer IMPLEMENTATION.
             ENDIF.
           ENDIF.
 
+          " Substring length shorthand: (4)
+          IF c = '('.
+            lv_kw = lv_ident.
+            TRANSLATE lv_kw TO UPPER CASE.
+            " Built-in functions keep their argument parentheses as tokens.
+            IF lv_kw = 'TO_LOWER' OR lv_kw = 'TO_UPPER' OR lv_kw = 'TO_MIXED' OR lv_kw = 'STRLEN'
+              OR lv_kw = 'CONDENSE' OR lv_kw = 'LINE_EXISTS'.
+              EXIT.
+            ENDIF.
+            DATA lv_rem_len     TYPE string.
+            DATA lv_cp_len      TYPE i.
+            DATA lv_len_spec    TYPE string.
+            lv_rem_len = iv_text+lv_pos.
+            lv_cp_len = find( val = lv_rem_len sub = ')' ).
+            IF lv_cp_len > 1.
+              lv_len_spec = substring( val = lv_rem_len off = 1 len = lv_cp_len - 1 ).
+              " An empty argument list, e.g. get_fullname( ), is not a length.
+              IF lv_len_spec CO '0123456789 ' AND lv_len_spec CA '0123456789'.
+                lv_next = lv_cp_len + 1.
+                lv_ident = |{ lv_ident }{ iv_text+lv_pos(lv_next) }|.
+                lv_pos = lv_pos + lv_next.
+                CONTINUE.
+              ENDIF.
+            ENDIF.
+          ENDIF.
+
           IF c = '-'.
             lv_next_pos = lv_pos + 1.
             IF lv_next_pos < lv_len AND ( iv_text+lv_next_pos(1) CA sy-abcde OR
@@ -892,7 +1240,9 @@ CLASS lcl_tokenizer IMPLEMENTATION.
             ls_token-type = 'WHEN'.
           WHEN 'SWITCH'.
             ls_token-type = 'SWITCH'.
-          WHEN 'TO_LOWER' OR 'TO_UPPER' OR 'TO_MIXED'.
+          WHEN 'REDUCE'.
+            ls_token-type = 'REDUCE'.
+          WHEN 'TO_LOWER' OR 'TO_UPPER' OR 'TO_MIXED' OR 'STRLEN' OR 'CONDENSE' OR 'LINE_EXISTS'.
             ls_token-type  = 'FUNC'.
             ls_token-value = lv_kw.
           WHEN 'IS'.
@@ -983,10 +1333,68 @@ CLASS lcl_parser IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD parse.
+    DATA lv_option TYPE string.
+    DATA lo_value TYPE REF TO lcl_node_var.
+    DATA lo_country TYPE REF TO lcl_ast_node.
     ro_root = parse_cond( ).
-    IF current( )-type <> 'EOF'.
-      zcx_xtt_exception=>raise_sys_error( iv_message = |Unexpected token at end: { current( )-value }| ).
+    lv_option = current( )-value.
+    TRANSLATE lv_option TO UPPER CASE.
+    IF iv_template = abap_true AND current( )-type = 'IDENT' AND lv_option = 'COUNTRY'.
+      consume( 'IDENT' ).
+      IF current( )-value <> '='.
+        zcx_xtt_exception=>raise_sys_error( iv_message = 'Expected = after COUNTRY' ).
+      ENDIF.
+      consume( 'COMP' ).
+      lo_country = parse_concat( ).
+      TRY.
+          lo_value ?= ro_root.
+        CATCH cx_sy_move_cast_error.
+          zcx_xtt_exception=>raise_sys_error( iv_message = 'COUNTRY currently supports date fields only' ).
+      ENDTRY.
+      CREATE OBJECT ro_root TYPE lcl_node_country_date
+        EXPORTING io_value = lo_value io_country = lo_country.
+    ELSEIF iv_template = abap_true AND current( )-type = 'IDENT' AND
+      ( lv_option = 'DATE' OR lv_option = 'NUMBER' ).
+      DATA lo_format TYPE REF TO lcl_node_user_format.
+      consume( 'IDENT' ).
+      IF current( )-value <> '='.
+        zcx_xtt_exception=>raise_sys_error( iv_message = |Expected = after { lv_option }| ).
+      ENDIF.
+      consume( 'COMP' ).
+      consume_word( 'USER' ).
+      CREATE OBJECT lo_format.
+      lo_format->mv_option = lv_option.
+      lo_format->mo_value = ro_root.
+      ro_root = lo_format.
     ENDIF.
+    IF current( )-type <> 'EOF'.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |Unexpected token at end: { current( )-type }-{ current( )-value }| ).
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD parse_call.
+    DATA lv_method TYPE string.
+    DATA lv_name TYPE string.
+    DATA lo_call TYPE REF TO lcl_node_call.
+    DATA lo_value TYPE REF TO lcl_ast_node.
+
+    lv_method = current( )-value.
+    consume( 'IDENT' ).
+    CREATE OBJECT lo_call EXPORTING io_caller = io_caller iv_method = lv_method.
+    consume( 'LPAREN' ).
+    WHILE current( )-type <> 'RPAREN'.
+      lv_name = current( )-value.
+      consume( 'IDENT' ).
+      IF current( )-value <> '='.
+        zcx_xtt_exception=>raise_sys_error( iv_message = |Expected '=' after parameter { lv_name }| ).
+      ENDIF.
+      consume( 'COMP' ).
+      lo_value = parse_cond( ).
+      lo_call->add_argument( iv_name = lv_name io_value = lo_value ).
+    ENDWHILE.
+    consume( 'RPAREN' ).
+    consume( 'EOF' ).
+    ro_root = lo_call.
   ENDMETHOD.
 
   METHOD parse_or.
@@ -1028,6 +1436,11 @@ CLASS lcl_parser IMPLEMENTATION.
     DATA lo_cond      TYPE REF TO lcl_ast_node.
     DATA lo_val       TYPE REF TO lcl_ast_node.
     DATA ls_branch    LIKE LINE OF lo_cond_node->mt_branches.
+
+    IF current( )-type = 'REDUCE'.
+      ro_node = parse_reduce( ).
+      RETURN.
+    ENDIF.
 
     " Syntax: SWITCH #( expr WHEN val THEN res ... ELSE default )
     IF current( )-type = 'SWITCH'.
@@ -1118,6 +1531,62 @@ CLASS lcl_parser IMPLEMENTATION.
     ro_node = lo_switch.
   ENDMETHOD.
 
+  METHOD consume_word.
+    DATA lv_word TYPE string.
+    lv_word = current( )-value.
+    TRANSLATE lv_word TO UPPER CASE.
+    IF current( )-type <> 'IDENT' OR lv_word <> iv_word.
+      zcx_xtt_exception=>raise_sys_error( iv_message = |Expected { iv_word }, found { current( )-value }| ).
+    ENDIF.
+    consume( 'IDENT' ).
+  ENDMETHOD.
+
+  METHOD parse_reduce.
+    DATA lo_reduce TYPE REF TO lcl_node_reduce.
+    DATA lv_path TYPE string.
+    DATA lv_name TYPE string.
+    DATA lv_length TYPE i.
+    CREATE OBJECT lo_reduce.
+    consume( 'REDUCE' ).
+    consume_word( 'DECFLOAT34' ).
+    consume( 'LPAREN' ).
+    consume_word( 'INIT' ).
+    lo_reduce->mv_accumulator = current( )-value.
+    TRANSLATE lo_reduce->mv_accumulator TO UPPER CASE.
+    consume( 'IDENT' ).
+    consume_word( 'TYPE' ).
+    consume_word( 'DECFLOAT34' ).
+    consume_word( 'FOR' ).
+    lo_reduce->mv_iterator = current( )-value.
+    TRANSLATE lo_reduce->mv_iterator TO UPPER CASE.
+    IF lo_reduce->mv_iterator = lo_reduce->mv_accumulator.
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'REDUCE iterator and accumulator must differ' ).
+    ENDIF.
+    consume( 'IDENT' ).
+    consume_word( 'IN' ).
+    lv_path = current( )-value.
+    consume( 'IDENT' ).
+    lv_length = strlen( lv_path ) - 2.
+    IF lv_length > 0 AND lv_path+lv_length = '[]'.
+      lv_path = lv_path(lv_length).
+    ENDIF.
+    CREATE OBJECT lo_reduce->mo_table EXPORTING iv_path = lv_path.
+    consume_word( 'NEXT' ).
+    lv_name = current( )-value.
+    TRANSLATE lv_name TO UPPER CASE.
+    IF lv_name <> lo_reduce->mv_accumulator.
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'REDUCE NEXT must assign the accumulator' ).
+    ENDIF.
+    consume( 'IDENT' ).
+    IF current( )-value <> '='.
+      zcx_xtt_exception=>raise_sys_error( iv_message = 'Expected = after REDUCE accumulator' ).
+    ENDIF.
+    consume( 'COMP' ).
+    lo_reduce->mo_next = parse_concat( ).
+    consume( 'RPAREN' ).
+    ro_node = lo_reduce.
+  ENDMETHOD.
+
   METHOD parse_not.
     DATA lo_child TYPE REF TO lcl_ast_node.
 
@@ -1175,7 +1644,7 @@ CLASS lcl_parser IMPLEMENTATION.
       RETURN.
     ENDIF.
 
-    lo_left = parse_operand( ).
+    lo_left = parse_concat( ).
 
     " IS [NOT] INITIAL
     IF current( )-type = 'IS'.
@@ -1197,7 +1666,7 @@ CLASS lcl_parser IMPLEMENTATION.
     IF current( )-type = 'COMP'.
       lv_op = current( )-value.
       consume( 'COMP' ).
-      lo_right = parse_operand( ).
+      lo_right = parse_concat( ).
       CREATE OBJECT ro_node TYPE lcl_node_compare
         EXPORTING
           iv_op    = lv_op
@@ -1207,6 +1676,23 @@ CLASS lcl_parser IMPLEMENTATION.
     ENDIF.
 
     ro_node = lo_left.
+  ENDMETHOD.
+
+  METHOD parse_concat.
+    DATA lo_concat TYPE REF TO lcl_node_template.
+    DATA lo_right TYPE REF TO lcl_ast_node.
+    ro_node = parse_operand( ).
+    IF current( )-type <> 'CONCAT'.
+      RETURN.
+    ENDIF.
+    CREATE OBJECT lo_concat.
+    lo_concat->add_child( ro_node ).
+    WHILE current( )-type = 'CONCAT'.
+      consume( 'CONCAT' ).
+      lo_right = parse_operand( ).
+      lo_concat->add_child( lo_right ).
+    ENDWHILE.
+    ro_node = lo_concat.
   ENDMETHOD.
 
   METHOD parse_operand.
@@ -1257,7 +1743,7 @@ CLASS lcl_parser IMPLEMENTATION.
     ls_tok = current( ).
 
     " Allow COND #( ... ) as an operand
-    IF ls_tok-type = 'COND'.
+    IF ls_tok-type = 'COND' OR ls_tok-type = 'REDUCE'.
       ro_node = parse_cond( ).
       RETURN.
     ENDIF.
@@ -1305,7 +1791,7 @@ CLASS lcl_parser IMPLEMENTATION.
         ro_node = lo_var.
       WHEN 'LPAREN'.
         consume( 'LPAREN' ).
-        ro_node = parse_operand( ).
+        ro_node = parse_concat( ).
         consume( 'RPAREN' ).
 
       WHEN 'SWITCH'.
@@ -1316,7 +1802,7 @@ CLASS lcl_parser IMPLEMENTATION.
         consume( 'TMPL' ).
         ro_node = lcl_expression=>_compile_template( ls_tok-value ).
 
-        " Functions: to_lower( ... ), to_upper( ... ), to_mixed( ... )
+        " Functions: to_lower( ... ), to_upper( ... ), to_mixed( ... ), strlen( ... )
       WHEN 'FUNC'.
         DATA lv_fname TYPE string.
         DATA lo_arg   TYPE REF TO lcl_ast_node.
@@ -1344,12 +1830,22 @@ ENDCLASS.
 " Facade Implementation
 " ====================================================================
 CLASS lcl_expression IMPLEMENTATION.
+  METHOD compile_call.
+    DATA lt_tokens TYPE lcl_tokenizer=>tt_token.
+    DATA lo_parser TYPE REF TO lcl_parser.
+    CLEAR mo_ast.
+    lt_tokens = lcl_tokenizer=>tokenize( iv_call ).
+    CREATE OBJECT lo_parser EXPORTING it_tokens = lt_tokens.
+    mo_ast = lo_parser->parse_call( io_caller ).
+  ENDMETHOD.
+
   METHOD compile.
     DATA lv_expr   TYPE string.
     DATA lv_len    TYPE i.
     DATA lv_len_m1 TYPE i.
     DATA lv_len_m2 TYPE i.
 
+    CLEAR mo_ast.
     lv_expr = iv_expr.
     SHIFT lv_expr LEFT DELETING LEADING space.
     SHIFT lv_expr RIGHT DELETING TRAILING space.
@@ -1389,7 +1885,7 @@ CLASS lcl_expression IMPLEMENTATION.
     CREATE OBJECT lo_parser
       EXPORTING
         it_tokens = lt_tokens.
-    ro_node = lo_parser->parse( ).
+    ro_node = lo_parser->parse( iv_template = iv_template ).
   ENDMETHOD.
 
   METHOD _compile_template.
@@ -1430,7 +1926,7 @@ CLASS lcl_expression IMPLEMENTATION.
         lv_sub_len  = lv_close_pos - lv_open_pos.
         lv_sub_expr = substring( val = iv_template off = lv_open_pos len = lv_sub_len ).
 
-        lo_sub_node = _compile_sub_expr( lv_sub_expr ).
+        lo_sub_node = _compile_sub_expr( iv_sub_expr = lv_sub_expr iv_template = abap_true ).
         lo_tmpl->add_child( lo_sub_node ).
 
         lv_pos = lv_close_pos + 1.
@@ -1456,14 +1952,4 @@ CLASS lcl_expression IMPLEMENTATION.
     rv_result = mo_ast->eval( is_context ).
   ENDMETHOD.
 
-  METHOD evaluate_bool.
-    IF mo_ast IS NOT BOUND.
-      zcx_xtt_exception=>raise_sys_error( iv_message = 'Expression not compiled.' ).
-    ENDIF.
-    IF mo_ast->eval( is_context ) = abap_true.
-      rv_result = abap_true.
-    ELSE.
-      rv_result = abap_false.
-    ENDIF.
-  ENDMETHOD.
 ENDCLASS.

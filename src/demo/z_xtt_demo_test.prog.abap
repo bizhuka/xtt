@@ -37,10 +37,10 @@ CLASS lcl_test IMPLEMENTATION.
     CHECK lt_list IS NOT INITIAL.
 
 
-DELETE lt_list WHERE key <> '090'.
-***********************************        p_r_cnt = 15.
-***********************************        p_c_cnt = 36.
-***********************************        p_b_cnt = 3.
+"DELETE lt_list WHERE key <> '160'.
+***********************************
+***********************************
+***********************************
     p_open  = abap_false.
     " All demo
     DATA: ls_list TYPE REF TO vrm_value, lo_demo TYPE REF TO zcl_xtt_demo.

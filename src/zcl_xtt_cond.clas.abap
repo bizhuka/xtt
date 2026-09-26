@@ -143,6 +143,7 @@ METHOD calc_matches.
 
     DATA lo_error TYPE REF TO zcx_xtt_exception.
     DATA lv_ok    TYPE abap_bool.
+    CLEAR lv_ok.
 
     IF <ls_match>-o_expr IS NOT INITIAL.
       TRY.
@@ -150,8 +151,16 @@ METHOD calc_matches.
         lo_expression ?= <ls_match>-o_expr.
 
         sy-tabix = iv_tabix.
-        lv_result = lo_expression->evaluate( <ls_root> ).
-        <lv_result> = lv_result.
+        IF <ls_match>-type = zcl_xtt_replace_block=>mc_type-block.
+          FIELD-SYMBOLS <lt_result> TYPE STANDARD TABLE.
+          ASSIGN ls_field-dref->* TO <lt_result>.
+          IF lo_expression->evaluate( <ls_root> ) = abap_true.
+            APPEND INITIAL LINE TO <lt_result>.
+          ENDIF.
+        ELSE.
+          lv_result = lo_expression->evaluate( <ls_root> ).
+          <lv_result> = lv_result.
+        ENDIF.
         lv_ok = abap_true.
       CATCH zcx_xtt_exception.
         lv_ok = abap_false.
@@ -362,7 +371,7 @@ METHOD make_tree_forms.
   FIELD-SYMBOLS <ls_row_off> LIKE LINE OF ct_row_offset.
   LOOP AT ct_row_offset ASSIGNING <ls_row_off> WHERE if_where IS NOT INITIAL. "#EC CI_SORTSEQ
 
-    " Compile AST for OPEN-ABAP (or always as fast-path)
+    " Compile AST for OPEN-ABAP and tests of the expression path.
     IF sy-saprl = 'OPEN'.
       DATA lo_expression TYPE REF TO lcl_expression.
       CREATE OBJECT lo_expression.
@@ -569,7 +578,11 @@ ENDMETHOD.
 
 
 METHOD _read_scopes.
-  FIELD-SYMBOLS <ls_scope> LIKE LINE OF it_scope.
+  DATA:
+    lo_expression TYPE REF TO lcl_expression,
+    lo_error      TYPE REF TO zcx_xtt_exception.
+  FIELD-SYMBOLS
+    <ls_scope>    LIKE LINE OF it_scope.
   LOOP AT it_scope ASSIGNING <ls_scope>.
     DATA ls_match LIKE LINE OF mt_match.
     CLEAR ls_match.
@@ -586,13 +599,13 @@ METHOD _read_scopes.
           ls_match-cond = <ls_pair>-val.
 
           IF sy-saprl = 'OPEN'.
-            DATA lo_expression TYPE REF TO lcl_expression.
             CREATE OBJECT lo_expression.
             TRY.
               lo_expression->compile( ls_match-cond ).
               ls_match-o_expr = lo_expression.
-            CATCH zcx_xtt_exception.
+            CATCH zcx_xtt_exception INTO lo_error.
               CLEAR ls_match-o_expr.
+              mo_xtt->add_log_message( io_exception = lo_error iv_msgty = 'E' ).
             ENDTRY.
           ENDIF.
         WHEN 'type'.
@@ -600,6 +613,16 @@ METHOD _read_scopes.
         WHEN 'call'.
           ls_match-cond = <ls_pair>-val.
           mo_xtt->get_caller_info( CHANGING cs_match = ls_match ).
+          IF sy-saprl = 'OPEN'.
+            CREATE OBJECT lo_expression.
+            TRY.
+                lo_expression->compile_call( iv_call = <ls_pair>-val io_caller = ls_match-caller ).
+                ls_match-o_expr = lo_expression.
+              CATCH zcx_xtt_exception INTO lo_error.
+                CLEAR ls_match-o_expr.
+                mo_xtt->add_log_message( io_exception = lo_error iv_msgty = 'E' ).
+            ENDTRY.
+          ENDIF.
         WHEN OTHERS.
           MESSAGE e017(zsy_xtt) WITH <ls_pair>-key INTO sy-msgli.
           zcx_eui_no_check=>raise_sys_error( ).
@@ -615,7 +638,7 @@ METHOD eval_tree_cond.
   CHECK io_expr IS NOT INITIAL.
   TRY.
       lo_expression ?= io_expr.
-      rv_ok = lo_expression->evaluate_bool( is_row ).
+      rv_ok = lo_expression->evaluate( is_row ).
     CATCH zcx_xtt_exception.
       rv_ok = abap_false.
   ENDTRY.

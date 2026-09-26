@@ -38,10 +38,45 @@ CLASS lcl_node_var DEFINITION INHERITING FROM lcl_ast_node.
   PUBLIC SECTION.
     DATA mv_path   TYPE string.
     DATA mv_is_num TYPE abap_bool.
+    DATA mv_kind   TYPE abap_typekind.
 
     METHODS constructor IMPORTING iv_path TYPE string.
+    METHODS resolve
+      IMPORTING is_context TYPE any iv_optional TYPE abap_bool DEFAULT abap_false
+      RETURNING VALUE(rr_value) TYPE REF TO data
+      RAISING zcx_xtt_exception.
     METHODS eval REDEFINITION.
     METHODS is_numeric REDEFINITION.
+ENDCLASS.
+
+" Explicit USER formatting in string templates.
+CLASS lcl_node_user_format DEFINITION INHERITING FROM lcl_ast_node.
+  PUBLIC SECTION.
+    DATA mo_value TYPE REF TO lcl_ast_node.
+    DATA mv_option TYPE string.
+    METHODS eval REDEFINITION.
+ENDCLASS.
+
+" Single decfloat34 accumulator and one FOR iterator.
+CLASS lcl_node_reduce DEFINITION INHERITING FROM lcl_ast_node.
+  PUBLIC SECTION.
+    DATA mo_table TYPE REF TO lcl_node_var.
+    DATA mo_next TYPE REF TO lcl_ast_node.
+    DATA mv_accumulator TYPE string.
+    DATA mv_iterator TYPE string.
+    METHODS eval REDEFINITION.
+    METHODS is_numeric REDEFINITION.
+ENDCLASS.
+
+" COUNTRY formatting for a date field embedded in a string template.
+CLASS lcl_node_country_date DEFINITION INHERITING FROM lcl_ast_node.
+  PUBLIC SECTION.
+    METHODS constructor
+      IMPORTING io_value TYPE REF TO lcl_node_var io_country TYPE REF TO lcl_ast_node.
+    METHODS eval REDEFINITION.
+  PRIVATE SECTION.
+    DATA mo_value TYPE REF TO lcl_node_var.
+    DATA mo_country TYPE REF TO lcl_ast_node.
 ENDCLASS.
 
 " Arithmetic sub-expression (+, -, *, /)
@@ -162,6 +197,32 @@ CLASS lcl_node_func DEFINITION INHERITING FROM lcl_ast_node.
     METHODS is_numeric REDEFINITION.
 ENDCLASS.
 
+" Method call supplied by ;call= or @, using the merge helper instance.
+CLASS lcl_node_call DEFINITION INHERITING FROM lcl_ast_node.
+  PUBLIC SECTION.
+    METHODS constructor
+      IMPORTING io_caller TYPE REF TO object iv_method TYPE string
+      RAISING zcx_xtt_exception.
+    METHODS add_argument
+      IMPORTING iv_name TYPE string io_value TYPE REF TO lcl_ast_node
+      RAISING zcx_xtt_exception.
+    METHODS eval REDEFINITION.
+
+  PRIVATE SECTION.
+    TYPES:
+      BEGIN OF ts_argument,
+        name       TYPE abap_parmname,
+        expression TYPE REF TO lcl_ast_node,
+        datatype   TYPE REF TO cl_abap_datadescr,
+      END OF ts_argument.
+    DATA mo_caller TYPE REF TO object.
+    DATA mo_descr TYPE REF TO cl_abap_objectdescr.
+    DATA ms_method TYPE abap_methdescr.
+    DATA mt_arguments TYPE SORTED TABLE OF ts_argument WITH UNIQUE KEY name.
+    DATA mv_return_name TYPE abap_parmname.
+    DATA mo_return_type TYPE REF TO cl_abap_datadescr.
+ENDCLASS.
+
 " ====================================================================
 " 2. Tokenizer / Lexer
 " ====================================================================
@@ -186,7 +247,14 @@ ENDCLASS.
 CLASS lcl_parser DEFINITION.
   PUBLIC SECTION.
     METHODS constructor IMPORTING it_tokens TYPE lcl_tokenizer=>tt_token.
-    METHODS parse RETURNING VALUE(ro_root) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
+    METHODS parse
+      IMPORTING iv_template TYPE abap_bool DEFAULT abap_false
+      RETURNING VALUE(ro_root) TYPE REF TO lcl_ast_node
+      RAISING zcx_xtt_exception.
+    METHODS parse_call
+      IMPORTING io_caller TYPE REF TO object
+      RETURNING VALUE(ro_root) TYPE REF TO lcl_ast_node
+      RAISING zcx_xtt_exception.
 
   PRIVATE SECTION.
     DATA mt_tokens TYPE lcl_tokenizer=>tt_token.
@@ -197,9 +265,12 @@ CLASS lcl_parser DEFINITION.
     METHODS parse_or RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_cond RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_switch RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
+    METHODS parse_reduce RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
+    METHODS consume_word IMPORTING iv_word TYPE string RAISING zcx_xtt_exception.
     METHODS parse_and RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_not RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_predicate RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
+    METHODS parse_concat RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_operand RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_arith_term RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
     METHODS parse_arith_factor RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node RAISING zcx_xtt_exception.
@@ -215,14 +286,13 @@ CLASS lcl_expression DEFINITION.
       IMPORTING iv_expr TYPE string
       RAISING   zcx_xtt_exception.
 
+    METHODS compile_call
+      IMPORTING iv_call TYPE string io_caller TYPE REF TO object
+      RAISING zcx_xtt_exception.
+
     METHODS evaluate
       IMPORTING is_context       TYPE any
       RETURNING VALUE(rv_result) TYPE string
-      RAISING   zcx_xtt_exception.
-
-    METHODS evaluate_bool
-      IMPORTING is_context       TYPE any
-      RETURNING VALUE(rv_result) TYPE abap_bool
       RAISING   zcx_xtt_exception.
 
     CLASS-METHODS _compile_template
@@ -235,6 +305,7 @@ CLASS lcl_expression DEFINITION.
 
     CLASS-METHODS _compile_sub_expr
       IMPORTING iv_sub_expr    TYPE string
+                iv_template    TYPE abap_bool DEFAULT abap_false
       RETURNING VALUE(ro_node) TYPE REF TO lcl_ast_node
       RAISING   zcx_xtt_exception.
 ENDCLASS.

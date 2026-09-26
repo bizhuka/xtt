@@ -6,6 +6,7 @@ CLASS lcl_test  DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
   PUBLIC SECTION.
     METHODS:
       generate    FOR TESTING RAISING zcx_xtt_exception,
+      block_result FOR TESTING RAISING zcx_xtt_exception,
       _702_cond   FOR TESTING RAISING zcx_xtt_exception,
       _702_concat FOR TESTING RAISING zcx_xtt_exception.
 ENDCLASS.
@@ -26,6 +27,18 @@ CLASS lcl_expression_text_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harm
       to_lower_function     FOR TESTING RAISING zcx_xtt_exception,
       to_upper_function     FOR TESTING RAISING zcx_xtt_exception,
       to_mixed_function     FOR TESTING RAISING zcx_xtt_exception,
+      concat_values         FOR TESTING RAISING zcx_xtt_exception,
+      country_date_values   FOR TESTING RAISING zcx_xtt_exception,
+      country_rejects_text  FOR TESTING RAISING zcx_xtt_exception,
+      country_unknown       FOR TESTING RAISING zcx_xtt_exception,
+      failed_recompile      FOR TESTING RAISING zcx_xtt_exception,
+      strlen_function       FOR TESTING RAISING zcx_xtt_exception,
+      demo_condense         FOR TESTING RAISING zcx_xtt_exception,
+      demo_line_exists      FOR TESTING RAISING zcx_xtt_exception,
+      demo_reduce           FOR TESTING RAISING zcx_xtt_exception,
+      demo_user_formats     FOR TESTING RAISING zcx_xtt_exception,
+      demo_invalid_operands FOR TESTING RAISING zcx_xtt_exception,
+      date_difference       FOR TESTING RAISING zcx_xtt_exception,
       substring_offset_len  FOR TESTING RAISING zcx_xtt_exception.
 ENDCLASS.
 
@@ -34,18 +47,426 @@ CLASS lcl_expression_boolean_test DEFINITION FOR TESTING FINAL "#AU Risk_Level H
   PUBLIC SECTION.
     METHODS:
       compound_condition FOR TESTING RAISING zcx_xtt_exception,
+      boolean_results    FOR TESTING RAISING zcx_xtt_exception,
       equality_condition FOR TESTING RAISING zcx_xtt_exception,
       raw_dynamic_form   FOR TESTING RAISING zcx_xtt_exception,
       nested_parentheses    FOR TESTING RAISING zcx_xtt_exception, " NEW
       numeric_comparisons   FOR TESTING RAISING zcx_xtt_exception, " NEW
       is_initial_test       FOR TESTING RAISING zcx_xtt_exception, " NEW
-      string_contains_cs_ns FOR TESTING RAISING zcx_xtt_exception. " NEW
+      string_contains_cs_ns FOR TESTING RAISING zcx_xtt_exception, " NEW
+      system_field_len_only FOR TESTING RAISING zcx_xtt_exception.
 ENDCLASS.
 
+CLASS lcl_call_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
+                                    .           "#AU Duration Short
+  PUBLIC SECTION.
+    METHODS:
+      fullname              FOR TESTING RAISING zcx_xtt_exception,
+      date_default_language FOR TESTING RAISING zcx_xtt_exception,
+      date_explicit_language FOR TESTING RAISING zcx_xtt_exception,
+      cond_fullname         FOR TESTING RAISING zcx_xtt_exception,
+      actual_month_names    FOR TESTING RAISING zcx_xtt_exception,
+      month_names_layouts   FOR TESTING.
+
+  PRIVATE SECTION.
+    METHODS _assert_call
+      IMPORTING
+        iv_call       TYPE string
+        iv_expected   TYPE string
+        iv_rows       TYPE abap_bool DEFAULT abap_false
+        iv_lang       TYPE sylangu DEFAULT sy-langu
+        iv_real_months TYPE abap_bool DEFAULT abap_false
+        iv_month_text TYPE string DEFAULT 'March'
+      RAISING zcx_xtt_exception.
+    METHODS _prepare
+      IMPORTING
+        iv_lang       TYPE sylangu DEFAULT sy-langu
+        iv_real_months TYPE abap_bool DEFAULT abap_false
+        iv_month_text TYPE string DEFAULT 'March'
+      EXPORTING
+        es_root       TYPE zcl_xtt_demo_160=>ts_root
+        eo_caller     TYPE REF TO zcl_xtt_demo_160.
+ENDCLASS.
+
+CLASS zcl_xtt_cond DEFINITION LOCAL FRIENDS lcl_test.
+
 **********************************************************************
 **********************************************************************
 
+CLASS lcl_call_test IMPLEMENTATION.
+  METHOD cond_fullname.
+    DATA ls_root TYPE zcl_xtt_demo_160=>ts_root.
+    DATA lo_expression TYPE REF TO lcl_expression.
+    _prepare( IMPORTING es_root = ls_root ).
+    CREATE OBJECT lo_expression.
+    lo_expression->compile( 'to_upper( value-FIRST_NAME && ` ` && value-LAST_NAME && ` ` && value-MIDDLE_NAME )' ).
+    zcl_eui_conv=>assert_equals(
+      exp = 'FIRSTNAME LASTNAME MIDDLENAME'
+      act = lo_expression->evaluate( ls_root ) ).
+  ENDMETHOD.
+
+  METHOD actual_month_names.
+    _assert_call(
+      iv_real_months = abap_true
+      iv_rows = abap_true
+      iv_call = `date_text( iv_date = value-FLDATE iv_lang = 'E' )`
+      iv_expected = `2026-March-08|2026-March-09` ).
+    _assert_call(
+      iv_real_months = abap_true
+      iv_rows = abap_true
+      iv_call = `date_text( iv_date = value-FLDATE iv_lang = 'D' )`
+      iv_expected = `2026-März-08|2026-März-09` ).
+  ENDMETHOD.
+
+  METHOD month_names_layouts.
+    DATA lt_names TYPE wdr_date_nav_month_name_tab.
+    DATA ls_name LIKE LINE OF lt_names.
+    CALL FUNCTION 'MONTH_NAMES_GET'
+      EXPORTING language = 'E'
+      TABLES month_names = lt_names.
+    zcl_eui_conv=>assert_equals( exp = 12 act = lines( lt_names ) ).
+    READ TABLE lt_names INTO ls_name INDEX 3.
+    zcl_eui_conv=>assert_equals( exp = '03' act = ls_name-mnr ).
+    zcl_eui_conv=>assert_equals( exp = 'March' act = ls_name-ltx ).
+
+    DATA lt_sap_names TYPE STANDARD TABLE OF t247.
+    DATA ls_sap_name TYPE t247.
+    CALL FUNCTION 'MONTH_NAMES_GET'
+      TABLES month_names = lt_sap_names.
+    READ TABLE lt_sap_names INTO ls_sap_name INDEX 3.
+    zcl_eui_conv=>assert_equals( exp = sy-langu act = ls_sap_name-spras ).
+    zcl_eui_conv=>assert_equals( exp = '03' act = ls_sap_name-mnr ).
+  ENDMETHOD.
+
+  METHOD fullname.
+    " IS_ROOT is passed implicitly; RV_TEXT becomes the replacement value.
+    _assert_call(
+      iv_call = `get_fullname( )`
+      iv_expected = `FIRSTNAME LASTNAME MIDDLENAME` ).
+    _assert_call(
+      iv_call = `get_fullname()`
+      iv_expected = `FIRSTNAME LASTNAME MIDDLENAME` ).
+  ENDMETHOD.
+
+  METHOD date_default_language.
+    " Resolve value-FLDATE for each row and leave IV_LANG at its method default.
+    _assert_call(
+      iv_rows = abap_true
+      iv_call = `date_text( iv_date = value-FLDATE )`
+      iv_expected = `2026-March-08|2026-March-09` ).
+  ENDMETHOD.
+
+  METHOD date_explicit_language.
+    " Pass both a row field and a literal to a method without IS_ROOT.
+    _assert_call(
+      iv_rows       = abap_true
+      iv_call       = `date_text( iv_date = value-FLDATE iv_lang = 'D' )`
+      iv_expected   = `2026-Maerz-08|2026-Maerz-09`
+      iv_lang       = 'D'
+      iv_month_text = 'Maerz' ).
+  ENDMETHOD.
+
+  METHOD _prepare.
+    CLEAR es_root.
+    es_root-first_name  = 'FirstName'.
+    es_root-last_name   = 'LastName'.
+    es_root-middle_name = 'MiddleName'.
+
+    DATA ls_flight LIKE LINE OF es_root-t.
+    ls_flight-fldate = '20260308'.
+    APPEND ls_flight TO es_root-t.
+    ls_flight-fldate = '20260309'.
+    APPEND ls_flight TO es_root-t.
+
+    CREATE OBJECT eo_caller.
+
+    " Seed the caller's month names without depending on database contents.
+    DATA ls_month TYPE t247.
+    ls_month-spras = iv_lang.
+    ls_month-mnr   = '03'.
+    ls_month-ltx   = iv_month_text.
+    APPEND ls_month TO eo_caller->mt_month_name.
+    IF iv_real_months = abap_true.
+      CLEAR eo_caller->mt_month_name.
+      DATA lt_months LIKE eo_caller->mt_month_name.
+      CALL FUNCTION 'MONTH_NAMES_GET'
+        EXPORTING language = 'E'
+        TABLES month_names = eo_caller->mt_month_name.
+      CALL FUNCTION 'MONTH_NAMES_GET'
+        EXPORTING language = 'D'
+        TABLES month_names = lt_months.
+      APPEND LINES OF lt_months TO eo_caller->mt_month_name.
+      SORT eo_caller->mt_month_name BY spras mnr.
+    ENDIF.
+  ENDMETHOD.
+
+  METHOD _assert_call.
+    DATA ls_root TYPE zcl_xtt_demo_160=>ts_root.
+    DATA lo_caller TYPE REF TO zcl_xtt_demo_160.
+    _prepare( EXPORTING iv_lang = iv_lang iv_real_months = iv_real_months iv_month_text = iv_month_text
+              IMPORTING es_root = ls_root eo_caller = lo_caller ).
+    DATA lo_expression TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_expression.
+    lo_expression->compile_call( iv_call = iv_call io_caller = lo_caller ).
+
+    DATA lv_result TYPE string.
+    DATA lv_value TYPE string.
+    DATA ls_flight LIKE LINE OF ls_root-t.
+    IF iv_rows = abap_true.
+      " Reuse the compiled call with a different row context.
+      LOOP AT ls_root-t INTO ls_flight.
+        lv_value = lo_expression->evaluate( ls_flight ).
+        IF lv_result IS NOT INITIAL.
+          CONCATENATE lv_result '|' INTO lv_result.
+        ENDIF.
+        CONCATENATE lv_result lv_value INTO lv_result.
+      ENDLOOP.
+    ELSE.
+      lv_result = lo_expression->evaluate( ls_root ).
+    ENDIF.
+    zcl_eui_conv=>assert_equals( exp = iv_expected act = lv_result ).
+  ENDMETHOD.
+
+ENDCLASS.
+
 CLASS lcl_expression_text_test IMPLEMENTATION.
+  METHOD demo_condense.
+    DATA: BEGIN OF ls_root,
+            caption TYPE string VALUE '  First   caption  ',
+          END OF ls_root.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( 'condense( value-CAPTION )' ).
+    zcl_eui_conv=>assert_equals( exp = 'First caption' act = lo_calc->evaluate( ls_root ) ).
+    CLEAR ls_root-caption.
+    zcl_eui_conv=>assert_equals( exp = '' act = lo_calc->evaluate( ls_root ) ).
+  ENDMETHOD.
+
+  METHOD demo_line_exists.
+    TYPES: BEGIN OF ts_line,
+             group TYPE string,
+             caption TYPE string,
+           END OF ts_line.
+    DATA: BEGIN OF ls_root,
+            t TYPE STANDARD TABLE OF ts_line WITH DEFAULT KEY,
+          END OF ls_root.
+    DATA ls_line TYPE ts_line.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    ls_line-group = 'GRP A'.
+    ls_line-caption = 'First'.
+    APPEND ls_line TO ls_root-t.
+    lo_calc->compile( `WHEN line_exists( value-t[ group = 'GRP A' ] ) THEN |First caption in group 'A' { value-t[ group = 'GRP A' ]-caption }|` ).
+    zcl_eui_conv=>assert_equals( exp = `First caption in group 'A' First` act = lo_calc->evaluate( ls_root ) ).
+    CLEAR ls_root-t.
+    zcl_eui_conv=>assert_equals( exp = '' act = lo_calc->evaluate( ls_root ) ).
+    lo_calc->compile( 'line_exists( value-t[ 1 ] )' ).
+    zcl_eui_conv=>assert_equals( exp = abap_false act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    APPEND ls_line TO ls_root-t.
+    zcl_eui_conv=>assert_equals( exp = abap_true act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+  ENDMETHOD.
+
+  METHOD demo_reduce.
+    TYPES: BEGIN OF ts_line,
+             sum1 TYPE decfloat34,
+             sum2 TYPE decfloat34,
+           END OF ts_line.
+    DATA: BEGIN OF ls_root,
+            t TYPE STANDARD TABLE OF ts_line WITH DEFAULT KEY,
+          END OF ls_root.
+    DATA ls_line TYPE ts_line.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    ls_line-sum1 = '10.5'.
+    ls_line-sum2 = '-2'.
+    APPEND ls_line TO ls_root-t.
+    ls_line-sum1 = '-3'.
+    ls_line-sum2 = '8.25'.
+    APPEND ls_line TO ls_root-t.
+    lo_calc->compile( 'REDUCE decfloat34( INIT s TYPE decfloat34 FOR ls_line IN value-t[] NEXT s = s + ls_line-SUM1 )' ).
+    zcl_eui_conv=>assert_equals( exp = '7.5' act = lo_calc->evaluate( ls_root ) ).
+    lo_calc->compile( 'REDUCE decfloat34( INIT s TYPE decfloat34 FOR ls_line IN value-t[] NEXT s = s + ls_line-SUM2 )' ).
+    zcl_eui_conv=>assert_equals( exp = '6.25' act = lo_calc->evaluate( ls_root ) ).
+    CLEAR ls_root-t.
+    zcl_eui_conv=>assert_equals( exp = '0' act = lo_calc->evaluate( ls_root ) ).
+  ENDMETHOD.
+
+  METHOD demo_user_formats.
+    DATA: BEGIN OF ls_root,
+            gbdat TYPE d VALUE '20260301',
+            sum1 TYPE decfloat34 VALUE '42500',
+            sum2 TYPE decfloat34 VALUE '1.25',
+          END OF ls_root.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    DATA lv_expected TYPE string.
+    DATA lv_number TYPE decfloat34.
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( '|{ value-GBDAT DATE = USER }|' ).
+    lv_expected = |{ ls_root-gbdat DATE = USER }|.
+    zcl_eui_conv=>assert_equals( exp = lv_expected act = lo_calc->evaluate( ls_root ) ).
+    lo_calc->compile( '|{ 42500 NUMBER = USER }|' ).
+    lv_number = 42500.
+    lv_expected = |{ lv_number NUMBER = USER }|.
+    zcl_eui_conv=>assert_equals( exp = lv_expected act = lo_calc->evaluate( ls_root ) ).
+    lo_calc->compile( '|{ value-SUM1 - value-SUM2 NUMBER = USER }|' ).
+    lv_number = ls_root-sum1 - ls_root-sum2.
+    lv_expected = |{ lv_number NUMBER = USER }|.
+    zcl_eui_conv=>assert_equals( exp = lv_expected act = lo_calc->evaluate( ls_root ) ).
+  ENDMETHOD.
+
+  METHOD date_difference.
+    DATA: BEGIN OF ls_root,
+            date1 TYPE d VALUE '20260301',
+            date2 TYPE d VALUE '20260228',
+          END OF ls_root.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( 'value-DATE1 - value-DATE2' ).
+    zcl_eui_conv=>assert_equals( exp = '1' act = lo_calc->evaluate( ls_root ) ).
+    ls_root-date1 = '20240228'.
+    ls_root-date2 = '20240301'.
+    zcl_eui_conv=>assert_equals( exp = '-2' act = lo_calc->evaluate( ls_root ) ).
+    lo_calc->compile( '20260301 - 20260228' ).
+    zcl_eui_conv=>assert_equals( exp = '73' act = lo_calc->evaluate( ls_root ) ).
+  ENDMETHOD.
+
+  METHOD demo_invalid_operands.
+    DATA: BEGIN OF ls_root,
+            text TYPE string VALUE '20260301',
+          END OF ls_root.
+    DATA lt_expr TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
+    DATA lv_expr TYPE string.
+    DATA lv_failed TYPE abap_bool.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    APPEND 'line_exists( value-missing[ 1 ] )' TO lt_expr.
+    APPEND '|{ value-text DATE = USER }|' TO lt_expr.
+    APPEND '|{ value-text NUMBER = USER }|' TO lt_expr.
+    APPEND 'REDUCE string( INIT s TYPE string FOR row IN value-t[] NEXT s = s )' TO lt_expr.
+    LOOP AT lt_expr INTO lv_expr.
+      CLEAR lv_failed.
+      TRY.
+          lo_calc->compile( lv_expr ).
+          lo_calc->evaluate( ls_root ).
+        CATCH zcx_xtt_exception.
+          lv_failed = abap_true.
+      ENDTRY.
+      zcl_eui_conv=>assert_equals( exp = abap_true act = lv_failed ).
+    ENDLOOP.
+  ENDMETHOD.
+
+  METHOD strlen_function.
+    DATA: BEGIN OF ls_root,
+            title TYPE string VALUE 'Document title',
+          END OF ls_root.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( 'strlen( value-TITLE ) eq -1' ).
+    zcl_eui_conv=>assert_equals( exp = abap_false act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    lo_calc->compile( 'strlen( value-TITLE ) gt 0' ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    CLEAR ls_root-title.
+    zcl_eui_conv=>assert_equals( exp = abap_false act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    lo_calc->compile( 'strlen( `a  ` ) + strlen( `` )' ).
+    zcl_eui_conv=>assert_equals( exp = '3' act = lo_calc->evaluate( ls_root ) ).
+    lo_calc->compile( 'strlen( `1234567890` ) > strlen( `ab` )' ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+  ENDMETHOD.
+
+  METHOD failed_recompile.
+    DATA lo_expression TYPE REF TO lcl_expression.
+    DATA lo_caller TYPE REF TO zcl_xtt_demo_160.
+    DATA lv_compile_failed TYPE abap_bool.
+    DATA lv_evaluate_failed TYPE abap_bool.
+    CREATE OBJECT lo_expression.
+    CREATE OBJECT lo_caller.
+    DO 2 TIMES.
+      lo_expression->compile( '`old`' ).
+      CLEAR: lv_compile_failed, lv_evaluate_failed.
+      TRY.
+          IF sy-index = 1.
+            lo_expression->compile( '1 +' ).
+          ELSE.
+            lo_expression->compile_call( iv_call = 'get_fullname(' io_caller = lo_caller ).
+          ENDIF.
+        CATCH zcx_xtt_exception.
+          lv_compile_failed = abap_true.
+      ENDTRY.
+      TRY.
+          lo_expression->evaluate( sy ).
+        CATCH zcx_xtt_exception.
+          lv_evaluate_failed = abap_true.
+      ENDTRY.
+      zcl_eui_conv=>assert_equals( exp = abap_true act = lv_compile_failed ).
+      zcl_eui_conv=>assert_equals( exp = abap_true act = lv_evaluate_failed ).
+    ENDDO.
+    lo_expression->compile( '`new`' ).
+    zcl_eui_conv=>assert_equals( exp = 'new' act = lo_expression->evaluate( sy ) ).
+  ENDMETHOD.
+
+  METHOD concat_values.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( 'to_upper( `a` && ` ` && ( `b` && `c` ) )' ).
+    zcl_eui_conv=>assert_equals( exp = 'A BC' act = lo_calc->evaluate( sy ) ).
+    lo_calc->compile( '`sum=` && 1 + 2 * 3' ).
+    zcl_eui_conv=>assert_equals( exp = 'sum=7' act = lo_calc->evaluate( sy ) ).
+    lo_calc->compile( '`a` && `b` = `ab`' ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+  ENDMETHOD.
+
+  METHOD country_date_values.
+    DATA: BEGIN OF ls_row,
+            fldate TYPE d,
+            country TYPE land1,
+          END OF ls_row.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    ls_row-fldate = '20260322'.
+    ls_row-country = 'US'.
+    lo_calc->compile( `|Date: { value-FLDATE COUNTRY = value-COUNTRY }|` ).
+    zcl_eui_conv=>assert_equals( exp = 'Date: 03/22/2026' act = lo_calc->evaluate( ls_row ) ).
+    ls_row-country = 'RU'.
+    zcl_eui_conv=>assert_equals( exp = 'Date: 22.03.2026' act = lo_calc->evaluate( ls_row ) ).
+    ls_row-country = 'DE'.
+    ls_row-fldate = '20240229'.
+    zcl_eui_conv=>assert_equals( exp = 'Date: 29.02.2024' act = lo_calc->evaluate( ls_row ) ).
+    CLEAR ls_row-fldate.
+    zcl_eui_conv=>assert_equals( exp = 'Date: 00.00.0000' act = lo_calc->evaluate( ls_row ) ).
+  ENDMETHOD.
+
+  METHOD country_rejects_text.
+    DATA: BEGIN OF ls_row,
+            fldate TYPE string VALUE '20260322',
+          END OF ls_row.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    DATA lv_rejected TYPE abap_bool.
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( `|{ value-FLDATE COUNTRY = 'US ' }|` ).
+    TRY.
+        lo_calc->evaluate( ls_row ).
+      CATCH zcx_xtt_exception.
+        lv_rejected = abap_true.
+    ENDTRY.
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lv_rejected ).
+  ENDMETHOD.
+
+  METHOD country_unknown.
+    DATA: BEGIN OF ls_row,
+            fldate TYPE d VALUE '20260322',
+          END OF ls_row.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    DATA lv_rejected TYPE abap_bool.
+    CREATE OBJECT lo_calc.
+    lo_calc->compile( `|{ value-FLDATE COUNTRY = 'ZZZ' }|` ).
+    TRY.
+        lo_calc->evaluate( ls_row ).
+      CATCH zcx_xtt_exception.
+        lv_rejected = abap_true.
+    ENDTRY.
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lv_rejected ).
+  ENDMETHOD.
+
   METHOD system_fields.
     DATA lo_calc   TYPE REF TO lcl_expression.
     DATA lv_result TYPE string.
@@ -446,6 +867,36 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
 ENDCLASS.
 
 CLASS lcl_expression_boolean_test IMPLEMENTATION.
+  METHOD boolean_results.
+    DATA lt_false TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
+    DATA lv_expr TYPE string.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    CREATE OBJECT lo_calc.
+    APPEND 'abap_false' TO lt_false.
+    APPEND '``' TO lt_false.
+    APPEND '` `' TO lt_false.
+    APPEND '`  `' TO lt_false.
+    APPEND '`0`' TO lt_false.
+    APPEND '`XX`' TO lt_false.
+    LOOP AT lt_false INTO lv_expr.
+      lo_calc->compile( lv_expr ).
+      zcl_eui_conv=>assert_equals( exp = abap_false
+        act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+      lo_calc->compile( |{ lv_expr } AND abap_true| ).
+      zcl_eui_conv=>assert_equals( exp = abap_false
+        act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+      lo_calc->compile( |{ lv_expr } OR abap_true| ).
+      zcl_eui_conv=>assert_equals( exp = abap_true
+        act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+      lo_calc->compile( |NOT { lv_expr }| ).
+      zcl_eui_conv=>assert_equals( exp = abap_true
+        act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+    ENDLOOP.
+    lo_calc->compile( 'abap_true' ).
+    zcl_eui_conv=>assert_equals( exp = abap_true
+      act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+  ENDMETHOD.
+
   METHOD compound_condition.
     TYPES:
       BEGIN OF ts_rand_data,
@@ -462,7 +913,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `( row-GROUP = 'C' OR ROW-group cp '*C' ) AND ROW-GROUP <> 'Z'` ).
-    lv_result = lo_calc->evaluate_bool( ls_row ).
+    lv_result = xsdbool( lo_calc->evaluate( ls_row ) = abap_true ).
 
     IF lv_result <> abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = |compound_condition: expected X but got '{ lv_result }'| ).
@@ -485,7 +936,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `ROW-GROUP eq 'GRP B'` ).
-    lv_result = lo_calc->evaluate_bool( ls_row ).
+    lv_result = xsdbool( lo_calc->evaluate( ls_row ) = abap_true ).
 
     IF lv_result <> abap_false.
       zcx_xtt_exception=>raise_sys_error( iv_message = |equality_condition: expected blank but got '{ lv_result }'| ).
@@ -508,7 +959,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `( row-GROUP = 'C' OR ROW-group cp '*C' ) AND ROW-GROUP <> 'Z'` ).
-    lv_result = lo_calc->evaluate_bool( ls_row ).
+    lv_result = xsdbool( lo_calc->evaluate( ls_row ) = abap_true ).
 
     IF lv_result <> abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = |raw_dynamic_form: expected X but got '{ lv_result }'| ).
@@ -530,12 +981,12 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `( ( row-a = 1 ) AND ( row-b = 2 ) )` ).
-    IF lo_calc->evaluate_bool( ls_row ) <> abap_true.
+    IF lo_calc->evaluate( ls_row ) <> abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = 'nested_parentheses failed for true' ).
     ENDIF.
 
     lo_calc->compile( `( ( row-a = 2 ) OR ( row-b = 99 ) )` ).
-    IF lo_calc->evaluate_bool( ls_row ) <> abap_false.
+    IF lo_calc->evaluate( ls_row ) = abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = 'nested_parentheses failed for false' ).
     ENDIF.
   ENDMETHOD.
@@ -553,12 +1004,12 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `row-val > 10 AND row-val <= 20` ).
-    IF lo_calc->evaluate_bool( ls_row ) <> abap_true.
+    IF lo_calc->evaluate( ls_row ) <> abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = 'numeric_comparisons failed' ).
     ENDIF.
 
     lo_calc->compile( `row-val >= 20` ).
-    IF lo_calc->evaluate_bool( ls_row ) <> abap_false.
+    IF lo_calc->evaluate( ls_row ) = abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = 'numeric_comparisons >= failed' ).
     ENDIF.
   ENDMETHOD.
@@ -578,7 +1029,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `row-text IS INITIAL AND row-num IS NOT INITIAL` ).
-    IF lo_calc->evaluate_bool( ls_row ) <> abap_true.
+    IF lo_calc->evaluate( ls_row ) <> abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = 'is_initial_test failed' ).
     ENDIF.
   ENDMETHOD.
@@ -596,17 +1047,84 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `row-name CS 'brown' AND row-name NS 'cat'` ).
-    IF lo_calc->evaluate_bool( ls_row ) <> abap_true.
+    IF lo_calc->evaluate( ls_row ) <> abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = 'string_contains_cs_ns failed' ).
     ENDIF.
   ENDMETHOD.
+
+  METHOD system_field_len_only.
+    DATA lo_calc TYPE REF TO lcl_expression.
+    DATA lv_current_year TYPE string.
+    CREATE OBJECT lo_calc.
+
+    lv_current_year = sy-datum(4).
+
+    " Test ABAP shorthand length without offset: sy-datum(4)
+    lo_calc->compile( |sy-datum(4) eq '{ lv_current_year }'| ).
+    zcl_eui_conv=>assert_equals(
+      exp = abap_true
+      act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+
+    lo_calc->compile( 'sy-datum+4(2)' ).
+    zcl_eui_conv=>assert_equals( exp = sy-datum+4(2) act = lo_calc->evaluate( sy ) ).
+
+    " Test with field from structure
+    TYPES: BEGIN OF ts_test,
+             datum TYPE d,
+           END OF ts_test.
+    DATA ls_test TYPE ts_test.
+    ls_test-datum = '20191231'.
+
+    lo_calc->compile( `value-datum(4) eq '2019'` ).
+    zcl_eui_conv=>assert_equals(
+      exp = abap_true
+      act = xsdbool( lo_calc->evaluate( ls_test ) = abap_true ) ).
+
+    " Numeric function arguments are not substring lengths.
+    lo_calc->compile( `to_upper(123)` ).
+    zcl_eui_conv=>assert_equals( exp = '123' act = lo_calc->evaluate( ls_test ) ).
+  ENDMETHOD.
+
 ENDCLASS.
 
 **********************************************************************
 **********************************************************************
 
-CLASS zcl_xtt_cond DEFINITION LOCAL FRIENDS lcl_test.
 CLASS lcl_test IMPLEMENTATION.
+  METHOD block_result.
+    DATA lo_xtt TYPE REF TO zcl_xtt.
+    DATA lo_cond TYPE REF TO zcl_xtt_cond.
+    DATA lo_block TYPE REF TO zcl_xtt_replace_block.
+    DATA lo_expression TYPE REF TO lcl_expression.
+    DATA ls_match TYPE zcl_xtt_cond=>ts_match.
+    DATA ls_field TYPE zcl_xtt_replace_block=>ts_field.
+    DATA lv_root TYPE string VALUE 'test'.
+    FIELD-SYMBOLS <lt_result> TYPE STANDARD TABLE.
+    CREATE OBJECT lo_cond EXPORTING io_xtt = lo_xtt.
+    CREATE OBJECT lo_block EXPORTING io_xtt = lo_xtt is_block = lv_root iv_block_name = 'R'.
+    CREATE OBJECT lo_expression.
+    lo_expression->compile( 'abap_true' ).
+    ls_match-cid = 'VISIBLE'.
+    ls_match-type = zcl_xtt_replace_block=>mc_type-block.
+    ls_match-o_expr = lo_expression.
+    INSERT ls_match INTO TABLE lo_cond->mt_match.
+    CREATE OBJECT lo_expression.
+    lo_expression->compile( 'abap_false' ).
+    ls_match-cid = 'HIDDEN'.
+    ls_match-o_expr = lo_expression.
+    INSERT ls_match INTO TABLE lo_cond->mt_match.
+
+    lo_cond->calc_matches( io_xtt = lo_xtt iv_tabix = 1 io_block = lo_block ).
+    READ TABLE lo_block->mt_fields INTO ls_field WITH TABLE KEY name = 'VISIBLE'.
+    zcl_eui_conv=>assert_equals( exp = 0 act = sy-subrc ).
+    ASSIGN ls_field-dref->* TO <lt_result>.
+    zcl_eui_conv=>assert_equals( exp = 1 act = lines( <lt_result> ) ).
+    READ TABLE lo_block->mt_fields INTO ls_field WITH TABLE KEY name = 'HIDDEN'.
+    zcl_eui_conv=>assert_equals( exp = 0 act = sy-subrc ).
+    ASSIGN ls_field-dref->* TO <lt_result>.
+    zcl_eui_conv=>assert_equals( exp = 0 act = lines( <lt_result> ) ).
+  ENDMETHOD.
+
   METHOD generate.
 *    DATA cut TYPE REF TO zcl_xtt_cond.
 *    zcl_xtt_cond=>get_instance( EXPORTING iv_id       = 'R'

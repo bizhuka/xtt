@@ -125,7 +125,11 @@ METHOD calc_cond_matches.
 
       " Has dynamic conditions ?
       LOOP AT <ls_scope>-t_pair TRANSPORTING NO FIELDS WHERE key = 'cond' OR key = 'call'. "#EC CI_SORTSEQ
-        INSERT <ls_scope> INTO TABLE lt_cond_scope.
+        DATA ls_cond_scope LIKE LINE OF lt_cond_scope.
+        ls_cond_scope = <ls_scope>.
+        " Other options belong to scope/tree/image handlers, not expressions.
+        DELETE ls_cond_scope-t_pair WHERE key <> 'cond' AND key <> 'call' AND key <> 'type'.
+        INSERT ls_cond_scope INTO TABLE lt_cond_scope.
         EXIT.
       ENDLOOP.
     ENDLOOP.
@@ -263,6 +267,7 @@ METHOD _fill_t_pair.
       WHEN OTHERS.
         MESSAGE s017(zsy_xtt) WITH ls_pair-key INTO sy-msgli.
         io_xtt->add_log_message( iv_syst = abap_true ).
+        CONTINUE.
 
     ENDCASE.
 

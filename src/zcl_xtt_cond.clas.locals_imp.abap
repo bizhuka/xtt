@@ -364,13 +364,11 @@ CLASS lcl_node_user_format IMPLEMENTATION.
     lv_text = mo_value->eval( is_context ).
     CASE mv_option.
       WHEN 'DATE'.
-        IF NOT mo_value IS INSTANCE OF lcl_node_var.
-          zcx_xtt_exception=>raise_sys_error( iv_message = 'DATE currently supports date fields only' ).
-        ENDIF.
-        lo_var ?= mo_value.
-        IF lo_var->mv_kind <> cl_abap_typedescr=>typekind_date.
+        TRY.
+          lo_var ?= mo_value.
+        CATCH cx_sy_move_cast_error.
           zcx_xtt_exception=>raise_sys_error( iv_message = 'DATE requires a date field' ).
-        ENDIF.
+        ENDTRY.
         lv_date = lv_text.
         rv_val = |{ lv_date DATE = USER }|.
       WHEN 'NUMBER'.
@@ -378,14 +376,15 @@ CLASS lcl_node_user_format IMPLEMENTATION.
           zcx_xtt_exception=>raise_sys_error( iv_message = 'NUMBER requires a numeric operand' ).
         ENDIF.
         " Preserve a field's declared decimals when it is formatted directly.
-        IF mo_value IS INSTANCE OF lcl_node_var.
+        TRY.
           lo_var ?= mo_value.
           lr_value = lo_var->resolve( is_context ).
           ASSIGN lr_value->* TO <value>.
           lv_number = <value>.
           rv_val = |{ lv_number NUMBER = USER }|.
           RETURN.
-        ENDIF.
+        CATCH cx_sy_move_cast_error.
+        ENDTRY.
         lv_number = _to_number( lv_text ).
         rv_val = |{ lv_number NUMBER = USER }|.
     ENDCASE.
@@ -505,17 +504,20 @@ CLASS lcl_node_arith IMPLEMENTATION.
     lv_left = mo_left->eval( is_context ).
     lv_right = mo_right->eval( is_context ).
     " Date-to-date subtraction counts days, not YYYYMMDD numbers.
-    IF mv_op = '-' AND mo_left IS INSTANCE OF lcl_node_var AND mo_right IS INSTANCE OF lcl_node_var.
-      lo_left ?= mo_left.
-      lo_right ?= mo_right.
-      IF lo_left->mv_kind = cl_abap_typedescr=>typekind_date AND
-         lo_right->mv_kind = cl_abap_typedescr=>typekind_date.
-        lv_date_left = lv_left.
-        lv_date_right = lv_right.
-        lv_res = lv_date_left - lv_date_right.
-        rv_val = |{ lv_res }|.
-        RETURN.
-      ENDIF.
+    IF mv_op = '-'.
+      TRY.
+        lo_left ?= mo_left.
+        lo_right ?= mo_right.
+        IF lo_left->mv_kind = cl_abap_typedescr=>typekind_date AND
+           lo_right->mv_kind = cl_abap_typedescr=>typekind_date.
+          lv_date_left = lv_left.
+          lv_date_right = lv_right.
+          lv_res = lv_date_left - lv_date_right.
+          rv_val = |{ lv_res }|.
+          RETURN.
+        ENDIF.
+      CATCH cx_sy_move_cast_error.
+      ENDTRY.
     ENDIF.
     lv_l = _to_number( lv_left ).
     lv_r = _to_number( lv_right ).
@@ -835,10 +837,11 @@ CLASS lcl_node_func IMPLEMENTATION.
     IF mv_func_name = 'LINE_EXISTS'.
       DATA lo_var TYPE REF TO lcl_node_var.
       DATA lr_value TYPE REF TO data.
-      IF NOT mo_arg IS INSTANCE OF lcl_node_var.
+      TRY.
+        lo_var ?= mo_arg.
+      CATCH cx_sy_move_cast_error.
         zcx_xtt_exception=>raise_sys_error( iv_message = 'LINE_EXISTS requires a table expression' ).
-      ENDIF.
-      lo_var ?= mo_arg.
+      ENDTRY.
       IF lo_var->mv_path NS '[' OR lo_var->mv_path CS '[]'.
         zcx_xtt_exception=>raise_sys_error( iv_message = 'LINE_EXISTS requires a table expression' ).
       ENDIF.

@@ -261,9 +261,9 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     CLEAR ls_root-t.
     zcl_eui_conv=>assert_equals( exp = '' act = lo_calc->evaluate( ls_root ) ).
     lo_calc->compile( 'line_exists( value-t[ 1 ] )' ).
-    zcl_eui_conv=>assert_equals( exp = abap_false act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    zcl_eui_conv=>assert_equals( exp = abap_false act = lo_calc->evaluate( ls_root ) ).
     APPEND ls_line TO ls_root-t.
-    zcl_eui_conv=>assert_equals( exp = abap_true act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lo_calc->evaluate( ls_root ) ).
   ENDMETHOD.
 
   METHOD demo_reduce.
@@ -362,15 +362,15 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     DATA lo_calc TYPE REF TO lcl_expression.
     CREATE OBJECT lo_calc.
     lo_calc->compile( 'strlen( value-TITLE ) eq -1' ).
-    zcl_eui_conv=>assert_equals( exp = abap_false act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    zcl_eui_conv=>assert_equals( exp = abap_false act = lo_calc->evaluate( ls_root ) ).
     lo_calc->compile( 'strlen( value-TITLE ) gt 0' ).
-    zcl_eui_conv=>assert_equals( exp = abap_true act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lo_calc->evaluate( ls_root ) ).
     CLEAR ls_root-title.
-    zcl_eui_conv=>assert_equals( exp = abap_false act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    zcl_eui_conv=>assert_equals( exp = abap_false act = lo_calc->evaluate( ls_root ) ).
     lo_calc->compile( 'strlen( `a  ` ) + strlen( `` )' ).
     zcl_eui_conv=>assert_equals( exp = '3' act = lo_calc->evaluate( ls_root ) ).
     lo_calc->compile( 'strlen( `1234567890` ) > strlen( `ab` )' ).
-    zcl_eui_conv=>assert_equals( exp = abap_true act = xsdbool( lo_calc->evaluate( ls_root ) = abap_true ) ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lo_calc->evaluate( ls_root ) ).
   ENDMETHOD.
 
   METHOD failed_recompile.
@@ -412,7 +412,7 @@ CLASS lcl_expression_text_test IMPLEMENTATION.
     lo_calc->compile( '`sum=` && 1 + 2 * 3' ).
     zcl_eui_conv=>assert_equals( exp = 'sum=7' act = lo_calc->evaluate( sy ) ).
     lo_calc->compile( '`a` && `b` = `ab`' ).
-    zcl_eui_conv=>assert_equals( exp = abap_true act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lo_calc->evaluate( sy ) ).
   ENDMETHOD.
 
   METHOD country_date_values.
@@ -881,20 +881,20 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     LOOP AT lt_false INTO lv_expr.
       lo_calc->compile( lv_expr ).
       zcl_eui_conv=>assert_equals( exp = abap_false
-        act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+        act = lo_calc->evaluate( sy ) ).
       lo_calc->compile( |{ lv_expr } AND abap_true| ).
       zcl_eui_conv=>assert_equals( exp = abap_false
-        act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+        act = lo_calc->evaluate( sy ) ).
       lo_calc->compile( |{ lv_expr } OR abap_true| ).
       zcl_eui_conv=>assert_equals( exp = abap_true
-        act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+        act = lo_calc->evaluate( sy ) ).
       lo_calc->compile( |NOT { lv_expr }| ).
       zcl_eui_conv=>assert_equals( exp = abap_true
-        act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+        act = lo_calc->evaluate( sy ) ).
     ENDLOOP.
     lo_calc->compile( 'abap_true' ).
     zcl_eui_conv=>assert_equals( exp = abap_true
-      act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+      act = lo_calc->evaluate( sy ) ).
   ENDMETHOD.
 
   METHOD compound_condition.
@@ -913,7 +913,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `( row-GROUP = 'C' OR ROW-group cp '*C' ) AND ROW-GROUP <> 'Z'` ).
-    lv_result = xsdbool( lo_calc->evaluate( ls_row ) = abap_true ).
+    lv_result = lo_calc->evaluate( ls_row ).
 
     IF lv_result <> abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = |compound_condition: expected X but got '{ lv_result }'| ).
@@ -936,7 +936,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `ROW-GROUP eq 'GRP B'` ).
-    lv_result = xsdbool( lo_calc->evaluate( ls_row ) = abap_true ).
+    lv_result = lo_calc->evaluate( ls_row ).
 
     IF lv_result <> abap_false.
       zcx_xtt_exception=>raise_sys_error( iv_message = |equality_condition: expected blank but got '{ lv_result }'| ).
@@ -959,7 +959,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
 
     CREATE OBJECT lo_calc.
     lo_calc->compile( `( row-GROUP = 'C' OR ROW-group cp '*C' ) AND ROW-GROUP <> 'Z'` ).
-    lv_result = xsdbool( lo_calc->evaluate( ls_row ) = abap_true ).
+    lv_result = lo_calc->evaluate( ls_row ).
 
     IF lv_result <> abap_true.
       zcx_xtt_exception=>raise_sys_error( iv_message = |raw_dynamic_form: expected X but got '{ lv_result }'| ).
@@ -1063,7 +1063,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     lo_calc->compile( |sy-datum(4) eq '{ lv_current_year }'| ).
     zcl_eui_conv=>assert_equals(
       exp = abap_true
-      act = xsdbool( lo_calc->evaluate( sy ) = abap_true ) ).
+      act = lo_calc->evaluate( sy ) ).
 
     lo_calc->compile( 'sy-datum+4(2)' ).
     zcl_eui_conv=>assert_equals( exp = sy-datum+4(2) act = lo_calc->evaluate( sy ) ).
@@ -1078,7 +1078,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     lo_calc->compile( `value-datum(4) eq '2019'` ).
     zcl_eui_conv=>assert_equals(
       exp = abap_true
-      act = xsdbool( lo_calc->evaluate( ls_test ) = abap_true ) ).
+      act = lo_calc->evaluate( ls_test ) ).
 
     " Numeric function arguments are not substring lengths.
     lo_calc->compile( `to_upper(123)` ).

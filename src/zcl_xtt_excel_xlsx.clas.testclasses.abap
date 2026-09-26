@@ -59,13 +59,14 @@ CLASS lcl_test IMPLEMENTATION.
     DATA lv_resulting_formula TYPE string.
     DATA lv_message TYPE string.
     DATA lv_exception TYPE string.
+    DATA lo_error TYPE REF TO cx_root.
 
     TRY.
         lv_resulting_formula = zcl_xtt_excel_xlsx=>formula_shift(
           iv_reference_formula = iv_reference_formula
           iv_shift_cols        = iv_shift_cols
           iv_shift_rows        = iv_shift_rows ).
-      CATCH cx_root INTO DATA(lo_error).
+      CATCH cx_root INTO lo_error.
         lv_exception = lo_error->get_text( ).
     ENDTRY.
 

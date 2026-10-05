@@ -41,7 +41,8 @@ CLASS lcl_test DEFINITION FOR TESTING FINAL "#AU Risk_Level Harmless
       whole_row_column_shift FOR TESTING,
       whole_column_sumif FOR TESTING,
       sheet_whole_column FOR TESTING,
-      range_name_and_cell FOR TESTING.
+      range_name_and_cell FOR TESTING,
+      no_shared_strings_part FOR TESTING.
 
   PRIVATE SECTION.
     METHODS _assert_formula_shift
@@ -312,5 +313,79 @@ CLASS lcl_test IMPLEMENTATION.
     _assert_formula_shift( iv_reference_formula = 'RNGNAME1+A1'
                           iv_shift_cols = 1 iv_shift_rows = 0
                           iv_expected = 'RNGNAME1+B1' ).
+  ENDMETHOD.
+
+  METHOD no_shared_strings_part.
+    " The smallest xlsx with one marker, written the way openpyxl and
+    " XlsxWriter (constant_memory) write it: the text is an inline string
+    " and the package has no xl/sharedStrings.xml at all
+    DATA lo_zip TYPE REF TO cl_abap_zip.
+    DATA lv_xml TYPE string.
+    CREATE OBJECT lo_zip.
+
+    CONCATENATE `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>`
+      `<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">`
+      `<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>`
+      `<Default Extension="xml" ContentType="application/xml"/>`
+      `<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>`
+      `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`
+      `</Types>` INTO lv_xml.
+    lo_zip->add( name = `[Content_Types].xml` content = zcl_eui_conv=>string_to_xstring( lv_xml ) ).
+
+    CONCATENATE `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>`
+      `</Relationships>` INTO lv_xml.
+    lo_zip->add( name = `_rels/.rels` content = zcl_eui_conv=>string_to_xstring( lv_xml ) ).
+
+    CONCATENATE `<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"`
+      ` xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">`
+      `<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>` INTO lv_xml.
+    lo_zip->add( name = `xl/workbook.xml` content = zcl_eui_conv=>string_to_xstring( lv_xml ) ).
+
+    CONCATENATE `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">`
+      `<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet"`
+      ` Target="worksheets/sheet1.xml"/>`
+      `</Relationships>` INTO lv_xml.
+    lo_zip->add( name = `xl/_rels/workbook.xml.rels` content = zcl_eui_conv=>string_to_xstring( lv_xml ) ).
+
+    CONCATENATE `<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">`
+      `<sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>{R-TITLE}</t></is></c></row></sheetData></worksheet>` INTO lv_xml.
+    lo_zip->add( name = `xl/worksheets/sheet1.xml` content = zcl_eui_conv=>string_to_xstring( lv_xml ) ).
+
+    TYPES: BEGIN OF ts_root,
+             title TYPE string,
+           END OF ts_root.
+    DATA ls_root TYPE ts_root.
+    DATA lo_file TYPE REF TO zif_xtt_file.
+    DATA cut     TYPE REF TO zcl_xtt.
+    DATA lv_raw  TYPE xstring.
+
+    CREATE OBJECT lo_file TYPE zcl_xtt_file_raw
+      EXPORTING
+        iv_name    = `no_shared_strings.xlsx`
+        iv_xstring = lo_zip->save( ).
+    CREATE OBJECT cut TYPE zcl_xtt_excel_xlsx EXPORTING io_file = lo_file.
+    ls_root-title = `ACME Corp`.
+    cut->merge( iv_block_name = 'R' is_block = ls_root ).
+    lv_raw = cut->get_raw( iv_no_warning = abap_true ).
+
+    " xtt writes the cell back as <c t="s"><v>0</v></c> and creates
+    " xl/sharedStrings.xml - a reader finds that part only via these two files
+    CREATE OBJECT lo_zip.
+    lo_zip->load( lv_raw ).
+    lo_zip->get( EXPORTING name = `xl/sharedStrings.xml` IMPORTING content = lv_raw ).
+    lv_xml = zcl_eui_conv=>xstring_to_string( lv_raw ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = boolc( lv_xml CS `ACME Corp` )
+                                 msg = `Value is not in xl/sharedStrings.xml` ).
+
+    lo_zip->get( EXPORTING name = `[Content_Types].xml` IMPORTING content = lv_raw ).
+    lv_xml = zcl_eui_conv=>xstring_to_string( lv_raw ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = boolc( lv_xml CS `PartName="/xl/sharedStrings.xml"` )
+                                 msg = `xl/sharedStrings.xml is missing in [Content_Types].xml` ).
+
+    lo_zip->get( EXPORTING name = `xl/_rels/workbook.xml.rels` IMPORTING content = lv_raw ).
+    lv_xml = zcl_eui_conv=>xstring_to_string( lv_raw ).
+    zcl_eui_conv=>assert_equals( exp = abap_true act = boolc( lv_xml CS `/relationships/sharedStrings"` )
+                                 msg = `xl/sharedStrings.xml is missing in xl/_rels/workbook.xml.rels` ).
   ENDMETHOD.
 ENDCLASS.

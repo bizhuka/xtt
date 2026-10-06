@@ -870,6 +870,7 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
   METHOD boolean_results.
     DATA lt_false TYPE STANDARD TABLE OF string WITH DEFAULT KEY.
     DATA lv_expr TYPE string.
+    DATA lv_boolean TYPE abap_bool.
     DATA lo_calc TYPE REF TO lcl_expression.
     CREATE OBJECT lo_calc.
     APPEND 'abap_false' TO lt_false.
@@ -880,9 +881,19 @@ CLASS lcl_expression_boolean_test IMPLEMENTATION.
     APPEND '`XX`' TO lt_false.
     LOOP AT lt_false INTO lv_expr.
       lo_calc->compile( lv_expr ).
+      lv_boolean = abap_false.
+      IF lo_calc->evaluate( sy ) = abap_true.
+        lv_boolean = abap_true.
+      ENDIF.
+      zcl_eui_conv=>assert_equals( exp = abap_false
+        act = lv_boolean ).
+      lo_calc->compile( |{ lv_expr } AND abap_true| ).
       zcl_eui_conv=>assert_equals( exp = abap_false
         act = lo_calc->evaluate( sy ) ).
-      lo_calc->compile( |{ lv_expr } AND abap_true| ).
+      lo_calc->compile( |abap_true AND { lv_expr }| ).
+      zcl_eui_conv=>assert_equals( exp = abap_false
+        act = lo_calc->evaluate( sy ) ).
+      lo_calc->compile( |abap_false OR { lv_expr }| ).
       zcl_eui_conv=>assert_equals( exp = abap_false
         act = lo_calc->evaluate( sy ) ).
       lo_calc->compile( |{ lv_expr } OR abap_true| ).

@@ -2287,9 +2287,7 @@ METHOD shared_strings_save.
    iv_name  = `xl/sharedStrings.xml`
    iv_sdoc  = lv_val_txt ).
 
-  " A template may have no sharedStrings.xml at all: openpyxl and XlsxWriter
-  " (constant_memory) store every text as an inline string. The cells are
-  " written back as t="s", so the new part has to be registered too
+  " @lcl_test=>no_shared_strings_part( ) Excel result is damaged when the template has no sharedStrings.xml
   DATA lv_types TYPE string.
   lv_types = _xml_content_types->str_get_document( ).
   IF lv_types NS `PartName="/xl/sharedStrings.xml"`.

@@ -14,6 +14,9 @@ CLASS lcl_ast_node DEFINITION ABSTRACT.
     METHODS is_numeric
       RETURNING VALUE(rv_num) TYPE abap_bool.
 
+    METHODS is_variable
+      RETURNING VALUE(rv_variable) TYPE abap_bool.
+
     CLASS-METHODS _is_number IMPORTING iv_value            TYPE any
                              RETURNING VALUE(rv_is_number) TYPE abap_bool.
     CLASS-METHODS _to_number
@@ -47,6 +50,7 @@ CLASS lcl_node_var DEFINITION INHERITING FROM lcl_ast_node.
       RAISING zcx_xtt_exception.
     METHODS eval REDEFINITION.
     METHODS is_numeric REDEFINITION.
+    METHODS is_variable REDEFINITION.
 ENDCLASS.
 
 " Explicit USER formatting in string templates.

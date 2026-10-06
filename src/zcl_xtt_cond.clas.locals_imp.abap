@@ -14,6 +14,10 @@ CLASS lcl_ast_node IMPLEMENTATION.
     rv_num = abap_false.
   ENDMETHOD.
 
+  METHOD is_variable.
+    rv_variable = abap_false.
+  ENDMETHOD.
+
   METHOD _is_number.
     DATA lv_type        TYPE c LENGTH 1.
     DATA lv_simple_type TYPE string.
@@ -59,6 +63,10 @@ CLASS lcl_node_var IMPLEMENTATION.
 
   METHOD is_numeric.
     rv_num = mv_is_num.
+  ENDMETHOD.
+
+  METHOD is_variable.
+    rv_variable = abap_true.
   ENDMETHOD.
 
   METHOD eval.
@@ -369,6 +377,9 @@ CLASS lcl_node_user_format IMPLEMENTATION.
         CATCH cx_sy_move_cast_error.
           zcx_xtt_exception=>raise_sys_error( iv_message = 'DATE requires a date field' ).
         ENDTRY.
+        IF lo_var->mv_kind <> cl_abap_typedescr=>typekind_date.
+          zcx_xtt_exception=>raise_sys_error( iv_message = 'DATE requires a date field' ).
+        ENDIF.
         lv_date = lv_text.
         rv_val = |{ lv_date DATE = USER }|.
       WHEN 'NUMBER'.
@@ -376,15 +387,14 @@ CLASS lcl_node_user_format IMPLEMENTATION.
           zcx_xtt_exception=>raise_sys_error( iv_message = 'NUMBER requires a numeric operand' ).
         ENDIF.
         " Preserve a field's declared decimals when it is formatted directly.
-        TRY.
+        IF mo_value->is_variable( ) = abap_true.
           lo_var ?= mo_value.
           lr_value = lo_var->resolve( is_context ).
           ASSIGN lr_value->* TO <value>.
           lv_number = <value>.
           rv_val = |{ lv_number NUMBER = USER }|.
           RETURN.
-        CATCH cx_sy_move_cast_error.
-        ENDTRY.
+        ENDIF.
         lv_number = _to_number( lv_text ).
         rv_val = |{ lv_number NUMBER = USER }|.
     ENDCASE.
@@ -676,16 +686,20 @@ CLASS lcl_node_logical IMPLEMENTATION.
 
     IF mv_op = 'AND'.
       IF lv_l <> abap_true.
-        rv_val = abap_false.
+        CLEAR rv_val.
         RETURN.
       ENDIF.
-      rv_val = mo_right->eval( is_context ).
+      IF mo_right->eval( is_context ) = abap_true.
+        rv_val = abap_true.
+      ENDIF.
     ELSEIF mv_op = 'OR'.
       IF lv_l = abap_true.
         rv_val = abap_true.
         RETURN.
       ENDIF.
-      rv_val = mo_right->eval( is_context ).
+      IF mo_right->eval( is_context ) = abap_true.
+        rv_val = abap_true.
+      ENDIF.
     ENDIF.
   ENDMETHOD.
 ENDCLASS.

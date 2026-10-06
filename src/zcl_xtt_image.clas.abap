@@ -64,7 +64,7 @@ METHOD clone.
   DATA lv_type TYPE char1.
   FIELD-SYMBOLS <lv_xstring> TYPE xstring.
 
-  CHECK source IS NOT INITIAL.
+  "CHECK source IS NOT INITIAL.
 
   " Is raw xString?
   DESCRIBE FIELD source TYPE lv_type.

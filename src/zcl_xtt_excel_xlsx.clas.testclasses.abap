@@ -316,9 +316,7 @@ CLASS lcl_test IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD no_shared_strings_part.
-    " The smallest xlsx with one marker, written the way openpyxl and
-    " XlsxWriter (constant_memory) write it: the text is an inline string
-    " and the package has no xl/sharedStrings.xml at all
+    " Excel result is damaged when the template has no sharedStrings.xml
     DATA lo_zip TYPE REF TO cl_abap_zip.
     DATA lv_xml TYPE string.
     CREATE OBJECT lo_zip.
@@ -359,6 +357,7 @@ CLASS lcl_test IMPLEMENTATION.
     DATA lo_file TYPE REF TO zif_xtt_file.
     DATA cut     TYPE REF TO zcl_xtt.
     DATA lv_raw  TYPE xstring.
+    DATA lv_act  TYPE abap_bool.
 
     CREATE OBJECT lo_file TYPE zcl_xtt_file_raw
       EXPORTING
@@ -375,17 +374,29 @@ CLASS lcl_test IMPLEMENTATION.
     lo_zip->load( lv_raw ).
     lo_zip->get( EXPORTING name = `xl/sharedStrings.xml` IMPORTING content = lv_raw ).
     lv_xml = zcl_eui_conv=>xstring_to_string( lv_raw ).
-    zcl_eui_conv=>assert_equals( exp = abap_true act = boolc( lv_xml CS `ACME Corp` )
+    CLEAR lv_act.
+    IF lv_xml CS `ACME Corp`.
+      lv_act = abap_true.
+    ENDIF.
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lv_act
                                  msg = `Value is not in xl/sharedStrings.xml` ).
 
     lo_zip->get( EXPORTING name = `[Content_Types].xml` IMPORTING content = lv_raw ).
     lv_xml = zcl_eui_conv=>xstring_to_string( lv_raw ).
-    zcl_eui_conv=>assert_equals( exp = abap_true act = boolc( lv_xml CS `PartName="/xl/sharedStrings.xml"` )
+    CLEAR lv_act.
+    IF lv_xml CS `PartName="/xl/sharedStrings.xml"`.
+      lv_act = abap_true.
+    ENDIF.
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lv_act
                                  msg = `xl/sharedStrings.xml is missing in [Content_Types].xml` ).
 
     lo_zip->get( EXPORTING name = `xl/_rels/workbook.xml.rels` IMPORTING content = lv_raw ).
     lv_xml = zcl_eui_conv=>xstring_to_string( lv_raw ).
-    zcl_eui_conv=>assert_equals( exp = abap_true act = boolc( lv_xml CS `/relationships/sharedStrings"` )
+    CLEAR lv_act.
+    IF lv_xml CS `/relationships/sharedStrings"`.
+      lv_act = abap_true.
+    ENDIF.
+    zcl_eui_conv=>assert_equals( exp = abap_true act = lv_act
                                  msg = `xl/sharedStrings.xml is missing in xl/_rels/workbook.xml.rels` ).
   ENDMETHOD.
 ENDCLASS.

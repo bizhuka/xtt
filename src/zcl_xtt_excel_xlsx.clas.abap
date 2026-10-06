@@ -2286,6 +2286,28 @@ METHOD shared_strings_save.
    io_zip   = mo_zip
    iv_name  = `xl/sharedStrings.xml`
    iv_sdoc  = lv_val_txt ).
+
+  " A template may have no sharedStrings.xml at all: openpyxl and XlsxWriter
+  " (constant_memory) store every text as an inline string. The cells are
+  " written back as t="s", so the new part has to be registered too
+  DATA lv_types TYPE string.
+  lv_types = _xml_content_types->str_get_document( ).
+  IF lv_types NS `PartName="/xl/sharedStrings.xml"`.
+    _xml_content_types->str_add( `<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>` ). "#EC NOTEXT
+  ENDIF.
+
+  DATA lo_rels TYPE REF TO zcl_xtt_xml_updater.
+  DATA lv_rels TYPE string.
+  CREATE OBJECT lo_rels
+    EXPORTING
+      io_zip     = mo_zip
+      iv_path    = 'xl/_rels/workbook.xml.rels'             "#EC NOTEXT
+      iv_str_tag = `Relationships`.                         "#EC NOTEXT
+  lv_rels = lo_rels->str_get_document( ).
+  IF lv_rels NS `/relationships/sharedStrings"`.
+    lo_rels->str_add( `<Relationship Id="rIdXttSst" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>` ). "#EC NOTEXT
+    lo_rels->save( ).
+  ENDIF.
 ENDMETHOD.
 
 

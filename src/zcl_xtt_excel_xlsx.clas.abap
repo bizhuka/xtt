@@ -2585,7 +2585,7 @@ METHOD _workbook_write_xml.
   lo_rel_updater->obj_replace( iv_tag            = `Relationships` "#EC NOTEXT
                                it_tags           = lt_rel_tag
                                iv_part_attribute = `Target`        "#EC NOTEXT
-                               iv_part_value     = `worksheets/*`  "#EC NOTEXT
+                               iv_part_value     = `*worksheets/*` "#EC NOTEXT
   ).
   "№ 4 - write back to zip
   lo_rel_updater->save( ).

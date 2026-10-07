@@ -11,9 +11,10 @@ CLASS lcl_ex_sheet IMPLEMENTATION.
     WHILE lo_node IS BOUND.
       DATA lv_target TYPE string.
       lv_target = lo_node->get_attribute( 'Target' ).
-      IF lv_target CP 'worksheets/sheet*'.
-        REPLACE FIRST OCCURRENCE OF: 'worksheets/sheet' IN lv_target WITH ``,
-                                     '.xml'             IN lv_target WITH ``.
+      " @lcl_test=>absolute_sheet_target( ) openpyxl writes Target="/xl/worksheets/sheet1.xml"
+      IF lv_target CP '*worksheets/sheet*'.
+        REPLACE REGEX '^.*worksheets/sheet' IN lv_target WITH ``.
+        REPLACE FIRST OCCURRENCE OF '.xml' IN lv_target WITH ``.
 
         DATA lv_index TYPE syindex.
         lv_index = lv_target.

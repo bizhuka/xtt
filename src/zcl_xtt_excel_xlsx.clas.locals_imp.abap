@@ -3,7 +3,6 @@
 CLASS lcl_ex_sheet IMPLEMENTATION.
   METHOD get_sheet_indices.
     DATA lo_workbook_rels TYPE REF TO if_ixml_document.
-    DATA lv_offset        TYPE i.
     zcl_eui_conv=>xml_from_zip( EXPORTING io_zip    = io_zip
                                           iv_name   = 'xl/_rels/workbook.xml.rels'
                                 IMPORTING eo_xmldoc = lo_workbook_rels ).
